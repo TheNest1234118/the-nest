@@ -256,7 +256,7 @@ export function Atmosphere() {
       }}
     >
       <HeartBackground />
-      
+
       {/* Ambient glow */}
       <div
         style={{
@@ -274,7 +274,7 @@ export function Atmosphere() {
           paddingTop: "calc(env(safe-area-inset-top, 0px) + 52px)",
           paddingBottom: 96,
           position: "relative",
-          zIndex: 1,
+          zIndex: 5,
           display: "flex",
           flexDirection: "column",
           gap: 26,

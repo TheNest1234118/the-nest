@@ -96,9 +96,9 @@ const isKick =
   playing &&
   primed.current &&
   cooldown.current <= 0 &&
-  rawRef.current > 0.015 &&
-excess > 0.0032 &&
-  fast.current > slow.current * 1.045;
+  rawRef.current > 0.010 &&
+excess > 0.0022 &&
+  fast.current > slow.current * 1.025;
 
 if (isKick) {
   const strength = Math.min(1, excess * 70);
@@ -109,7 +109,7 @@ if (isKick) {
   pulseVel.current += strength * 0.045;
 
   shakePh.current = 0;
-  cooldown.current = 12;
+  cooldown.current = 7;
 }     
       pulseVel.current += (0 - pulse.current) * 0.035;
 pulseVel.current *= 0.62;      pulse.current += pulseVel.current;
@@ -143,7 +143,7 @@ pulseVel.current *= 0.62;      pulse.current += pulseVel.current;
 const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseScale * kickScale;
 
       if (svgRef.current) {
-        svgRef.current.style.opacity = String(v);
+        svgRef.current.style.opacity = String(v * 0.22);
       }
 
       if (groupRef.current) {
