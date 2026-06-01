@@ -44,16 +44,12 @@ function App() {
       <TooltipProvider>
         <AudioProvider>
         <AtmosphereProvider>
-  <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
-    <HeartBackground />
-  </div>
+  <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+    <Router />
+    <MiniPlayer />
+  </WouterRouter>
 
-  <div style={{ position: "relative", zIndex: 2 }}>
-    <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-      <Router />
-      <MiniPlayer />
-    </WouterRouter>
-  </div>
+  <HeartBackground />
 
   <Toaster />
 </AtmosphereProvider>
