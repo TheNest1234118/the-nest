@@ -140,7 +140,7 @@ export function HeartBackground() {
       const scale = baseScale * kickScale;
 
       if (svgRef.current) {
-        svgRef.current.style.opacity = String(v * 0.12);
+        svgRef.current.style.opacity = String(v * 0.05);
       }
 
       if (groupRef.current) {
@@ -200,7 +200,7 @@ export function HeartBackground() {
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 0,
+        zIndex: -10,
         pointerEvents: "none",
         mixBlendMode: "screen" as React.CSSProperties["mixBlendMode"],
       }}

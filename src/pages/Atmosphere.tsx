@@ -253,6 +253,7 @@ export function Atmosphere() {
         flexDirection: "column",
         position: "relative",
         overflow: "hidden",
+        isolation: "isolate",
       }}
     >
       <HeartBackground />
@@ -274,7 +275,7 @@ export function Atmosphere() {
           paddingTop: "calc(env(safe-area-inset-top, 0px) + 52px)",
           paddingBottom: 96,
           position: "relative",
-          zIndex: 5,
+          zIndex: 10,
           display: "flex",
           flexDirection: "column",
           gap: 26,
