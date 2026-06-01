@@ -104,13 +104,13 @@ export function HeartBackground() {
       if (isKick) {
         const strength = Math.min(1, excess * 70);
 
-        kick.current = Math.max(kick.current, strength * 0.35);
-        kickGlow.current = Math.max(kickGlow.current, strength * 0.65);
-        ripple.current = Math.max(ripple.current, strength * 0.55);
+        kick.current = Math.max(kick.current, strength * 0.85);
+kickGlow.current = Math.max(kickGlow.current, strength * 1.25);
+ripple.current = Math.max(ripple.current, strength * 0.9);
 
         pulseVel.current += strength * 0.018;
 
-        cooldown.current = 6;
+        cooldown.current = 3;
       }
 
       pulseVel.current += (0 - pulse.current) * 0.12;
@@ -136,11 +136,10 @@ export function HeartBackground() {
       const organicPulse = Math.max(0, pulse.current);
 
       const baseScale = 0.82 + br * 0.012;
-      const kickScale = 1 + organicPulse * 0.45 + kc * 0.018;
+      const kickScale = 1 + organicPulse * 1.3 + kc * 0.07;
       const scale = baseScale * kickScale;
-
       if (svgRef.current) {
-        svgRef.current.style.opacity = String(v * 0.22);      }
+        svgRef.current.style.opacity = String(v * 0.32);      }
 
       if (groupRef.current) {
         groupRef.current.setAttribute(
@@ -241,16 +240,15 @@ export function HeartBackground() {
           <path
             ref={bodyRef}
             d={HEART}
-            fill="hsl(352,40%,10%)"
-            filter="none"
+            fill="hsl(355,55%,18%)"            filter="none"
             style={{ opacity: 0.16 }}
           />
 
           <path
             ref={innerCoreRef}
             d={HEART}
-            fill="hsl(24,38%,10%)"
-            filter="none"
+            fill="hsl(15,65%,22%)"
+                        filter="none"
             transform="translate(180,334) scale(0.62) translate(-180,-334)"
             style={{ opacity: 0.08 }}
           />
@@ -259,8 +257,7 @@ export function HeartBackground() {
             ref={strokeRef}
             d={HEART}
             fill="none"
-            stroke="hsl(5,40%,22%)"
-            strokeWidth={0.9}
+            stroke="hsl(0,75%,40%)"            strokeWidth={0.9}
             filter="none"
             style={{ opacity: 0.18 }}
           />
