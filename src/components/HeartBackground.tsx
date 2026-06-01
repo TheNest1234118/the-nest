@@ -21,11 +21,12 @@ export function HeartBackground() {
   const strokeHaloRef = useRef<SVGPathElement>(null);
   const strokeRef = useRef<SVGPathElement>(null);
   const ambientRef = useRef<SVGEllipseElement>(null);
-
+  const rawRef = useRef(0);
   const freqBuf = useRef<Uint8Array<ArrayBuffer> | null>(null);
 
   const fast = useRef(0);
   const slow = useRef(0);
+  const primed = useRef(false);
 
   const kick = useRef(0);
   const kickGlow = useRef(0);
@@ -71,9 +72,15 @@ export function HeartBackground() {
     d[4] * 1.0 +
     d[5] * 0.5) /
   (7.7 * 255);
-
-        fast.current = fast.current * 0.25 + raw * 0.75;
-slow.current = slow.current * 0.985 + raw * 0.015;
+  rawRef.current = raw;
+  if (!primed.current) {
+    fast.current = raw;
+    slow.current = raw;
+    primed.current = true;
+  } else {
+    fast.current = fast.current * 0.18 + raw * 0.82;
+    slow.current = slow.current * 0.97 + raw * 0.03;
+  }
       } else {
         fast.current *= 0.88;
         slow.current *= 0.97;
@@ -87,13 +94,14 @@ const excess = fast.current - slow.current;
 
 const isKick =
   playing &&
+  primed.current &&
   cooldown.current <= 0 &&
-  fast.current > 0.026 &&
-  excess > 0.007 &&
-  fast.current > slow.current * 1.08;
+  rawRef.current > 0.018 &&
+  excess > 0.004 &&
+  fast.current > slow.current * 1.045;
 
 if (isKick) {
-  const strength = Math.min(1, excess * 46);
+  const strength = Math.min(1, excess * 70);
 
   kick.current = Math.max(kick.current, strength * 0.45);
   kickGlow.current = Math.max(kickGlow.current, strength);
