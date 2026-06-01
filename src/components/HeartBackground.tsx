@@ -96,8 +96,8 @@ const isKick =
   playing &&
   primed.current &&
   cooldown.current <= 0 &&
-  rawRef.current > 0.018 &&
-  excess > 0.004 &&
+  rawRef.current > 0.015 &&
+excess > 0.0032 &&
   fast.current > slow.current * 1.045;
 
 if (isKick) {
@@ -157,13 +157,13 @@ const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseSc
 
       if (bodyRef.current) {
         bodyRef.current.style.opacity = String(
-          Math.min(0.52 + br * 0.14 + kg * 0.22, 0.84),
+          Math.min(0.30 + br * 0.08 + kg * 0.16, 0.58),
         );
       }
 
       if (innerCoreRef.current) {
         innerCoreRef.current.style.opacity = String(
-          Math.min(0.28 + br * 0.10 + kg * 0.28, 0.68),
+          Math.min(0.16 + br * 0.06 + kg * 0.16, 0.42),
         );
       }
 
@@ -174,7 +174,7 @@ const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseSc
         );
 
         strokeHaloRef.current.style.opacity = String(
-          Math.min(0.20 + br * 0.08 + kg * 0.24, 0.52),
+          Math.min(0.12 + br * 0.05 + kg * 0.16, 0.34),
         );
       }
 
@@ -225,7 +225,7 @@ const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseSc
         preserveAspectRatio="xMidYMid meet"
         width="100%"
         height="100%"
-        style={{ opacity: 0, display: "block" }}
+        style={{ opacity: 0, display: "block", transform: "scale(0.92)" }}
       >
         <defs>
           <filter id="nhbBodyGlow" x="-80%" y="-80%" width="260%" height="260%">
@@ -263,7 +263,7 @@ const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseSc
             fill="none"
             stroke="hsl(352,48%,16%)"
             strokeWidth={12}
-            filter="url(#nhbBodyGlow)"
+            filter="none"
             style={{ opacity: 0.22 }}
           />
 
@@ -279,7 +279,7 @@ const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseSc
             ref={innerCoreRef}
             d={HEART}
             fill="hsl(24,48%,14%)"
-            filter="url(#nhbCoreGlow)"
+            filter="none"
             transform="translate(180,334) scale(0.62) translate(-180,-334)"
             style={{ opacity: 0.32 }}
           />
