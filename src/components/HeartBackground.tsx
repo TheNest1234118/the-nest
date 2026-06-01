@@ -244,7 +244,7 @@ const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseSc
           rx={210}
           ry={245}
           fill="hsl(352,42%,9%)"
-          filter="url(#nhbHaze)"
+          filter="none"
           style={{ opacity: 0.2 }}
         />
 
@@ -263,7 +263,7 @@ const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseSc
             ref={bodyRef}
             d={HEART}
             fill="hsl(352,56%,18%)"
-            filter="url(#nhbBodyGlow)"
+            filter="none"
             style={{ opacity: 0.55 }}
           />
 
@@ -282,7 +282,7 @@ const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseSc
             fill="none"
             stroke="hsl(5,64%,34%)"
             strokeWidth={1.4}
-            filter="url(#nhbEdge)"
+            filter="none"
             style={{ opacity: 0.42 }}
           />
         </g>
