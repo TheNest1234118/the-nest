@@ -65,11 +65,12 @@ export function HeartBackground() {
         const d = freqBuf.current;
 
         const raw =
-  (d[1] * 3.0 +
-    d[2] * 2.5 +
+  (d[1] * 2.4 +
+    d[2] * 2.2 +
     d[3] * 1.6 +
-    d[4] * 0.7) /
-  (7.8 * 255);
+    d[4] * 1.0 +
+    d[5] * 0.5) /
+  (7.7 * 255);
 
         fast.current = fast.current * 0.25 + raw * 0.75;
 slow.current = slow.current * 0.985 + raw * 0.015;
@@ -78,33 +79,30 @@ slow.current = slow.current * 0.985 + raw * 0.015;
         slow.current *= 0.97;
       }
 
-      if (cooldown.current > 0) {
-        cooldown.current -= 1;
-      } else {
-        const excess = fast.current - slow.current;
+     if (cooldown.current > 0) {
+  cooldown.current -= 1;
+}
 
-       const isKick =
+const excess = fast.current - slow.current;
+
+const isKick =
   playing &&
-  fast.current > 0.030 &&
-  excess > 0.008 &&
-  fast.current > slow.current * 1.09;
+  cooldown.current <= 0 &&
+  fast.current > 0.026 &&
+  excess > 0.007 &&
+  fast.current > slow.current * 1.08;
 
-        if (isKick) {
-const strength = Math.min(1, excess * 48);
-          kick.current = Math.max(kick.current, strength * 0.55);
-          kickGlow.current = Math.max(kickGlow.current, strength);
-          ripple.current = Math.max(ripple.current, strength);
+if (isKick) {
+  const strength = Math.min(1, excess * 46);
 
-pulseVel.current += strength * 0.055;
-          shakePh.current = 0;
-          cooldown.current = 10;
+  kick.current = Math.max(kick.current, strength * 0.45);
+  kickGlow.current = Math.max(kickGlow.current, strength);
+  ripple.current = Math.max(ripple.current, strength);
+  pulseVel.current += strength * 0.045;
 
-          if (typeof navigator !== "undefined" && navigator.vibrate) {
-            navigator.vibrate(Math.round(8 + strength * 10));
-          }
-        }
-      }
-
+  shakePh.current = 0;
+  cooldown.current = 12;
+}     
       pulseVel.current += (0 - pulse.current) * 0.035;
 pulseVel.current *= 0.62;      pulse.current += pulseVel.current;
 
@@ -134,7 +132,7 @@ pulseVel.current *= 0.62;      pulse.current += pulseVel.current;
       const organicPulse = Math.max(0, pulse.current);
 
       const baseScale = 0.975 + br * 0.028;
-const kickScale = 1 + organicPulse * 5.6 + kc * 0.045;      const scale = baseScale * kickScale;
+const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseScale * kickScale;
 
       if (svgRef.current) {
         svgRef.current.style.opacity = String(v);
