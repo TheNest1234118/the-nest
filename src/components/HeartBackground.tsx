@@ -214,7 +214,7 @@ const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseSc
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 1,
+        zIndex: -1,
         pointerEvents: "none",
         mixBlendMode: "screen" as React.CSSProperties["mixBlendMode"],
       }}
