@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { HeartBackground } from "@/components/HeartBackground";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { ChevronLeft, Upload, Play, Pause, Music2 } from "lucide-react";
@@ -254,6 +255,8 @@ export function Atmosphere() {
         overflow: "hidden",
       }}
     >
+      <HeartBackground />
+      
       {/* Ambient glow */}
       <div
         style={{
