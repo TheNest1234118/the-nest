@@ -51,7 +51,6 @@ export function HeartBackground() {
         60;
 
       const analyser = getAnalyserNode();
-      console.log("analyser:", analyser);
 
       if (analyser && playing) {
         if (
@@ -62,16 +61,7 @@ export function HeartBackground() {
         }
 
         analyser.getByteFrequencyData(freqBuf.current);
-        console.log(
-          "bass:",
-          freqBuf.current[1],
-          freqBuf.current[2],
-          freqBuf.current[3],
-          "fast:",
-          fast.current,
-          "slow:",
-          slow.current
-        );
+      
         const d = freqBuf.current;
 
         const raw =
