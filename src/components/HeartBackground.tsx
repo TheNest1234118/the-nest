@@ -21,8 +21,9 @@ export function HeartBackground() {
   const strokeHaloRef = useRef<SVGPathElement>(null);
   const strokeRef = useRef<SVGPathElement>(null);
   const ambientRef = useRef<SVGEllipseElement>(null);
-  const rawRef = useRef(0);
+
   const freqBuf = useRef<Uint8Array<ArrayBuffer> | null>(null);
+  const rawRef = useRef(0);
 
   const fast = useRef(0);
   const slow = useRef(0);
@@ -35,7 +36,6 @@ export function HeartBackground() {
   const pulse = useRef(0);
   const pulseVel = useRef(0);
 
-  const shakePh = useRef(0);
   const cooldown = useRef(0);
   const breathT = useRef(0);
   const vis = useRef(0);
@@ -48,7 +48,7 @@ export function HeartBackground() {
       const vTarget = playing ? 1 : 0;
       vis.current +=
         (vTarget - vis.current) *
-        (vTarget > vis.current ? 0.0032 : 0.0016) *
+        (vTarget > vis.current ? 0.004 : 0.002) *
         60;
 
       const analyser = getAnalyserNode();
@@ -62,61 +62,64 @@ export function HeartBackground() {
         }
 
         analyser.getByteFrequencyData(freqBuf.current);
-      
         const d = freqBuf.current;
 
         const raw =
-  (d[1] * 2.4 +
-    d[2] * 2.2 +
-    d[3] * 1.6 +
-    d[4] * 1.0 +
-    d[5] * 0.5) /
-  (7.7 * 255);
-  rawRef.current = raw;
-  if (!primed.current) {
-    fast.current = raw;
-    slow.current = raw;
-    primed.current = true;
-  } else {
-    fast.current = fast.current * 0.18 + raw * 0.82;
-    slow.current = slow.current * 0.97 + raw * 0.03;
-  }
+          (d[1] * 2.4 +
+            d[2] * 2.2 +
+            d[3] * 1.6 +
+            d[4] * 1.0 +
+            d[5] * 0.5) /
+          (7.7 * 255);
+
+        rawRef.current = raw;
+
+        if (!primed.current) {
+          fast.current = raw;
+          slow.current = raw;
+          primed.current = true;
+        } else {
+          fast.current = fast.current * 0.16 + raw * 0.84;
+          slow.current = slow.current * 0.97 + raw * 0.03;
+        }
       } else {
         fast.current *= 0.88;
         slow.current *= 0.97;
       }
 
-     if (cooldown.current > 0) {
-  cooldown.current -= 1;
-}
+      if (cooldown.current > 0) {
+        cooldown.current -= 1;
+      }
 
-const excess = fast.current - slow.current;
+      const excess = fast.current - slow.current;
 
-const isKick =
-  playing &&
-  primed.current &&
-  cooldown.current <= 0 &&
-  rawRef.current > 0.010 &&
-excess > 0.0022 &&
-  fast.current > slow.current * 1.025;
+      const isKick =
+        playing &&
+        primed.current &&
+        cooldown.current <= 0 &&
+        rawRef.current > 0.01 &&
+        excess > 0.0022 &&
+        fast.current > slow.current * 1.025;
 
-if (isKick) {
-  const strength = Math.min(1, excess * 70);
+      if (isKick) {
+        const strength = Math.min(1, excess * 70);
 
-  kick.current = Math.max(kick.current, strength * 0.45);
-  kickGlow.current = Math.max(kickGlow.current, strength);
-  ripple.current = Math.max(ripple.current, strength);
-  pulseVel.current += strength * 0.045;
+        kick.current = Math.max(kick.current, strength * 0.35);
+        kickGlow.current = Math.max(kickGlow.current, strength * 0.65);
+        ripple.current = Math.max(ripple.current, strength * 0.55);
 
-  shakePh.current = 0;
-  cooldown.current = 7;
-}     
-      pulseVel.current += (0 - pulse.current) * 0.035;
-pulseVel.current *= 0.62;      pulse.current += pulseVel.current;
+        pulseVel.current += strength * 0.018;
 
-      kick.current *= 0.88;
-      kickGlow.current *= 0.925;
-      ripple.current *= 0.94;
+        cooldown.current = 6;
+      }
+
+      pulseVel.current += (0 - pulse.current) * 0.12;
+      pulseVel.current *= 0.5;
+      pulse.current += pulseVel.current;
+
+      kick.current *= 0.72;
+      kickGlow.current *= 0.86;
+      ripple.current *= 0.88;
 
       if (kick.current < 0.001) kick.current = 0;
       if (kickGlow.current < 0.001) kickGlow.current = 0;
@@ -130,71 +133,54 @@ pulseVel.current *= 0.62;      pulse.current += pulseVel.current;
       const br = Math.sin(breathT.current * 0.009) * 0.5 + 0.5;
       const v = vis.current;
 
-      let shakeX = 0;
-
-      if (kc > 0.015) {
-        shakePh.current += 1;
-        shakeX = Math.sin(shakePh.current * 0.9) * kc * 1.1;
-      }
-
       const organicPulse = Math.max(0, pulse.current);
 
-      const baseScale = 0.975 + br * 0.028;
-const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseScale * kickScale;
+      const baseScale = 0.82 + br * 0.012;
+      const kickScale = 1 + organicPulse * 0.45 + kc * 0.018;
+      const scale = baseScale * kickScale;
 
       if (svgRef.current) {
-        svgRef.current.style.opacity = String(v * 0.22);
+        svgRef.current.style.opacity = String(v * 0.12);
       }
 
       if (groupRef.current) {
         groupRef.current.setAttribute(
           "transform",
-          `translate(${180 + shakeX},334) scale(${scale.toFixed(
-            4,
-          )}) translate(-180,-334)`,
+          `translate(180,334) scale(${scale.toFixed(4)}) translate(-180,-334)`,
         );
       }
 
       if (bodyRef.current) {
         bodyRef.current.style.opacity = String(
-          Math.min(0.30 + br * 0.08 + kg * 0.16, 0.58),
+          Math.min(0.16 + br * 0.04 + kg * 0.08, 0.32),
         );
       }
 
       if (innerCoreRef.current) {
         innerCoreRef.current.style.opacity = String(
-          Math.min(0.16 + br * 0.06 + kg * 0.16, 0.42),
+          Math.min(0.08 + br * 0.03 + kg * 0.08, 0.22),
         );
       }
 
       if (strokeHaloRef.current) {
-        strokeHaloRef.current.setAttribute(
-          "stroke-width",
-          String(12 + kg * 18),
-        );
-
+        strokeHaloRef.current.setAttribute("stroke-width", String(6 + kg * 6));
         strokeHaloRef.current.style.opacity = String(
-          Math.min(0.12 + br * 0.05 + kg * 0.16, 0.34),
+          Math.min(0.08 + br * 0.03 + kg * 0.08, 0.22),
         );
       }
 
       if (strokeRef.current) {
-        strokeRef.current.setAttribute(
-          "stroke-width",
-          String(1.4 + kc * 2.2),
-        );
-
+        strokeRef.current.setAttribute("stroke-width", String(0.9 + kc * 0.8));
         strokeRef.current.style.opacity = String(
-          Math.min(0.40 + br * 0.16 + kg * 0.34, 0.86),
+          Math.min(0.18 + br * 0.05 + kg * 0.10, 0.38),
         );
       }
 
       if (ambientRef.current) {
-        ambientRef.current.setAttribute("rx", String(210 + br * 18 + rp * 90));
-        ambientRef.current.setAttribute("ry", String(245 + br * 20 + rp * 105));
-
+        ambientRef.current.setAttribute("rx", String(180 + br * 12 + rp * 35));
+        ambientRef.current.setAttribute("ry", String(210 + br * 14 + rp * 42));
         ambientRef.current.style.opacity = String(
-          Math.min(0.16 + br * 0.1 + rp * 0.22, 0.46),
+          Math.min(0.06 + br * 0.04 + rp * 0.08, 0.18),
         );
       }
 
@@ -214,7 +200,7 @@ const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseSc
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: -1,
+        zIndex: 0,
         pointerEvents: "none",
         mixBlendMode: "screen" as React.CSSProperties["mixBlendMode"],
       }}
@@ -225,35 +211,21 @@ const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseSc
         preserveAspectRatio="xMidYMid meet"
         width="100%"
         height="100%"
-        style={{ opacity: 0, display: "block", transform: "scale(0.92)" }}
+        style={{
+          opacity: 0,
+          display: "block",
+          transform: "scale(0.8)",
+        }}
       >
-        <defs>
-          <filter id="nhbBodyGlow" x="-80%" y="-80%" width="260%" height="260%">
-            <feGaussianBlur stdDeviation="24" />
-          </filter>
-
-          <filter id="nhbCoreGlow" x="-80%" y="-80%" width="260%" height="260%">
-            <feGaussianBlur stdDeviation="18" />
-          </filter>
-
-          <filter id="nhbEdge" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="7" />
-          </filter>
-
-          <filter id="nhbHaze" x="-130%" y="-130%" width="360%" height="360%">
-            <feGaussianBlur stdDeviation="56" />
-          </filter>
-        </defs>
-
         <ellipse
           ref={ambientRef}
           cx="180"
           cy="344"
-          rx={210}
-          ry={245}
-          fill="hsl(352,42%,9%)"
+          rx={180}
+          ry={210}
+          fill="hsl(352,36%,8%)"
           filter="none"
-          style={{ opacity: 0.2 }}
+          style={{ opacity: 0.08 }}
         />
 
         <g ref={groupRef}>
@@ -261,37 +233,37 @@ const kickScale = 1 + organicPulse * 4.6 + kc * 0.035;      const scale = baseSc
             ref={strokeHaloRef}
             d={HEART}
             fill="none"
-            stroke="hsl(352,48%,16%)"
-            strokeWidth={12}
+            stroke="hsl(352,38%,14%)"
+            strokeWidth={6}
             filter="none"
-            style={{ opacity: 0.22 }}
+            style={{ opacity: 0.08 }}
           />
 
           <path
             ref={bodyRef}
             d={HEART}
-            fill="hsl(352,56%,18%)"
+            fill="hsl(352,40%,10%)"
             filter="none"
-            style={{ opacity: 0.55 }}
+            style={{ opacity: 0.16 }}
           />
 
           <path
             ref={innerCoreRef}
             d={HEART}
-            fill="hsl(24,48%,14%)"
+            fill="hsl(24,38%,10%)"
             filter="none"
             transform="translate(180,334) scale(0.62) translate(-180,-334)"
-            style={{ opacity: 0.32 }}
+            style={{ opacity: 0.08 }}
           />
 
           <path
             ref={strokeRef}
             d={HEART}
             fill="none"
-            stroke="hsl(5,64%,34%)"
-            strokeWidth={1.4}
+            stroke="hsl(5,40%,22%)"
+            strokeWidth={0.9}
             filter="none"
-            style={{ opacity: 0.42 }}
+            style={{ opacity: 0.18 }}
           />
         </g>
       </svg>
