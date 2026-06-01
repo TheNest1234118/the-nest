@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 interface Anchor {
   id: string;
   type: "text" | "image";
-  content: string; // text or base64 data url
+  content: string;
   createdAt: number;
 }
 
@@ -19,12 +19,14 @@ export function Anchors() {
 
   const handleAddText = () => {
     if (!newText.trim()) return;
+
     const anchor: Anchor = {
       id: crypto.randomUUID(),
       type: "text",
       content: newText.trim(),
-      createdAt: Date.now()
+      createdAt: Date.now(),
     };
+
     setAnchors([anchor, ...anchors]);
     setNewText("");
     setIsAdding(false);
@@ -35,100 +37,355 @@ export function Anchors() {
     if (!file) return;
 
     const reader = new FileReader();
+
     reader.onloadend = () => {
       const anchor: Anchor = {
         id: crypto.randomUUID(),
         type: "image",
         content: reader.result as string,
-        createdAt: Date.now()
+        createdAt: Date.now(),
       };
+
       setAnchors([anchor, ...anchors]);
       setIsAdding(false);
     };
+
     reader.readAsDataURL(file);
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 1 }}
-      className="min-h-screen bg-background text-foreground p-6 pt-12 flex flex-col max-w-md mx-auto"
+      transition={{ duration: 0.7 }}
+      style={{
+        minHeight: "100svh",
+        background: "#09090d",
+        position: "relative",
+        overflow: "hidden",
+        maxWidth: 480,
+        margin: "0 auto",
+        display: "flex",
+        flexDirection: "column",
+      }}
     >
-      <header className="mb-12 flex flex-row items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/home" className="text-muted-foreground hover:text-foreground transition-colors duration-500">
-            <ChevronLeft strokeWidth={1} size={28} />
-          </Link>
-          <h2 className="font-serif text-2xl tracking-wider text-primary/80">Anchors</h2>
-        </div>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "radial-gradient(ellipse 70% 35% at 50% 10%, rgba(185, 120, 35, 0.05) 0%, transparent 70%)",
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
 
-        <Dialog open={isAdding} onOpenChange={setIsAdding}>
-          <DialogTrigger asChild>
-            <button className="w-10 h-10 rounded-full border border-border/50 flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all duration-500">
-              <Plus size={18} strokeWidth={1.5} />
-            </button>
-          </DialogTrigger>
-          <DialogContent className="bg-card border-border/30 rounded-2xl p-6 sm:rounded-2xl max-w-[320px]">
-            <h3 className="font-serif text-xl text-primary/80 mb-6">New Anchor</h3>
-            <div className="flex flex-col gap-4">
-              <textarea
-                value={newText}
-                onChange={(e) => setNewText(e.target.value)}
-                placeholder="A small reality reminder..."
-                className="w-full bg-background/50 border border-border/50 rounded-xl p-4 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/40 resize-none min-h-[100px] transition-all duration-700 font-light"
-              />
-              <div className="flex items-center justify-between mt-2">
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg hover:bg-white/5">
-                  <ImageIcon size={16} strokeWidth={1.5} />
-                  <span className="uppercase tracking-widest">Upload Photo</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                </label>
-                <button 
-                  onClick={handleAddText}
-                  disabled={!newText.trim()}
-                  className="text-xs uppercase tracking-[0.2em] text-primary/70 hover:text-primary transition-colors disabled:opacity-30 duration-500"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </header>
+      <div
+        style={{
+          flex: 1,
+          padding: "0 20px 32px",
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 52px)",
+          position: "relative",
+          zIndex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <motion.header
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.7 }}
+          style={{
+            marginBottom: 34,
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <Link href="/home">
+              <button
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "rgba(185, 162, 128, 0.32)",
+                  padding: 2,
+                }}
+              >
+                <ChevronLeft strokeWidth={1.3} size={24} />
+              </button>
+            </Link>
 
-      <p className="text-muted-foreground/60 text-sm font-light mb-10 leading-relaxed">
-        Small, real things that connect you back to the physical world.
-      </p>
-
-      <div className="grid grid-cols-2 gap-4 pb-20">
-        {anchors.map((anchor, i) => (
-          <motion.div 
-            key={anchor.id}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: Math.min(i * 0.1, 0.5) }}
-            className={`rounded-2xl border border-border/30 overflow-hidden bg-card/20 ${anchor.type === 'text' ? 'p-5 flex items-center justify-center min-h-[160px]' : 'aspect-square'}`}
-          >
-            {anchor.type === 'text' ? (
-              <p className="text-sm font-light text-center leading-relaxed text-foreground/90">
-                {anchor.content}
+            <div>
+              <h2
+                style={{
+                  fontFamily: "Georgia, 'Times New Roman', serif",
+                  fontSize: 25,
+                  fontWeight: 400,
+                  color: "rgba(235, 215, 180, 0.90)",
+                  letterSpacing: "0.03em",
+                  lineHeight: 1.15,
+                  marginBottom: 5,
+                }}
+              >
+                Anchors
+              </h2>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: "rgba(185, 162, 128, 0.48)",
+                  fontWeight: 300,
+                  lineHeight: 1.5,
+                  maxWidth: 260,
+                  letterSpacing: "0.01em",
+                }}
+              >
+                Real things. This room. Right now.
               </p>
-            ) : (
-              <img src={anchor.content} alt="Reality anchor" className="w-full h-full object-cover opacity-80 mix-blend-luminosity hover:mix-blend-normal transition-all duration-1000 grayscale hover:grayscale-0" />
-            )}
+            </div>
+          </div>
+
+          <Dialog open={isAdding} onOpenChange={setIsAdding}>
+            <DialogTrigger asChild>
+              <button
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 999,
+                  background: "rgba(205, 170, 100, 0.05)",
+                  border: "1px solid rgba(205, 170, 100, 0.14)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "rgba(205, 170, 100, 0.56)",
+                  marginTop: 2,
+                }}
+              >
+                <Plus size={17} strokeWidth={1.5} />
+              </button>
+            </DialogTrigger>
+
+            <DialogContent
+              style={{
+                background: "#111015",
+                border: "1px solid rgba(205, 170, 100, 0.12)",
+                borderRadius: 22,
+                padding: 24,
+                maxWidth: 330,
+              }}
+            >
+              <h3
+                style={{
+                  fontFamily: "Georgia, 'Times New Roman', serif",
+                  fontSize: 21,
+                  fontWeight: 400,
+                  color: "rgba(235, 215, 180, 0.88)",
+                  letterSpacing: "0.03em",
+                  marginBottom: 20,
+                }}
+              >
+                New Anchor
+              </h3>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <textarea
+                  value={newText}
+                  onChange={(e) => setNewText(e.target.value)}
+                  placeholder="A small reality reminder..."
+                  style={{
+                    width: "100%",
+                    minHeight: 110,
+                    resize: "none",
+                    background: "rgba(255, 255, 255, 0.026)",
+                    border: "1px solid rgba(255, 255, 255, 0.07)",
+                    borderRadius: 16,
+                    padding: 15,
+                    color: "rgba(225, 210, 188, 0.86)",
+                    fontSize: 13,
+                    fontWeight: 300,
+                    lineHeight: 1.5,
+                    outline: "none",
+                  }}
+                />
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      cursor: "pointer",
+                      fontSize: 10,
+                      letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                      color: "rgba(185, 158, 115, 0.44)",
+                    }}
+                  >
+                    <ImageIcon size={15} strokeWidth={1.4} />
+                    Upload Photo
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={handleImageUpload}
+                    />
+                  </label>
+
+                  <button
+                    onClick={handleAddText}
+                    disabled={!newText.trim()}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: newText.trim() ? "pointer" : "default",
+                      opacity: newText.trim() ? 1 : 0.3,
+                      fontSize: 10,
+                      letterSpacing: "0.2em",
+                      textTransform: "uppercase",
+                      color: "rgba(205, 170, 100, 0.62)",
+                    }}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </motion.header>
+
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.16, duration: 0.7 }}
+          style={{
+            fontSize: 13,
+            color: "rgba(175, 158, 132, 0.42)",
+            fontWeight: 300,
+            lineHeight: 1.6,
+            letterSpacing: "0.01em",
+            marginBottom: 24,
+            maxWidth: 330,
+          }}
+        >
+          Small, real things that connect you back to the physical world.
+        </motion.p>
+
+        {anchors.length > 0 ? (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 10,
+              paddingBottom: 32,
+            }}
+          >
+            {anchors.map((anchor, i) => (
+              <motion.div
+                key={anchor.id}
+                initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{
+                  duration: 0.65,
+                  delay: Math.min(0.22 + i * 0.04, 0.55),
+                }}
+                style={{
+                  borderRadius: 16,
+                  overflow: "hidden",
+                  background: "rgba(255, 255, 255, 0.026)",
+                  border: "1px solid rgba(255, 255, 255, 0.065)",
+                  minHeight: anchor.type === "text" ? 150 : undefined,
+                  aspectRatio: anchor.type === "image" ? "1 / 1" : undefined,
+                  padding: anchor.type === "text" ? "18px 16px" : 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {anchor.type === "text" ? (
+                  <p
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 300,
+                      textAlign: "center",
+                      lineHeight: 1.55,
+                      color: "rgba(220, 205, 182, 0.74)",
+                      letterSpacing: "0.01em",
+                    }}
+                  >
+                    {anchor.content}
+                  </p>
+                ) : (
+                  <img
+                    src={anchor.content}
+                    alt="Reality anchor"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      opacity: 0.78,
+                      filter: "grayscale(1)",
+                      transition: "all 1000ms ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.filter = "grayscale(0)";
+                      e.currentTarget.style.opacity = "0.95";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.filter = "grayscale(1)";
+                      e.currentTarget.style.opacity = "0.78";
+                    }}
+                  />
+                )}
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22, duration: 0.7 }}
+            style={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingBottom: 80,
+            }}
+          >
+            <div
+              style={{
+                background: "rgba(255, 255, 255, 0.024)",
+                border: "1px solid rgba(255, 255, 255, 0.055)",
+                borderRadius: 18,
+                padding: "22px 24px",
+                maxWidth: 260,
+                textAlign: "center",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 13,
+                  color: "rgba(175, 158, 132, 0.42)",
+                  fontWeight: 300,
+                  lineHeight: 1.6,
+                  fontStyle: "italic",
+                }}
+              >
+                No anchors yet. Add something that reminds you of the real world.
+              </p>
+            </div>
           </motion.div>
-        ))}
+        )}
       </div>
-      
-      {anchors.length === 0 && (
-        <div className="flex-1 flex items-center justify-center pb-20">
-          <p className="text-muted-foreground/40 text-sm font-light italic text-center max-w-[200px]">
-            No anchors yet. Add something that reminds you of the real world.
-          </p>
-        </div>
-      )}
     </motion.div>
   );
 }
