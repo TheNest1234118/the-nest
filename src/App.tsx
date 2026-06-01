@@ -43,14 +43,20 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AudioProvider>
-          <AtmosphereProvider>
-            <HeartBackground />
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <Router />
-              <MiniPlayer />
-            </WouterRouter>
-            <Toaster />
-          </AtmosphereProvider>
+        <AtmosphereProvider>
+  <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+    <HeartBackground />
+  </div>
+
+  <div style={{ position: "relative", zIndex: 1 }}>
+    <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+      <Router />
+      <MiniPlayer />
+    </WouterRouter>
+  </div>
+
+  <Toaster />
+</AtmosphereProvider>
         </AudioProvider>
       </TooltipProvider>
     </QueryClientProvider>
