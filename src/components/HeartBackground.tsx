@@ -200,7 +200,7 @@ export function HeartBackground() {
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 0,
+        zIndex: 1,
         pointerEvents: "none",
         mixBlendMode: "screen" as React.CSSProperties["mixBlendMode"],
       }}

@@ -48,7 +48,7 @@ function App() {
     <HeartBackground />
   </div>
 
-  <div style={{ position: "relative", zIndex: 1 }}>
+  <div style={{ position: "relative", zIndex: 2 }}>
     <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
       <Router />
       <MiniPlayer />

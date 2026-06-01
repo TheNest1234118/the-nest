@@ -113,7 +113,7 @@ export function Dashboard() {
       transition={{ duration: 0.7 }}
       style={{
         minHeight: "100svh",
-        background: "#09090d",
+        background: "rgba(9, 9, 13, 0.88)",
         position: "relative",
         overflow: "hidden",
         maxWidth: 480,
