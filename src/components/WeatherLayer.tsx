@@ -221,7 +221,7 @@ export function WeatherLayer() {
         }
 
         if (rain > 0.01) {
-          const count = Math.floor(40 + rain * 240 + storm * 100);
+            const count = Math.floor(200 + rain * 600 + storm * 300);
           const speedBase = 12 + rain * 28 + storm * 20;
           const angle = -12 + wind * 42 + storm * 12;
           const angleRad = (angle * Math.PI) / 180;
@@ -245,10 +245,10 @@ export function WeatherLayer() {
 
             const x = d.x * w;
             const y = d.y * h;
-            const len = (14 + rain * 24 + storm * 16) * d.len;
+            const len = (30 + rain * 50 + storm * 40) * d.len;
             const alpha = (0.08 + rain * 0.22 + storm * 0.14) * d.alpha;
 
-            ctx.strokeStyle = `rgba(185, 205, 220, ${alpha})`;
+            ctx.strokeStyle = `rgba(255,255,255,0.95)`;
             ctx.lineWidth = d.thickness;
             ctx.beginPath();
             ctx.moveTo(x, y);
