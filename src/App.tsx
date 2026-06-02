@@ -17,6 +17,7 @@ import { AudioProvider } from "@/hooks/use-audio-context";
 import { AtmosphereProvider } from "@/hooks/use-atmosphere";
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { HeartBackground } from "@/components/HeartBackground";
+import { WeatherLayer } from "@/components/WeatherLayer";
 
 const queryClient = new QueryClient();
 
@@ -42,18 +43,19 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AudioProvider>
-        <AtmosphereProvider>
-  <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-    <Router />
-    <MiniPlayer />
-  </WouterRouter>
+      <AudioProvider>
+  <AtmosphereProvider>
+    <HeartBackground />
+    <WeatherLayer />
 
-  <HeartBackground />
+    <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+      <Router />
+      <MiniPlayer />
+    </WouterRouter>
 
-  <Toaster />
-</AtmosphereProvider>
-        </AudioProvider>
+    <Toaster />
+  </AtmosphereProvider>
+</AudioProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

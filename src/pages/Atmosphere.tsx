@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { WeatherControls } from "@/components/WeatherControls";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { ChevronLeft, Upload, Play, Pause, Music2 } from "lucide-react";
@@ -413,36 +414,50 @@ export function Atmosphere() {
           </div>
         </motion.div>
 
-        {/* Ambience layer */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26, duration: 0.6 }}>
-          <SectionLabel>Ambience layer</SectionLabel>
-          <div style={{ display: "flex", gap: 8 }}>
-            {AMBIENCE_LIST.map(a => {
-              const active = a.key === ambience;
-              return (
-                <button
-                  key={a.key}
-                  onClick={() => setAmbience(a.key as AmbienceKey)}
-                  style={{
-                    flex: 1,
-                    background: active ? "rgba(205,170,100,0.065)" : "rgba(255,255,255,0.018)",
-                    border: `1px solid ${active ? "rgba(205,170,100,0.18)" : "rgba(255,255,255,0.052)"}`,
-                    borderRadius: 11,
-                    padding: "11px 6px",
-                    cursor: "pointer",
-                    fontSize: 11,
-                    fontWeight: active ? 400 : 300,
-                    color: active ? "rgba(220,196,152,0.82)" : "rgba(178,162,136,0.38)",
-                    letterSpacing: "0.04em",
-                    transition: "all 0.18s",
-                  }}
-                >
-                  {a.label}
-                </button>
-              );
-            })}
-          </div>
-        </motion.div>
+       {/* Ambience layer */}
+<motion.div
+  initial={{ opacity: 0, y: 8 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.26, duration: 0.6 }}
+>
+  <SectionLabel>Ambience layer</SectionLabel>
+
+  <div style={{ display: "flex", gap: 8 }}>
+    {AMBIENCE_LIST.map((a) => {
+      const active = a.key === ambience;
+
+      return (
+        <button
+          key={a.key}
+          onClick={() => setAmbience(a.key as AmbienceKey)}
+          style={{
+            flex: 1,
+            background: active
+              ? "rgba(205,170,100,0.065)"
+              : "rgba(255,255,255,0.018)",
+            border: `1px solid ${
+              active ? "rgba(205,170,100,0.18)" : "rgba(255,255,255,0.052)"
+            }`,
+            borderRadius: 11,
+            padding: "11px 6px",
+            cursor: "pointer",
+            fontSize: 11,
+            fontWeight: active ? 400 : 300,
+            color: active
+              ? "rgba(220,196,152,0.82)"
+              : "rgba(178,162,136,0.38)",
+            letterSpacing: "0.04em",
+            transition: "all 0.18s",
+          }}
+        >
+          {a.label}
+        </button>
+      );
+    })}
+  </div>
+</motion.div>
+
+<WeatherControls />
 
         {/* Player — play button + seek bar */}
         <motion.div
