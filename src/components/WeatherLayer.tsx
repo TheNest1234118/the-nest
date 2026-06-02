@@ -388,20 +388,20 @@ export function WeatherLayer() {
 
   if (!settings.enabled) return null;
 
-  const storm = clamp01(settings.storm);
+const storm = clamp01(settings.storm);
 
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 46,
-        pointerEvents: "none",
-        overflow: "hidden",
-        mixBlendMode: "screen",
-      }}
-    >
+return (
+  <div
+    aria-hidden="true"
+    style={{
+      position: "fixed",
+      inset: 0,
+      zIndex: 46,
+      pointerEvents: "none",
+      overflow: "hidden",
+      mixBlendMode: "screen",
+    }}
+  >
       <div
         style={{
           position: "absolute",

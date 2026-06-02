@@ -1,2 +1,10 @@
 
 public/audio/weather/*.mp3
+
+public/audio/weather/*.mp3
+dist/public/audio/weather/*.mp3
+src/components/public/audio/weather/*.mp3
+
+public/audio/weather/*.mp3
+dist/public/audio/weather/*.mp3
+src/components/public/audio/weather/*.mp3
