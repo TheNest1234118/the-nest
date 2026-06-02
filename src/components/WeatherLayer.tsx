@@ -128,17 +128,25 @@ export function WeatherLayer() {
 
   const startAudio = async () => {
     const audio = ensureAudio();
-
-    try {
-      await Promise.allSettled([
-        audio.rainLight.play(),
-        audio.rainMedium.play(),
-        audio.rainHeavy.play(),
-        audio.wind.play(),
-        audio.thunder.play(),
-      ]);
-      audioUnlockedRef.current = true;
-    } catch (_) {}
+  
+    audioUnlockedRef.current = true;
+  
+    const all = [
+      audio.rainLight,
+      audio.rainMedium,
+      audio.rainHeavy,
+      audio.wind,
+      audio.thunder,
+    ];
+  
+    for (const a of all) {
+      try {
+        a.muted = false;
+        await a.play();
+      } catch (err) {
+        console.warn("Weather audio blocked or failed:", a.src, err);
+      }
+    }
   };
 
   const stopAudio = () => {
@@ -386,12 +394,10 @@ export function WeatherLayer() {
     };
   }, [drops, mist]);
 
-  if (!settings.enabled) return null;
-
 const storm = clamp01(settings.storm);
 
 return (
-  <div
+    <div
     aria-hidden="true"
     style={{
       position: "fixed",
@@ -400,6 +406,8 @@ return (
       pointerEvents: "none",
       overflow: "hidden",
       mixBlendMode: "screen",
+      opacity: settings.enabled ? 1 : 0,
+      transition: "opacity 600ms ease",
     }}
   >
       <div
