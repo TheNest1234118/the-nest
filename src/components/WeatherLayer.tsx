@@ -6,31 +6,33 @@ export interface WeatherSettings {
   wind: number;
   lightning: number;
   thunder: number;
-  fog: number;
   storm: number;
 }
 
 const DEFAULT_WEATHER: WeatherSettings = {
   enabled: false,
-  rain: 0.45,
-  wind: 0.25,
-  lightning: 0.15,
-  thunder: 0.15,
-  fog: 0.18,
-  storm: 0.2,
+  rain: 0,
+  wind: 0,
+  lightning: 0,
+  thunder: 0,
+  storm: 0,
 };
 
 export const WEATHER_STORAGE_KEY = "nest_weather_settings";
+
+const AUDIO_PATHS = {
+  rainLight: "/audio/weather/rain-light.mp3",
+  rainMedium: "/audio/weather/rain-medium.mp3",
+  rainHeavy: "/audio/weather/rain-heavy.mp3",
+  wind: "/audio/weather/wind.mp3",
+  thunder: "/audio/weather/thunder.mp3",
+};
 
 export function readWeatherSettings(): WeatherSettings {
   try {
     const raw = localStorage.getItem(WEATHER_STORAGE_KEY);
     if (!raw) return DEFAULT_WEATHER;
-
-    return {
-      ...DEFAULT_WEATHER,
-      ...(JSON.parse(raw) as Partial<WeatherSettings>),
-    };
+    return { ...DEFAULT_WEATHER, ...(JSON.parse(raw) as Partial<WeatherSettings>) };
   } catch (_) {
     return DEFAULT_WEATHER;
   }
@@ -47,12 +49,48 @@ function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));
 }
 
+function makeLoop(src: string) {
+  const audio = new Audio(src);
+  audio.loop = true;
+  audio.preload = "auto";
+  audio.crossOrigin = "anonymous";
+  audio.volume = 0;
+  return audio;
+}
+
+function setVolume(audio: HTMLAudioElement | null, volume: number) {
+  if (!audio) return;
+  audio.volume = clamp01(volume);
+}
+
+function fadeTowards(current: number, target: number, speed = 0.08) {
+  return current + (target - current) * speed;
+}
+
 export function WeatherLayer() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const lightningRef = useRef<HTMLDivElement | null>(null);
-  const thunderRef = useRef<AudioContext | null>(null);
+
   const [settings, setSettings] = useState<WeatherSettings>(() => readWeatherSettings());
   const settingsRef = useRef(settings);
+
+  const audioRef = useRef<{
+    rainLight: HTMLAudioElement;
+    rainMedium: HTMLAudioElement;
+    rainHeavy: HTMLAudioElement;
+    wind: HTMLAudioElement;
+    thunder: HTMLAudioElement;
+  } | null>(null);
+
+  const audioUnlockedRef = useRef(false);
+  const rafAudioRef = useRef<number | null>(null);
+  const currentVolumesRef = useRef({
+    rainLight: 0,
+    rainMedium: 0,
+    rainHeavy: 0,
+    wind: 0,
+    thunder: 0,
+  });
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -74,8 +112,119 @@ export function WeatherLayer() {
     };
   }, []);
 
+  const ensureAudio = () => {
+    if (audioRef.current) return audioRef.current;
+
+    audioRef.current = {
+      rainLight: makeLoop(AUDIO_PATHS.rainLight),
+      rainMedium: makeLoop(AUDIO_PATHS.rainMedium),
+      rainHeavy: makeLoop(AUDIO_PATHS.rainHeavy),
+      wind: makeLoop(AUDIO_PATHS.wind),
+      thunder: makeLoop(AUDIO_PATHS.thunder),
+    };
+
+    return audioRef.current;
+  };
+
+  const startAudio = async () => {
+    const audio = ensureAudio();
+
+    try {
+      await Promise.allSettled([
+        audio.rainLight.play(),
+        audio.rainMedium.play(),
+        audio.rainHeavy.play(),
+        audio.wind.play(),
+        audio.thunder.play(),
+      ]);
+      audioUnlockedRef.current = true;
+    } catch (_) {}
+  };
+
+  const stopAudio = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    Object.values(audio).forEach((a) => {
+      a.pause();
+      a.currentTime = 0;
+      a.volume = 0;
+    });
+
+    audioUnlockedRef.current = false;
+    currentVolumesRef.current = {
+      rainLight: 0,
+      rainMedium: 0,
+      rainHeavy: 0,
+      wind: 0,
+      thunder: 0,
+    };
+  };
+
+  useEffect(() => {
+    if (settings.enabled) startAudio();
+    else stopAudio();
+  }, [settings.enabled]);
+
+  useEffect(() => {
+    const tick = () => {
+      const audio = audioRef.current;
+      const s = settingsRef.current;
+
+      if (audio && s.enabled && audioUnlockedRef.current) {
+        const rain = clamp01(s.rain);
+        const wind = clamp01(s.wind);
+        const thunder = clamp01(s.thunder);
+        const storm = clamp01(s.storm);
+
+        let targetRainLight = 0;
+        let targetRainMedium = 0;
+        let targetRainHeavy = 0;
+
+        if (rain > 0) {
+          if (rain <= 0.5) {
+            const t = rain / 0.5;
+            targetRainLight = (1 - t) * Math.min(1, rain * 2.2);
+            targetRainMedium = t * Math.min(1, rain * 1.55);
+          } else {
+            const t = (rain - 0.5) / 0.5;
+            targetRainMedium = (1 - t) * 0.82;
+            targetRainHeavy = t;
+          }
+        }
+
+        targetRainLight *= 0.46;
+        targetRainMedium *= 0.52;
+        targetRainHeavy *= 0.58;
+
+        const targetWind = wind * 0.44 + storm * 0.16;
+        const targetThunder = thunder * 0.48 + storm * 0.16;
+
+        const cv = currentVolumesRef.current;
+        cv.rainLight = fadeTowards(cv.rainLight, targetRainLight);
+        cv.rainMedium = fadeTowards(cv.rainMedium, targetRainMedium);
+        cv.rainHeavy = fadeTowards(cv.rainHeavy, targetRainHeavy);
+        cv.wind = fadeTowards(cv.wind, targetWind);
+        cv.thunder = fadeTowards(cv.thunder, targetThunder);
+
+        setVolume(audio.rainLight, cv.rainLight);
+        setVolume(audio.rainMedium, cv.rainMedium);
+        setVolume(audio.rainHeavy, cv.rainHeavy);
+        setVolume(audio.wind, cv.wind);
+        setVolume(audio.thunder, cv.thunder);
+      }
+
+      rafAudioRef.current = requestAnimationFrame(tick);
+    };
+
+    rafAudioRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafAudioRef.current) cancelAnimationFrame(rafAudioRef.current);
+    };
+  }, []);
+
   const drops = useMemo(() => {
-    return Array.from({ length: 320 }, () => ({
+    return Array.from({ length: 360 }, () => ({
       x: Math.random(),
       y: Math.random(),
       len: 0.25 + Math.random() * 0.75,
@@ -86,7 +235,7 @@ export function WeatherLayer() {
   }, []);
 
   const mist = useMemo(() => {
-    return Array.from({ length: 36 }, () => ({
+    return Array.from({ length: 34 }, () => ({
       x: Math.random(),
       y: Math.random(),
       size: 80 + Math.random() * 180,
@@ -94,47 +243,6 @@ export function WeatherLayer() {
       alpha: 0.04 + Math.random() * 0.08,
     }));
   }, []);
-
-  const playThunder = (amount: number) => {
-    const s = settingsRef.current;
-    if (!s.enabled || s.thunder <= 0.02) return;
-
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-
-      const ctx = thunderRef.current ?? new AudioCtx();
-      thunderRef.current = ctx;
-
-      const duration = 1.4 + amount * 1.8;
-      const bufferSize = ctx.sampleRate * duration;
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-
-      for (let i = 0; i < bufferSize; i++) {
-        const t = i / bufferSize;
-        const decay = Math.pow(1 - t, 2.4);
-        data[i] = (Math.random() * 2 - 1) * decay;
-      }
-
-      const noise = ctx.createBufferSource();
-      noise.buffer = buffer;
-
-      const filter = ctx.createBiquadFilter();
-      filter.type = "lowpass";
-      filter.frequency.value = 80 + amount * 120;
-
-      const gain = ctx.createGain();
-      gain.gain.value = Math.min(0.22, s.thunder * amount * 0.18);
-
-      noise.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
-
-      noise.start();
-      noise.stop(ctx.currentTime + duration);
-    } catch (_) {}
-  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -145,7 +253,7 @@ export function WeatherLayer() {
 
     let raf = 0;
     let last = performance.now();
-    let nextLightning = performance.now() + 3000 + Math.random() * 8000;
+    let nextLightning = performance.now() + 2500 + Math.random() * 7000;
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -163,7 +271,7 @@ export function WeatherLayer() {
       const el = lightningRef.current;
       if (!el) return;
 
-      el.style.opacity = String(0.2 + amount * 0.5);
+      el.style.opacity = String(0.22 + amount * 0.48);
 
       window.setTimeout(() => {
         el.style.opacity = "0";
@@ -171,14 +279,12 @@ export function WeatherLayer() {
 
       if (amount > 0.35) {
         window.setTimeout(() => {
-          el.style.opacity = String(0.08 + amount * 0.2);
+          el.style.opacity = String(0.09 + amount * 0.2);
           window.setTimeout(() => {
             el.style.opacity = "0";
           }, 70);
-        }, 130);
+        }, 135);
       }
-
-      window.setTimeout(() => playThunder(amount), 250 + Math.random() * 900);
     };
 
     const loop = (now: number) => {
@@ -194,8 +300,10 @@ export function WeatherLayer() {
       if (s.enabled) {
         const rain = clamp01(s.rain);
         const wind = clamp01(s.wind);
-        const fog = clamp01(s.fog);
+        const lightning = clamp01(s.lightning);
+        const thunder = clamp01(s.thunder);
         const storm = clamp01(s.storm);
+        const fog = Math.min(1, rain * 0.13 + wind * 0.18 + storm * 0.28);
 
         if (fog > 0.01) {
           ctx.save();
@@ -221,9 +329,9 @@ export function WeatherLayer() {
         }
 
         if (rain > 0.01) {
-            const count = Math.floor(200 + rain * 600 + storm * 300);
-          const speedBase = 12 + rain * 28 + storm * 20;
-          const angle = -12 + wind * 42 + storm * 12;
+          const count = Math.floor(70 + rain * 380 + storm * 170);
+          const speedBase = 12 + rain * 30 + storm * 22;
+          const angle = -12 + wind * 46 + storm * 12;
           const angleRad = (angle * Math.PI) / 180;
           const dx = Math.sin(angleRad);
           const dy = Math.cos(angleRad);
@@ -245,10 +353,10 @@ export function WeatherLayer() {
 
             const x = d.x * w;
             const y = d.y * h;
-            const len = (30 + rain * 50 + storm * 40) * d.len;
-            const alpha = (0.08 + rain * 0.22 + storm * 0.14) * d.alpha;
+            const len = (20 + rain * 42 + storm * 32) * d.len;
+            const alpha = (0.10 + rain * 0.32 + storm * 0.18) * d.alpha;
 
-            ctx.strokeStyle = `rgba(255,255,255,0.95)`;
+            ctx.strokeStyle = `rgba(210, 225, 235, ${alpha})`;
             ctx.lineWidth = d.thickness;
             ctx.beginPath();
             ctx.moveTo(x, y);
@@ -259,7 +367,7 @@ export function WeatherLayer() {
           ctx.restore();
         }
 
-        const lightningChance = clamp01(s.lightning) * (0.25 + storm * 1.2);
+        const lightningChance = Math.max(lightning, thunder * 0.35) * (0.25 + storm * 1.2);
 
         if (lightningChance > 0.01 && now > nextLightning) {
           flash(lightningChance);
@@ -280,7 +388,6 @@ export function WeatherLayer() {
 
   if (!settings.enabled) return null;
 
-  const fog = clamp01(settings.fog);
   const storm = clamp01(settings.storm);
 
   return (
@@ -301,7 +408,9 @@ export function WeatherLayer() {
           inset: 0,
           background:
             storm > 0.05
-              ? `radial-gradient(ellipse 80% 50% at 50% 0%, rgba(90, 95, 120, ${0.03 + storm * 0.08}) 0%, transparent 70%)`
+              ? `radial-gradient(ellipse 80% 50% at 50% 0%, rgba(90, 95, 120, ${
+                  0.03 + storm * 0.08
+                }) 0%, transparent 70%)`
               : "transparent",
         }}
       />
@@ -328,18 +437,6 @@ export function WeatherLayer() {
             "radial-gradient(ellipse 70% 45% at 50% 8%, rgba(210,225,255,0.95) 0%, rgba(145,170,240,0.20) 38%, transparent 72%)",
         }}
       />
-
-      {fog > 0.01 && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            opacity: 0.08 + fog * 0.2,
-            background:
-              "linear-gradient(180deg, rgba(185,160,130,0.05), transparent 28%, rgba(120,105,100,0.08) 100%)",
-          }}
-        />
-      )}
     </div>
   );
 }

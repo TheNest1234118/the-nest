@@ -5,7 +5,6 @@ import {
   Zap,
   CloudLightning,
   Volume2,
-  Eye,
   Power,
 } from "lucide-react";
 import {
@@ -16,6 +15,105 @@ import {
 
 type WeatherKey = keyof WeatherSettings;
 
+const WEATHER_PRESETS: {
+  key: string;
+  label: string;
+  desc: string;
+  settings: WeatherSettings;
+}[] = [
+  {
+    key: "quiet",
+    label: "Quiet",
+    desc: "No weather, just the room",
+    settings: {
+      enabled: false,
+      rain: 0,
+      wind: 0,
+      lightning: 0,
+      thunder: 0,
+      storm: 0,
+    },
+  },
+  {
+    key: "light_rain",
+    label: "Light Rain",
+    desc: "Soft rain, almost no storm",
+    settings: {
+      enabled: true,
+      rain: 0.25,
+      wind: 0.04,
+      lightning: 0,
+      thunder: 0,
+      storm: 0.02,
+    },
+  },
+  {
+    key: "steady_rain",
+    label: "Steady Rain",
+    desc: "Calm, full rain bed",
+    settings: {
+      enabled: true,
+      rain: 0.55,
+      wind: 0.12,
+      lightning: 0.02,
+      thunder: 0.04,
+      storm: 0.12,
+    },
+  },
+  {
+    key: "heavy_rain",
+    label: "Heavy Rain",
+    desc: "Thick rain, darker room",
+    settings: {
+      enabled: true,
+      rain: 0.9,
+      wind: 0.22,
+      lightning: 0.06,
+      thunder: 0.08,
+      storm: 0.32,
+    },
+  },
+  {
+    key: "windy",
+    label: "Windy",
+    desc: "Moving air, little rain",
+    settings: {
+      enabled: true,
+      rain: 0.08,
+      wind: 0.7,
+      lightning: 0,
+      thunder: 0,
+      storm: 0.22,
+    },
+  },
+  {
+    key: "storm",
+    label: "Storm",
+    desc: "Rain, wind, thunder",
+    settings: {
+      enabled: true,
+      rain: 0.8,
+      wind: 0.55,
+      lightning: 0.42,
+      thunder: 0.62,
+      storm: 0.72,
+    },
+  },
+  {
+    key: "heavy_storm",
+    label: "Heavy Storm",
+    desc: "Maximum weather pressure",
+    settings: {
+      enabled: true,
+      rain: 1,
+      wind: 0.86,
+      lightning: 0.82,
+      thunder: 0.9,
+      storm: 1,
+    },
+  },
+];
+
 const CONTROL_ROWS: {
   key: WeatherKey;
   label: string;
@@ -25,37 +123,31 @@ const CONTROL_ROWS: {
   {
     key: "rain",
     label: "Rain",
-    desc: "How much rain falls on the screen",
+    desc: "Blends light, medium and heavy rain",
     icon: CloudRain,
   },
   {
     key: "wind",
     label: "Wind",
-    desc: "Pushes rain sideways",
+    desc: "Adds movement and pressure",
     icon: Wind,
   },
   {
     key: "lightning",
     label: "Lightning",
-    desc: "Visual flashes in the sky",
+    desc: "Controls visual flashes",
     icon: Zap,
   },
   {
     key: "thunder",
     label: "Thunder",
-    desc: "Low rumble after lightning",
+    desc: "Controls the thunderstorm audio",
     icon: Volume2,
-  },
-  {
-    key: "fog",
-    label: "Mist",
-    desc: "Soft haze over the room",
-    icon: Eye,
   },
   {
     key: "storm",
     label: "Storm",
-    desc: "Makes everything heavier",
+    desc: "Makes rain, wind and lightning heavier",
     icon: CloudLightning,
   },
 ];
@@ -108,52 +200,14 @@ export function WeatherControls() {
     writeWeatherSettings(next);
   };
 
-  const setWeatherValue = (key: WeatherKey, value: number) => {
-    if (key === "enabled") return;
-    update({ [key]: value } as Partial<WeatherSettings>);
+  const applyPreset = (preset: WeatherSettings) => {
+    setSettings(preset);
+    writeWeatherSettings(preset);
   };
 
-  const applyPreset = (preset: "soft" | "rain" | "storm" | "heavy") => {
-    const presets: Record<typeof preset, WeatherSettings> = {
-      soft: {
-        enabled: true,
-        rain: 0.18,
-        wind: 0.12,
-        lightning: 0,
-        thunder: 0,
-        fog: 0.24,
-        storm: 0.05,
-      },
-      rain: {
-        enabled: true,
-        rain: 0.55,
-        wind: 0.24,
-        lightning: 0.04,
-        thunder: 0.08,
-        fog: 0.18,
-        storm: 0.14,
-      },
-      storm: {
-        enabled: true,
-        rain: 0.82,
-        wind: 0.62,
-        lightning: 0.55,
-        thunder: 0.65,
-        fog: 0.30,
-        storm: 0.72,
-      },
-      heavy: {
-        enabled: true,
-        rain: 1,
-        wind: 0.86,
-        lightning: 0.9,
-        thunder: 0.9,
-        fog: 0.45,
-        storm: 1,
-      },
-    };
-
-    update(presets[preset]);
+  const setWeatherValue = (key: WeatherKey, value: number) => {
+    if (key === "enabled") return;
+    update({ enabled: true, [key]: value } as Partial<WeatherSettings>);
   };
 
   return (
@@ -207,6 +261,7 @@ export function WeatherControls() {
               {settings.enabled ? "Weather on" : "Weather off"}
             </span>
           </span>
+
           <span
             style={{
               fontSize: 10,
@@ -219,29 +274,41 @@ export function WeatherControls() {
           </span>
         </button>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
-          {[
-            ["soft", "Soft"],
-            ["rain", "Rain"],
-            ["storm", "Storm"],
-            ["heavy", "Heavy"],
-          ].map(([key, label]) => (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {WEATHER_PRESETS.map((preset) => (
             <button
-              key={key}
-              onClick={() => applyPreset(key as "soft" | "rain" | "storm" | "heavy")}
+              key={preset.key}
+              onClick={() => applyPreset(preset.settings)}
               style={{
                 background: "rgba(255,255,255,0.018)",
                 border: "1px solid rgba(255,255,255,0.052)",
-                borderRadius: 11,
-                padding: "10px 4px",
+                borderRadius: 12,
+                padding: "12px 12px",
                 cursor: "pointer",
-                fontSize: 11,
-                fontWeight: 300,
-                color: "rgba(178,162,136,0.50)",
-                letterSpacing: "0.04em",
+                textAlign: "left",
               }}
             >
-              {label}
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "rgba(225,205,175,0.70)",
+                  fontWeight: 400,
+                  marginBottom: 2,
+                  letterSpacing: "0.01em",
+                }}
+              >
+                {preset.label}
+              </div>
+              <div
+                style={{
+                  fontSize: 10,
+                  color: "rgba(148,134,112,0.30)",
+                  fontWeight: 300,
+                  lineHeight: 1.35,
+                }}
+              >
+                {preset.desc}
+              </div>
             </button>
           ))}
         </div>
@@ -263,6 +330,7 @@ export function WeatherControls() {
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <Icon size={14} strokeWidth={1.4} color="rgba(205,170,100,0.48)" />
+
                   <div>
                     <div
                       style={{
@@ -274,6 +342,7 @@ export function WeatherControls() {
                     >
                       {row.label}
                     </div>
+
                     <div
                       style={{
                         fontSize: 10,
