@@ -80,6 +80,11 @@ export function Dashboard() {
   const [, navigate] = useLocation();
 
   const state      = localStorage.getItem("nest_state") || null;
+  const dashboardMode = localStorage.getItem("nest_dashboard_mode") || null;
+const isQuietDashboard = dashboardMode === "quiet";
+const visibleTools = isQuietDashboard
+  ? TOOLS.filter((tool) => tool.href === "/thoughts")
+  : TOOLS;
   const stateNote  = state ? STATE_NOTES[state]  ?? null : null;
   const sessionName = state ? SESSION_NAMES[state] ?? null : null;
   const sessionNote = state ? SESSION_NOTES[state] ?? null : null;
@@ -474,7 +479,7 @@ export function Dashboard() {
               gap: 10,
             }}
           >
-            {TOOLS.map((tool, i) => (
+            {visibleTools.map((tool, i) => (
               <motion.div
                 key={tool.href}
                 initial={{ opacity: 0, y: 6 }}
