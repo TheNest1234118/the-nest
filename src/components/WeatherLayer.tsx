@@ -21,12 +21,12 @@ const DEFAULT_WEATHER: WeatherSettings = {
 export const WEATHER_STORAGE_KEY = "nest_weather_settings";
 
 const AUDIO_PATHS = {
-  rainLight: "/audio/weather/rain-light.mp3",
-  rainMedium: "/audio/weather/rain-medium.mp3",
-  rainHeavy: "/audio/weather/rain-heavy.mp3",
-  wind: "/audio/weather/wind.mp3",
-  thunder: "/audio/weather/thunder.mp3",
-};
+    rainLight: "https://res.cloudinary.com/db3kqfbko/video/upload/v1780399812/rain-light_sx3lbe.mp3",
+    rainMedium: "https://res.cloudinary.com/db3kqfbko/video/upload/v1780399812/rain-medium_te3fdp.mp3",
+    rainHeavy: "https://res.cloudinary.com/db3kqfbko/video/upload/v1780402352/rain-heavy_rhiei9.mp3",
+    wind: "https://res.cloudinary.com/db3kqfbko/video/upload/v1780399812/wind_k3swcr.mp3",
+    thunder: "https://res.cloudinary.com/db3kqfbko/video/upload/v1780399812/thunder_npodvb.mp3",
+  };
 
 export function readWeatherSettings(): WeatherSettings {
   try {
