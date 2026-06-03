@@ -1,6 +1,9 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
+import { AuthModal } from "@/components/AuthModal";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 import {
   Feather,
   Mic,
@@ -78,6 +81,27 @@ const TOOLS = [
 
 export function Dashboard() {
   const [, navigate] = useLocation();
+  const [authOpen, setAuthOpen] = useState(false);
+const [user, setUser] = useState<User | null>(null);
+
+useEffect(() => {
+  supabase.auth.getUser().then(({ data }) => {
+    setUser(data.user ?? null);
+  });
+
+  const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    setUser(session?.user ?? null);
+  });
+
+  return () => {
+    listener.subscription.unsubscribe();
+  };
+}, []);
+
+const handleLogout = async () => {
+  await supabase.auth.signOut();
+  setUser(null);
+};
 
   const state      = localStorage.getItem("nest_state") || null;
   const dashboardMode = localStorage.getItem("nest_dashboard_mode") || null;
@@ -185,19 +209,38 @@ const visibleTools = isQuietDashboard
               </p>
             )}
           </div>
-          <button
-            onClick={() => navigate("/settings")}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "rgba(185, 162, 128, 0.32)",
-              padding: 4,
-              marginTop: 3,
-            }}
-          >
-            <Settings size={17} strokeWidth={1.4} />
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+  <button
+    onClick={user ? handleLogout : () => setAuthOpen(true)}
+    style={{
+      background: "rgba(205, 170, 100, 0.045)",
+      border: "1px solid rgba(205, 170, 100, 0.12)",
+      borderRadius: 999,
+      cursor: "pointer",
+      color: user ? "rgba(185, 162, 128, 0.45)" : "rgba(205, 170, 100, 0.62)",
+      padding: "7px 10px",
+      fontSize: 9,
+      letterSpacing: "0.16em",
+      textTransform: "uppercase",
+    }}
+  >
+    {user ? "Logout" : "Login"}
+  </button>
+
+  <button
+    onClick={() => navigate("/settings")}
+    style={{
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      color: "rgba(185, 162, 128, 0.32)",
+      padding: 4,
+      marginTop: 3,
+    }}
+  >
+    <Settings size={17} strokeWidth={1.4} />
+  </button>
+</div>
         </motion.div>
 
         {/* ── Enter the Nest card ── */}
@@ -614,10 +657,16 @@ const visibleTools = isQuietDashboard
           </motion.div>
         )}
 
-        <div style={{ marginTop: "auto", paddingTop: 8 }}>
+<div style={{ marginTop: "auto", paddingTop: 8 }}>
           <AudioControls minimal />
         </div>
       </div>
+
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onSuccess={() => setAuthOpen(false)}
+      />
     </motion.div>
   );
 }
