@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { ChevronLeft, Plus, Image as ImageIcon } from "lucide-react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { loadAnchors, saveTextAnchor, saveImageAnchor } from "@/lib/anchors";
 
 
@@ -159,121 +158,134 @@ const [isAdding, setIsAdding] = useState(false);
             </div>
           </div>
 
-          <Dialog open={isAdding} onOpenChange={setIsAdding}>
-            <DialogTrigger asChild>
-              <button
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 999,
-                  background: "rgba(205, 170, 100, 0.05)",
-                  border: "1px solid rgba(205, 170, 100, 0.14)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  color: "rgba(205, 170, 100, 0.56)",
-                  marginTop: 2,
-                }}
-              >
-                <Plus size={17} strokeWidth={1.5} />
-              </button>
-            </DialogTrigger>
-
-            <DialogContent
-              style={{
-                background: "#111015",
-                border: "1px solid rgba(205, 170, 100, 0.12)",
-                borderRadius: 22,
-                padding: 24,
-                maxWidth: 330,
-              }}
-            >
-              <h3
-                style={{
-                  fontFamily: "Georgia, 'Times New Roman', serif",
-                  fontSize: 21,
-                  fontWeight: 400,
-                  color: "rgba(235, 215, 180, 0.88)",
-                  letterSpacing: "0.03em",
-                  marginBottom: 20,
-                }}
-              >
-                New Anchor
-              </h3>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <textarea
-                  value={newText}
-                  onChange={(e) => setNewText(e.target.value)}
-                  placeholder="A small reality reminder..."
-                  style={{
-                    width: "100%",
-                    minHeight: 110,
-                    resize: "none",
-                    background: "rgba(255, 255, 255, 0.026)",
-                    border: "1px solid rgba(255, 255, 255, 0.07)",
-                    borderRadius: 16,
-                    padding: 15,
-                    color: "rgba(225, 210, 188, 0.86)",
-                    fontSize: 13,
-                    fontWeight: 300,
-                    lineHeight: 1.5,
-                    outline: "none",
-                  }}
-                />
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      cursor: "pointer",
-                      fontSize: 10,
-                      letterSpacing: "0.16em",
-                      textTransform: "uppercase",
-                      color: "rgba(185, 158, 115, 0.44)",
-                    }}
-                  >
-                    <ImageIcon size={15} strokeWidth={1.4} />
-                    Upload Photo
-                    <input
-                      type="file"
-                      accept="image/*"
-                      style={{ display: "none" }}
-                      onChange={handleImageUpload}
-                    />
-                  </label>
-
-                  <button
-                    onClick={handleAddText}
-                    disabled={!newText.trim()}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      cursor: newText.trim() ? "pointer" : "default",
-                      opacity: newText.trim() ? 1 : 0.3,
-                      fontSize: 10,
-                      letterSpacing: "0.2em",
-                      textTransform: "uppercase",
-                      color: "rgba(205, 170, 100, 0.62)",
-                    }}
-                  >
-                    Save
-                  </button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <button
+  onClick={() => setIsAdding(true)}
+  style={{
+    width: 38,
+    height: 38,
+    borderRadius: 999,
+    background: "rgba(205, 170, 100, 0.05)",
+    border: "1px solid rgba(205, 170, 100, 0.14)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    color: "rgba(205, 170, 100, 0.56)",
+    marginTop: 2,
+  }}
+>
+  <Plus size={17} strokeWidth={1.5} />
+</button>
         </motion.header>
+        {isAdding && (
+  <div
+    style={{
+      background: "#111015",
+      border: "1px solid rgba(205, 170, 100, 0.12)",
+      borderRadius: 22,
+      padding: 24,
+      marginBottom: 24,
+    }}
+  >
+    <h3
+      style={{
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: 21,
+        fontWeight: 400,
+        color: "rgba(235, 215, 180, 0.88)",
+        letterSpacing: "0.03em",
+        marginBottom: 20,
+      }}
+    >
+      New Anchor
+    </h3>
 
+    <textarea
+      value={newText}
+      onChange={(e) => setNewText(e.target.value)}
+      placeholder="A small reality reminder..."
+      style={{
+        width: "100%",
+        minHeight: 110,
+        resize: "none",
+        background: "rgba(255, 255, 255, 0.026)",
+        border: "1px solid rgba(255, 255, 255, 0.07)",
+        borderRadius: 16,
+        padding: 15,
+        color: "rgba(225, 210, 188, 0.86)",
+        fontSize: 13,
+        fontWeight: 300,
+        lineHeight: 1.5,
+        outline: "none",
+      }}
+    />
+
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginTop: 16,
+      }}
+    >
+      <label
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          cursor: "pointer",
+          fontSize: 10,
+          letterSpacing: "0.16em",
+          textTransform: "uppercase",
+          color: "rgba(185, 158, 115, 0.44)",
+        }}
+      >
+        <ImageIcon size={15} strokeWidth={1.4} />
+        Upload Photo
+        <input
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={handleImageUpload}
+        />
+      </label>
+
+      <div style={{ display: "flex", gap: 14 }}>
+        <button
+          onClick={() => setIsAdding(false)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontSize: 10,
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            color: "rgba(175, 158, 132, 0.36)",
+          }}
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={handleAddText}
+          disabled={!newText.trim()}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: newText.trim() ? "pointer" : "default",
+            opacity: newText.trim() ? 1 : 0.3,
+            fontSize: 10,
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            color: "rgba(205, 170, 100, 0.62)",
+          }}
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+)}
         <motion.p
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
