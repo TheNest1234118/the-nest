@@ -159,7 +159,11 @@ const [isAdding, setIsAdding] = useState(false);
           </div>
 
           <button
-  onClick={() => setIsAdding(true)}
+  type="button"
+  onClick={() => {
+    console.log("PLUS CLICKED");
+    setIsAdding(true);
+  }}
   style={{
     width: 38,
     height: 38,
@@ -172,10 +176,17 @@ const [isAdding, setIsAdding] = useState(false);
     cursor: "pointer",
     color: "rgba(205, 170, 100, 0.56)",
     marginTop: 2,
+    position: "relative",
+    zIndex: 50,
   }}
 >
   <Plus size={17} strokeWidth={1.5} />
 </button>
+{isAdding && (
+  <div style={{ color: "white", padding: 20, background: "red" }}>
+    TEST OPEN
+  </div>
+)}
         </motion.header>
         {isAdding && (
   <div
