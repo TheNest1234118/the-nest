@@ -1,56 +1,68 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { useLocalStorage } from "@/hooks/use-local-storage";
 import { ChevronLeft, Plus, Image as ImageIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { loadAnchors, saveTextAnchor, saveImageAnchor } from "@/lib/anchors";
+
 
 interface Anchor {
   id: string;
   type: "text" | "image";
   content: string;
-  createdAt: number;
+  created_at: string;
 }
 
 export function Anchors() {
-  const [anchors, setAnchors] = useLocalStorage<Anchor[]>("nest_anchors", []);
-  const [isAdding, setIsAdding] = useState(false);
+  const [anchors, setAnchors] = useState<Anchor[]>([]);
+const [loading, setLoading] = useState(true);
+useEffect(() => {
+  async function init() {
+    try {
+      const data = await loadAnchors();
+      setAnchors(data as Anchor[]);
+    } catch (err) {
+      console.error("Could not load anchors", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  init();
+}, []);
+const [isAdding, setIsAdding] = useState(false);
   const [newText, setNewText] = useState("");
 
-  const handleAddText = () => {
+  const handleAddText = async () => {
     if (!newText.trim()) return;
-
-    const anchor: Anchor = {
-      id: crypto.randomUUID(),
-      type: "text",
-      content: newText.trim(),
-      createdAt: Date.now(),
-    };
-
-    setAnchors([anchor, ...anchors]);
-    setNewText("");
-    setIsAdding(false);
+  
+    try {
+      const saved = await saveTextAnchor(newText.trim());
+      if (saved) {
+        setAnchors([saved as Anchor, ...anchors]);
+      }
+      setNewText("");
+      setIsAdding(false);
+    } catch (err) {
+      console.error("Could not save anchor", err);
+    }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const reader = new FileReader();
-
-    reader.onloadend = () => {
-      const anchor: Anchor = {
-        id: crypto.randomUUID(),
-        type: "image",
-        content: reader.result as string,
-        createdAt: Date.now(),
-      };
-
-      setAnchors([anchor, ...anchors]);
+  
+    try {
+      const saved = await saveImageAnchor(file);
+      if (saved) {
+        setAnchors([saved as Anchor, ...anchors]);
+      }
       setIsAdding(false);
-    };
-
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Could not save image anchor", err);
+    }
+  
+    e.target.value = "";
   };
 
   return (
