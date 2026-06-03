@@ -2,8 +2,13 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Mic, MicOff } from "lucide-react";
+import {
+  loadUserSettings,
+  saveVoiceIntensity,
+  saveLastSession,
+  type VoiceIntensity,
+} from "@/lib/userSettings";
 
-type VoiceIntensity = "off" | "minimal" | "guided";
 
 type StateKey =
   | "overstimulated"
@@ -265,6 +270,35 @@ export function Reset() {
   });
   const voiceIntensityRef = useRef<VoiceIntensity>(voiceIntensity);
   const [done, setDone] = useState(false);
+  useEffect(() => {
+    async function initSettings() {
+      try {
+        const settings = await loadUserSettings();
+  
+        if (
+          settings?.voice_intensity === "off" ||
+          settings?.voice_intensity === "minimal" ||
+          settings?.voice_intensity === "guided"
+        ) {
+          setVoiceIntensity(settings.voice_intensity);
+          return;
+        }
+  
+        const localVoice = localStorage.getItem("nest_voice_intensity");
+        if (
+          localVoice === "off" ||
+          localVoice === "minimal" ||
+          localVoice === "guided"
+        ) {
+          setVoiceIntensity(localVoice);
+        }
+      } catch (err) {
+        console.error("Could not load reset settings", err);
+      }
+    }
+  
+    initSettings();
+  }, []);
 
   useEffect(() => {
     voiceIntensityRef.current = voiceIntensity;
@@ -309,17 +343,14 @@ export function Reset() {
 
   useEffect(() => {
     if (!done || !selected) return;
-
-    try {
-      localStorage.setItem(
-        "nest_last_session",
-        JSON.stringify({
-          key: selected.key,
-          label: selected.label,
-          completedAt: Date.now(),
-        })
-      );
-    } catch (_) {}
+  
+    saveLastSession({
+      key: selected.key,
+      label: selected.label,
+      completedAt: Date.now(),
+    }).catch((err) => {
+      console.error("Could not save last session", err);
+    });
   }, [done, selected]);
 
   useEffect(() => {
@@ -337,14 +368,18 @@ export function Reset() {
 
   const cycleVoiceIntensity = () => {
     const next: VoiceIntensity =
-      voiceIntensity === "off" ? "minimal" : voiceIntensity === "minimal" ? "guided" : "off";
-
+      voiceIntensity === "off"
+        ? "minimal"
+        : voiceIntensity === "minimal"
+        ? "guided"
+        : "off";
+  
     setVoiceIntensity(next);
-
-    try {
-      localStorage.setItem("nest_voice_intensity", next);
-    } catch (_) {}
-
+  
+    saveVoiceIntensity(next).catch((err) => {
+      console.error("Could not save voice intensity", err);
+    });
+  
     if (next === "off") window.speechSynthesis?.cancel();
   };
 
