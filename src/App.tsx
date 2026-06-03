@@ -1,3 +1,6 @@
+import { Rituals } from "@/pages/Rituals";
+import { RitualPlayer } from "@/pages/RitualPlayer";
+import { Analytics } from "@vercel/analytics/react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -25,6 +28,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+      <Route path="/rituals" component={Rituals} />
+<Route path="/rituals/:id" component={RitualPlayer} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/home" component={Dashboard} />
       <Route path="/nest" component={Nest} />
@@ -54,6 +59,7 @@ function App() {
     </WouterRouter>
 
     <Toaster />
+    <Analytics />
   </AtmosphereProvider>
 </AudioProvider>
       </TooltipProvider>
