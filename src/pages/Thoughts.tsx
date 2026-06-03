@@ -1,29 +1,40 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { useLocalStorage } from "@/hooks/use-local-storage";
+import { loadThoughts, saveThought } from "@/lib/userData";
 import { ChevronLeft } from "lucide-react";
 
 interface Thought {
   id: string;
   text: string;
-  timestamp: number;
+  created_at: string;
 }
 
 export function Thoughts() {
-  const [thoughts, setThoughts] = useLocalStorage<Thought[]>("nest_thoughts", []);
-  const [newThought, setNewThought] = useState("");
+  const [thoughts, setThoughts] = useState<Thought[]>([]);  const [newThought, setNewThought] = useState("");
+  useEffect(() => {
+    async function init() {
+      const data = await loadThoughts();
+      setThoughts(data || []);
+    }
+  
+    init();
+  }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!newThought.trim()) return;
-
-    const thought: Thought = {
-      id: crypto.randomUUID(),
-      text: newThought.trim(),
-      timestamp: Date.now(),
-    };
-
-    setThoughts([thought, ...thoughts]);
+  
+    const saved = await saveThought(
+      newThought.trim()
+    );
+  
+    if (saved) {
+      setThoughts([
+        saved,
+        ...thoughts
+      ]);
+    }
+  
     setNewThought("");
   };
 
@@ -204,13 +215,13 @@ export function Thoughts() {
                     color: "rgba(175, 158, 132, 0.34)",
                   }}
                 >
-                  {new Date(thought.timestamp).toLocaleDateString(undefined, {
+                  {new Date(thought.created_at).toLocaleDateString(undefined, {
                     weekday: "short",
                     month: "short",
                     day: "numeric",
                   })}
                   {" · "}
-                  {new Date(thought.timestamp).toLocaleTimeString(undefined, {
+                  {new Date(thought.created_at).toLocaleTimeString(undefined, {
                     hour: "numeric",
                     minute: "2-digit",
                   })}
