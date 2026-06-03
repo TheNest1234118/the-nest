@@ -1,17 +1,33 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
+import { AuthModal } from "@/components/AuthModal";
+import { supabase } from "@/lib/supabase";
 
 export function Landing() {
   const [, navigate] = useLocation();
+  const [authOpen, setAuthOpen] = useState(false);
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) return;
+
+      const stateDate = localStorage.getItem("nest_state_date");
+      const today = new Date().toISOString().slice(0, 10);
+      navigate(stateDate === today ? "/home" : "/onboarding");
+    });
+  }, []);
+
+  const handleSuccess = () => {
+    setAuthOpen(false);
     try {
       const stateDate = localStorage.getItem("nest_state_date");
       const today = new Date().toISOString().slice(0, 10);
-      if (stateDate === today) navigate("/home");
-    } catch (_) {}
-  }, []);
+      navigate(stateDate === today ? "/home" : "/onboarding");
+    } catch (_) {
+      navigate("/onboarding");
+    }
+  };
 
   return (
     <div
@@ -26,7 +42,6 @@ export function Landing() {
         overflow: "hidden",
       }}
     >
-      {/* Ambient glow — very faint warm center */}
       <div
         style={{
           position: "absolute",
@@ -37,7 +52,6 @@ export function Landing() {
         }}
       />
 
-      {/* Breathing glow orb */}
       <motion.div
         animate={{ opacity: [0.35, 0.52, 0.35], scale: [1, 1.06, 1] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
@@ -110,7 +124,7 @@ export function Landing() {
         </p>
 
         <motion.button
-          onClick={() => navigate("/onboarding")}
+          onClick={() => setAuthOpen(true)}
           whileHover={{ opacity: 1 }}
           whileTap={{ scale: 0.97 }}
           style={{
@@ -124,12 +138,17 @@ export function Landing() {
             textTransform: "uppercase",
             fontWeight: 500,
             padding: "10px 4px 11px",
-            transition: "color 0.4s, border-color 0.4s",
           }}
         >
           Enter
         </motion.button>
       </motion.div>
+
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onSuccess={handleSuccess}
+      />
     </div>
   );
 }
