@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { WeatherControls } from "@/components/WeatherControls";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
@@ -9,7 +9,10 @@ import {
   SPEEDS,
   type SpeedKey,
 } from "@/hooks/use-atmosphere";
-
+import {
+  loadAtmosphereTracks,
+  uploadAtmosphereTrack,
+} from "@/lib/atmosphere";
 function fmtTime(s: number): string {
   if (!isFinite(s) || s < 0) return "0:00";
   const m = Math.floor(s / 60);
@@ -217,6 +220,7 @@ export function Atmosphere() {
     duration,
     musicVolume,
     loadFile,
+    loadRemoteTrack,
     togglePlay,
     setPreset,
     setSpeed,
@@ -227,6 +231,14 @@ export function Atmosphere() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [tracks, setTracks] = useState<any[]>([]);
+  useEffect(() => {
+    loadAtmosphereTracks()
+      .then(setTracks)
+      .catch((err) => {
+        console.error("Could not load atmosphere tracks", err);
+      });
+  }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -237,6 +249,11 @@ export function Atmosphere() {
 
     try {
       await loadFile(file);
+
+await uploadAtmosphereTrack(file);
+
+const updated = await loadAtmosphereTracks();
+setTracks(updated);
     } catch (_) {
       setError("Could not read that file. Try an MP3 or WAV.");
     } finally {
@@ -411,6 +428,29 @@ export function Atmosphere() {
               </>
             )}
           </label>
+          {tracks.length > 0 && (
+  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+    {tracks.map((track) => (
+      <button
+        key={track.id}
+        onClick={() => loadRemoteTrack(track.audio_url, track.name)}
+        style={{
+          width: "100%",
+          background: "rgba(255,255,255,0.018)",
+          border: "1px solid rgba(255,255,255,0.055)",
+          borderRadius: 12,
+          padding: "11px 13px",
+          cursor: "pointer",
+          textAlign: "left",
+          color: "rgba(210,192,165,0.58)",
+          fontSize: 12,
+        }}
+      >
+        {track.name}
+      </button>
+    ))}
+  </div>
+)}
 
           {error && (
             <p style={{ fontSize: 11, color: "rgba(200,100,70,0.55)", marginTop: 7, paddingLeft: 2 }}>

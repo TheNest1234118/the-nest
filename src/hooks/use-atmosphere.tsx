@@ -188,6 +188,10 @@ function buildAmbienceNodes(ctx: AudioContext, type: AmbienceKey, output: AudioN
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 export interface AtmosphereCtxValue {
+  loadRemoteTrack: (
+    url: string,
+    name: string
+  ) => Promise<void>;
   fileName: string | null;
   selectedPreset: string;
   ambience: AmbienceKey;
@@ -223,6 +227,8 @@ function loadNum(key: string, fallback: number): number {
 export function AtmosphereProvider({ children }: { children: React.ReactNode }) {
   // ── Persisted state ───────────────────────────────────────────────────────
   const [fileName, _setFileName]       = useState<string | null>(() => { try { return localStorage.getItem("nest_atmo_file"); } catch { return null; } });
+  const [trackUrl, setTrackUrl] =
+  useState<string | null>(null);
   const [selectedPreset, _setPreset]   = useState<string>(() => { try { return localStorage.getItem("nest_atmo_preset") || "deep_night"; } catch { return "deep_night"; } });
   const [ambience, _setAmbience]       = useState<AmbienceKey>(() => { try { return (localStorage.getItem("nest_atmo_ambience") as AmbienceKey) || "off"; } catch { return "off"; } });
   const [speed, _setSpeed]             = useState<SpeedKey>(() => { try { return (localStorage.getItem("nest_atmo_speed") as SpeedKey) || "normal"; } catch { return "normal"; } });
@@ -466,8 +472,31 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
   }, [stopMusic, stopAmbience]);
 
   const getAnalyserNode = useCallback(() => analyserRef.current, []);
-
+  const loadRemoteTrack = useCallback(
+    async (url: string, name: string) => {
+      const ctx = getCtx();
+  
+      const res = await fetch(url);
+      const ab = await res.arrayBuffer();
+  
+      const decoded =
+        await ctx.decodeAudioData(ab);
+  
+      bufferRef.current = decoded;
+  
+      offsetRef.current = 0;
+  
+      setHasBuffer(true);
+      setDuration(decoded.duration);
+      setCurrentTime(0);
+  
+      saveFileName(name);
+      setTrackUrl(url);
+    },
+    [getCtx]
+  );
   const value: AtmosphereCtxValue = {
+    loadRemoteTrack,
     fileName,
     selectedPreset,
     ambience,
