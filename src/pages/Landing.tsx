@@ -1,33 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { AuthModal } from "@/components/AuthModal";
-import { supabase } from "@/lib/supabase";
+
 
 export function Landing() {
   const [, navigate] = useLocation();
-  const [authOpen, setAuthOpen] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) return;
-
-      const stateDate = localStorage.getItem("nest_state_date");
-      const today = new Date().toISOString().slice(0, 10);
-      navigate(stateDate === today ? "/home" : "/onboarding");
-    });
-  }, []);
-
-  const handleSuccess = () => {
-    setAuthOpen(false);
-    try {
-      const stateDate = localStorage.getItem("nest_state_date");
-      const today = new Date().toISOString().slice(0, 10);
-      navigate(stateDate === today ? "/home" : "/onboarding");
-    } catch (_) {
-      navigate("/onboarding");
-    }
-  };
 
   return (
     <div
@@ -124,7 +101,7 @@ export function Landing() {
         </p>
 
         <motion.button
-          onClick={() => setAuthOpen(true)}
+         onClick={() => navigate("/onboarding")}
           whileHover={{ opacity: 1 }}
           whileTap={{ scale: 0.97 }}
           style={{
@@ -144,11 +121,7 @@ export function Landing() {
         </motion.button>
       </motion.div>
 
-      <AuthModal
-        open={authOpen}
-        onClose={() => setAuthOpen(false)}
-        onSuccess={handleSuccess}
-      />
+  
     </div>
   );
 }
