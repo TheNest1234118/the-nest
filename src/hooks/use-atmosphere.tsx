@@ -487,13 +487,35 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
       offsetRef.current = 0;
   
       setHasBuffer(true);
-      setDuration(decoded.duration);
-      setCurrentTime(0);
-  
-      saveFileName(name);
-      setTrackUrl(url);
+setDuration(decoded.duration);
+
+offsetRef.current = 0;
+setCurrentTime(0);
+
+saveFileName(name);
+setTrackUrl(url);
+
+// alten Song stoppen
+stopMusic();
+stopAmbience();
+
+// immer von vorne
+offsetRef.current = 0;
+
+// sofort starten
+launchMusic(0);
+launchAmbience();
+
+isPlayingRef.current = true;
+setIsPlaying(true);
     },
-    [getCtx]
+    [
+      getCtx,
+      stopMusic,
+      stopAmbience,
+      launchMusic,
+      launchAmbience,
+    ]
   );
   const value: AtmosphereCtxValue = {
     loadRemoteTrack,

@@ -139,7 +139,7 @@ ripple.current = Math.max(ripple.current, strength * 0.9);
       const kickScale = 1 + organicPulse * 1.3 + kc * 0.07;
       const scale = baseScale * kickScale;
       if (svgRef.current) {
-        svgRef.current.style.opacity = String(v * 0.32);      }
+        svgRef.current.style.opacity = String(v * 0.55);      }
 
       if (groupRef.current) {
         groupRef.current.setAttribute(
@@ -150,7 +150,7 @@ ripple.current = Math.max(ripple.current, strength * 0.9);
 
       if (bodyRef.current) {
         bodyRef.current.style.opacity = String(
-          Math.min(0.16 + br * 0.04 + kg * 0.08, 0.32),
+          Math.min(0.26 + br * 0.06 + kg * 0.15, 0.55),
         );
       }
 
@@ -240,14 +240,14 @@ ripple.current = Math.max(ripple.current, strength * 0.9);
           <path
             ref={bodyRef}
             d={HEART}
-            fill="hsl(355,55%,18%)"            filter="none"
+            fill="hsl(355,75%,32%)"            filter="none"
             style={{ opacity: 0.16 }}
           />
 
           <path
             ref={innerCoreRef}
             d={HEART}
-            fill="hsl(15,65%,22%)"
+            fill="hsl(0,85%,42%)"
                         filter="none"
             transform="translate(180,334) scale(0.62) translate(-180,-334)"
             style={{ opacity: 0.08 }}
@@ -257,7 +257,7 @@ ripple.current = Math.max(ripple.current, strength * 0.9);
             ref={strokeRef}
             d={HEART}
             fill="none"
-            stroke="hsl(0,75%,40%)"            strokeWidth={0.9}
+            stroke="hsl(0,95%,58%)"          strokeWidth={0.9}
             filter="none"
             style={{ opacity: 0.18 }}
           />
