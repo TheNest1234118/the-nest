@@ -1,16 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { useLocalStorage } from "@/hooks/use-local-storage";
+import {
+  loadMemos,
+  saveMemo,
+  deleteMemoFromSupabase,
+  type SupabaseMemo,
+} from "@/lib/memos";
 import { ChevronLeft, Mic, Square, Play, Pause, Trash2 } from "lucide-react";
-
-interface Memo {
-  id: string;
-  audioUrl: string;
-  mimeType: string;
-  duration: number;
-  createdAt: number;
-}
+type Memo = SupabaseMemo;
 
 function getSupportedMimeType(): string {
   const types = [
@@ -39,8 +37,8 @@ function isIOS(): boolean {
 }
 
 export function Memos() {
-  const [memos, setMemos] = useLocalStorage<Memo[]>("nest_memos_v2", []);
-  const [isRecording, setIsRecording] = useState(false);
+  const [memos, setMemos] = useState<Memo[]>([]);
+    const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +57,18 @@ export function Memos() {
       audioRef.current?.pause();
     };
   }, []);
-
+  useEffect(() => {
+    async function init() {
+      try {
+        const data = await loadMemos();
+        setMemos(data as Memo[]);
+      } catch (err) {
+        console.error("Could not load memos", err);
+      }
+    }
+  
+    init();
+  }, []);
   const startRecording = async () => {
     setError(null);
 
@@ -94,21 +103,16 @@ export function Memos() {
         const blob = new Blob(audioChunksRef.current, { type: actualMime });
         const duration = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
 
-        const reader = new FileReader();
-
-        reader.onloadend = () => {
-          const memo: Memo = {
-            id: crypto.randomUUID(),
-            audioUrl: reader.result as string,
-            mimeType: actualMime,
-            duration,
-            createdAt: Date.now(),
-          };
-
-          setMemos((prev) => [memo, ...prev]);
-        };
-
-        reader.readAsDataURL(blob);
+        saveMemo(blob, duration, actualMime)
+        .then((saved) => {
+          if (saved) {
+            setMemos((prev) => [saved as Memo, ...prev]);
+          }
+        })
+        .catch((err) => {
+          console.error("Could not save memo", err);
+          setError("Could not save this memo.");
+        });
 
         streamRef.current?.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
@@ -174,7 +178,7 @@ export function Memos() {
 
       const audio = new Audio();
       audio.preload = "auto";
-      audio.src = memo.audioUrl;
+      audio.src = memo.audio_url;
       audioRef.current = audio;
 
       audio.onended = () => setPlayingId(null);
@@ -194,13 +198,19 @@ export function Memos() {
     [playingId]
   );
 
-  const deleteMemo = (id: string) => {
+  const deleteMemo = async (id: string) => {
     if (playingId === id) {
       audioRef.current?.pause();
       setPlayingId(null);
     }
-
-    setMemos((prev) => prev.filter((m) => m.id !== id));
+  
+    try {
+      await deleteMemoFromSupabase(id);
+      setMemos((prev) => prev.filter((m) => m.id !== id));
+    } catch (err) {
+      console.error("Could not delete memo", err);
+      setError("Could not delete this memo.");
+    }
   };
 
   const formatTime = (s: number) => {
@@ -463,12 +473,12 @@ export function Memos() {
                         color: "rgba(175, 158, 132, 0.30)",
                       }}
                     >
-                      {new Date(memo.createdAt).toLocaleDateString(undefined, {
+                      {new Date(memo.created_at).toLocaleDateString(undefined, {
                         month: "short",
                         day: "numeric",
                       })}
                       {" · "}
-                      {new Date(memo.createdAt).toLocaleTimeString(undefined, {
+                      {new Date(memo.created_at).toLocaleTimeString(undefined, {
                         hour: "numeric",
                         minute: "2-digit",
                       })}

@@ -182,11 +182,7 @@ const [isAdding, setIsAdding] = useState(false);
 >
   <Plus size={17} strokeWidth={1.5} />
 </button>
-{isAdding && (
-  <div style={{ color: "white", padding: 20, background: "red" }}>
-    TEST OPEN
-  </div>
-)}
+
         </motion.header>
         {isAdding && (
   <div
