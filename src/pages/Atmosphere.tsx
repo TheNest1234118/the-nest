@@ -433,7 +433,7 @@ setTracks(updated);
     {tracks.map((track) => (
       <button
         key={track.id}
-        onClick={() => loadRemoteTrack(track.audio_url, track.name)}
+        onClick={() => loadRemoteTrack(track.file_url, track.name)}
         style={{
           width: "100%",
           background: "rgba(255,255,255,0.018)",

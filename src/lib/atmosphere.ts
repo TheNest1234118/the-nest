@@ -39,16 +39,16 @@ export async function uploadAtmosphereTrack(file: File) {
     .from("atmosphere")
     .getPublicUrl(path);
 
-  const { data, error } = await supabase
+    const { data, error } = await supabase
     .from("atmosphere_tracks")
     .insert({
       user_id: user.id,
       name: file.name,
-      audio_url: publicData.publicUrl,
+      file_url: publicData.publicUrl,
     })
     .select()
     .single();
-
+  
   if (error) throw error;
   return data;
 }
