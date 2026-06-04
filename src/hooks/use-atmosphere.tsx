@@ -250,7 +250,6 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
   const isPlayingRef    = useRef(false);
 
   const audioCtxRef        = useRef<AudioContext | null>(null);
-  const htmlAudioRef = useRef<HTMLAudioElement | null>(null);
   const bufferRef          = useRef<AudioBuffer | null>(null);
   const sourceRef          = useRef<AudioBufferSourceNode | null>(null);
   const masterGainRef      = useRef<GainNode | null>(null);
@@ -427,12 +426,6 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
   }, [stopAmbience, getCtx, getOutputGains]);
 
   const setSpeed = useCallback((key: SpeedKey) => {
-    saveSpeed(key);
-  
-    if (htmlAudioRef.current?.src) {
-      htmlAudioRef.current.playbackRate = SPEEDS[key].rate;
-      return;
-    }
   
     const rate = SPEEDS[key].rate;
     if (sourceRef.current && audioCtxRef.current) {
@@ -447,9 +440,7 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
     if (userMusicGainRef.current) {
       userMusicGainRef.current.gain.value = clamped;
     }
-    if (htmlAudioRef.current) {
-      htmlAudioRef.current.volume = clamped;
-    }
+  
   }, []);
 
   const setAmbienceVolume = useCallback((v: number) => {
@@ -461,22 +452,16 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const seek = useCallback((seconds: number) => {
-    if (htmlAudioRef.current?.src) {
-      const audio = htmlAudioRef.current;
-      audio.currentTime = seconds;
-      setCurrentTime(seconds);
-      return;
-    }
     const dur = bufferRef.current?.duration ?? 0;
     const clamped = Math.max(0, Math.min(dur, seconds));
     offsetRef.current = clamped;
     setCurrentTime(clamped);
+  
     if (isPlayingRef.current && bufferRef.current) {
       stopMusic();
       launchMusic(clamped);
     }
   }, [stopMusic, launchMusic]);
-
   // ── Cleanup ───────────────────────────────────────────────────────────────
   useEffect(() => {
     return () => {
@@ -490,48 +475,32 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
   const getAnalyserNode = useCallback(() => analyserRef.current, []);
   const loadRemoteTrack = useCallback(
     async (url: string, name: string) => {
+      const ctx = getCtx();
+  
+      const res = await fetch(url);
+      const ab = await res.arrayBuffer();
+      const decoded = await ctx.decodeAudioData(ab);
+  
       stopMusic();
       stopAmbience();
   
-      if (!htmlAudioRef.current) {
-        htmlAudioRef.current = new Audio();
-        htmlAudioRef.current.preload = "auto";
-        htmlAudioRef.current.crossOrigin = "anonymous";
-      }
+      bufferRef.current = decoded;
+      offsetRef.current = 0;
   
-      const audio = htmlAudioRef.current;
-      audio.pause();
-      audio.src = url;
-      audio.currentTime = 0;
-      audio.volume = musicVolRef.current;
-      audio.playbackRate = SPEEDS[speedKeyRef.current].rate;
-      audio.loop = false;
+      setHasBuffer(true);
+      setDuration(decoded.duration);
+      setCurrentTime(0);
   
       saveFileName(name);
       setTrackUrl(url);
-      setCurrentTime(0);
-      setDuration(0);
-      setHasBuffer(true);
   
-      audio.onloadedmetadata = () => {
-        setDuration(audio.duration || 0);
-      };
-  
-      audio.ontimeupdate = () => {
-        setCurrentTime(audio.currentTime || 0);
-      };
-  
-      audio.onended = () => {
-        isPlayingRef.current = false;
-        setIsPlaying(false);
-      };
-  
-      await audio.play();
+      launchMusic(0);
+      launchAmbience();
   
       isPlayingRef.current = true;
       setIsPlaying(true);
     },
-    [stopMusic, stopAmbience]
+    [getCtx, stopMusic, stopAmbience, launchMusic, launchAmbience]
   );
   const value: AtmosphereCtxValue = {
     loadRemoteTrack,
