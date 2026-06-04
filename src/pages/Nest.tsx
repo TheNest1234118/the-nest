@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { Feather, Mic, CircleDot, Anchor, Settings, ChevronLeft } from "lucide-react";
+import { Feather, Mic, CircleDot, Anchor, ChevronLeft } from "lucide-react";
 import { AudioControls } from "@/components/AudioControls";
 import { useAtmosphere } from "@/hooks/use-atmosphere";
 
@@ -543,26 +543,19 @@ export function Nest() {
     >
       {/* ── Top bar — minimal ── */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "46px 20px 0" }}>
-        <Link href="/home">
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.32 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(190,170,135,0.7)", padding: 4 }}
-          >
-            <ChevronLeft size={19} strokeWidth={1.4} />
-          </motion.button>
-        </Link>
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.32 }}
-          transition={{ delay: 0.3, duration: 0.8 }}
-          style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(190,170,135,0.7)", padding: 4 }}
-          data-testid="button-settings"
-        >
-          <Settings size={19} strokeWidth={1.4} />
-        </motion.button>
-      </div>
+  <Link href="/home">
+    <motion.button
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 0.32 }}
+      transition={{ delay: 0.3, duration: 0.8 }}
+      style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(190,170,135,0.7)", padding: 4 }}
+    >
+      <ChevronLeft size={19} strokeWidth={1.4} />
+    </motion.button>
+  </Link>
+
+  <div style={{ width: 27 }} />
+</div>
 
       {/* ── Tree — fills main area ── */}
       <div style={{ position: "absolute", inset: 0, bottom: 92, display: "flex", alignItems: "center", justifyContent: "center" }}>

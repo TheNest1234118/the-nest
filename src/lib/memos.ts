@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 
 export interface SupabaseMemo {
   id: string;
+  title: string | null;
   audio_url: string;
   mime_type: string;
   duration: number;
@@ -25,8 +26,7 @@ export async function loadMemos() {
   return data ?? [];
 }
 
-export async function saveMemo(blob: Blob, duration: number, mimeType: string) {
-  const {
+export async function saveMemo(blob: Blob, duration: number, mimeType: string, title?: string) {  const {
     data: { user },
   } = await supabase.auth.getUser();
 
@@ -57,6 +57,7 @@ export async function saveMemo(blob: Blob, duration: number, mimeType: string) {
     .from("memos")
     .insert({
       user_id: user.id,
+      title: title || "Voice capsule",
       audio_url: publicData.publicUrl,
       mime_type: mimeType,
       duration,

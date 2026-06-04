@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Mic, MicOff } from "lucide-react";
 import {
@@ -257,6 +257,7 @@ function useSessionAudio(voiceIntensityRef: React.MutableRefObject<VoiceIntensit
 }
 
 export function Reset() {
+  const [, navigate] = useLocation();
   const [selected, setSelected] = useState<StateProfile | null>(null);
   const [sessionActive, setSessionActive] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(-1);
@@ -382,13 +383,13 @@ export function Reset() {
   
     if (next === "off") window.speechSynthesis?.cancel();
   };
-
   const handleExit = () => {
     stop();
     setSelected(null);
     setSessionActive(false);
     setPhraseIndex(-1);
     setDone(false);
+    navigate("/home");
   };
 
   const profile = selected;
@@ -711,7 +712,7 @@ export function Reset() {
               data-testid="button-exit-session"
               style={{
                 position: "absolute",
-                bottom: 40,
+                bottom: 96,
                 zIndex: 20,
                 background: "none",
                 border: "none",

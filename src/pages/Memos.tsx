@@ -40,6 +40,7 @@ export function Memos() {
   const [memos, setMemos] = useState<Memo[]>([]);
     const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [memoTitle, setMemoTitle] = useState("");
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,10 +104,11 @@ export function Memos() {
         const blob = new Blob(audioChunksRef.current, { type: actualMime });
         const duration = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
 
-        saveMemo(blob, duration, actualMime)
+        saveMemo(blob, duration, actualMime, memoTitle.trim() || "Voice capsule")
         .then((saved) => {
           if (saved) {
             setMemos((prev) => [saved as Memo, ...prev]);
+            setMemoTitle("");
           }
         })
         .catch((err) => {
@@ -327,6 +329,22 @@ export function Memos() {
             justifyContent: "center",
           }}
         >
+          <input
+  value={memoTitle}
+  onChange={(e) => setMemoTitle(e.target.value)}
+  placeholder="title this capsule..."
+  style={{
+    width: "100%",
+    marginBottom: 18,
+    background: "rgba(255,255,255,0.035)",
+    border: "1px solid rgba(255,255,255,0.075)",
+    borderRadius: 13,
+    padding: "13px 14px",
+    color: "rgba(235,218,192,0.88)",
+    outline: "none",
+    fontSize: 13,
+  }}
+/>
           <button
             data-testid="button-record-toggle"
             onClick={isRecording ? stopRecording : startRecording}
@@ -453,7 +471,18 @@ export function Memos() {
                       <Play size={16} fill="currentColor" style={{ marginLeft: 2 }} />
                     )}
                   </button>
-
+                  <span
+  style={{
+    fontSize: 13,
+    color: "rgba(225,210,188,0.78)",
+    maxWidth: 190,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  }}
+>
+  {memo.title || "Voice capsule"}
+</span>
                   <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                     <span
                       style={{

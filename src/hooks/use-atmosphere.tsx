@@ -454,11 +454,12 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
   const seek = useCallback((seconds: number) => {
     const dur = bufferRef.current?.duration ?? 0;
     const clamped = Math.max(0, Math.min(dur, seconds));
+  
+    stopMusic();
     offsetRef.current = clamped;
     setCurrentTime(clamped);
   
     if (isPlayingRef.current && bufferRef.current) {
-      stopMusic();
       launchMusic(clamped);
     }
   }, [stopMusic, launchMusic]);
