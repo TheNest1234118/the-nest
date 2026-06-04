@@ -277,7 +277,6 @@ export function Settings() {
                 letterSpacing: "0.01em",
               }}
             >
-              Everything stays on your device. The Nest stores nothing externally — no accounts, no servers, no tracking. Uploaded audio is processed locally and never leaves your browser.
             </p>
           </div>
         </motion.div>
