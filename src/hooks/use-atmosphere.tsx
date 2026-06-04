@@ -250,6 +250,7 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
   const isPlayingRef    = useRef(false);
 
   const audioCtxRef        = useRef<AudioContext | null>(null);
+  const htmlAudioRef = useRef<HTMLAudioElement | null>(null);
   const bufferRef          = useRef<AudioBuffer | null>(null);
   const sourceRef          = useRef<AudioBufferSourceNode | null>(null);
   const masterGainRef      = useRef<GainNode | null>(null);
@@ -440,6 +441,9 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
     if (userMusicGainRef.current) {
       userMusicGainRef.current.gain.value = clamped;
     }
+    if (htmlAudioRef.current) {
+      htmlAudioRef.current.volume = clamped;
+    }
   }, []);
 
   const setAmbienceVolume = useCallback((v: number) => {
@@ -451,6 +455,12 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const seek = useCallback((seconds: number) => {
+    if (htmlAudioRef.current?.src) {
+      const audio = htmlAudioRef.current;
+      audio.currentTime = seconds;
+      setCurrentTime(seconds);
+      return;
+    }
     const dur = bufferRef.current?.duration ?? 0;
     const clamped = Math.max(0, Math.min(dur, seconds));
     offsetRef.current = clamped;
@@ -474,48 +484,47 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
   const getAnalyserNode = useCallback(() => analyserRef.current, []);
   const loadRemoteTrack = useCallback(
     async (url: string, name: string) => {
-      const ctx = getCtx();
+      stopMusic();
+      stopAmbience();
   
-      const res = await fetch(url);
-      const ab = await res.arrayBuffer();
+      if (!htmlAudioRef.current) {
+        htmlAudioRef.current = new Audio();
+        htmlAudioRef.current.preload = "auto";
+        htmlAudioRef.current.crossOrigin = "anonymous";
+      }
   
-      const decoded =
-        await ctx.decodeAudioData(ab);
+      const audio = htmlAudioRef.current;
+      audio.pause();
+      audio.src = url;
+      audio.currentTime = 0;
+      audio.volume = musicVolRef.current;
+      audio.loop = false;
   
-      bufferRef.current = decoded;
-  
-      offsetRef.current = 0;
-  
+      saveFileName(name);
+      setTrackUrl(url);
+      setCurrentTime(0);
+      setDuration(0);
       setHasBuffer(true);
-setDuration(decoded.duration);
-
-offsetRef.current = 0;
-setCurrentTime(0);
-
-saveFileName(name);
-setTrackUrl(url);
-
-// alten Song stoppen
-stopMusic();
-stopAmbience();
-
-// immer von vorne
-offsetRef.current = 0;
-
-// sofort starten
-launchMusic(0);
-launchAmbience();
-
-isPlayingRef.current = true;
-setIsPlaying(true);
+  
+      audio.onloadedmetadata = () => {
+        setDuration(audio.duration || 0);
+      };
+  
+      audio.ontimeupdate = () => {
+        setCurrentTime(audio.currentTime || 0);
+      };
+  
+      audio.onended = () => {
+        isPlayingRef.current = false;
+        setIsPlaying(false);
+      };
+  
+      await audio.play();
+  
+      isPlayingRef.current = true;
+      setIsPlaying(true);
     },
-    [
-      getCtx,
-      stopMusic,
-      stopAmbience,
-      launchMusic,
-      launchAmbience,
-    ]
+    [stopMusic, stopAmbience]
   );
   const value: AtmosphereCtxValue = {
     loadRemoteTrack,
