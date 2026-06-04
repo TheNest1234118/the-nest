@@ -12,6 +12,7 @@ import {
 import {
   loadAtmosphereTracks,
   uploadAtmosphereTrack,
+  deleteAtmosphereTrack,
 } from "@/lib/atmosphere";
 function fmtTime(s: number): string {
   if (!isFinite(s) || s < 0) return "0:00";
@@ -232,6 +233,15 @@ export function Atmosphere() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [tracks, setTracks] = useState<any[]>([]);
+  const handleDeleteTrack = async (id: string) => {
+    try {
+      await deleteAtmosphereTrack(id);
+      setTracks((prev) => prev.filter((t) => t.id !== id));
+    } catch (err) {
+      console.error("Could not delete atmosphere track", err);
+      setError("Could not delete this track.");
+    }
+  };
   useEffect(() => {
     loadAtmosphereTracks()
       .then(setTracks)
@@ -429,27 +439,63 @@ setTracks(updated);
             )}
           </label>
           {tracks.length > 0 && (
-  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
-    {tracks.map((track) => (
-      <button
-        key={track.id}
-        onClick={() => loadRemoteTrack(track.file_url, track.name)}
-        style={{
-          width: "100%",
-          background: "rgba(255,255,255,0.018)",
-          border: "1px solid rgba(255,255,255,0.055)",
-          borderRadius: 12,
-          padding: "11px 13px",
-          cursor: "pointer",
-          textAlign: "left",
-          color: "rgba(210,192,165,0.58)",
-          fontSize: 12,
-        }}
-      >
-        {track.name}
-      </button>
-    ))}
+  <div
+  style={{
+    display: "flex",
+    gap: 8,
+    overflowX: "auto",
+    paddingBottom: 6,
+    marginTop: 12,
+  }}
+>
+{tracks.map((track) => (
+  <div
+    key={track.id}
+    style={{
+      flex: "0 0 auto",
+      display: "flex",
+      alignItems: "center",
+      gap: 4,
+      background: "rgba(255,255,255,0.018)",
+      border: "1px solid rgba(255,255,255,0.055)",
+      borderRadius: 999,
+      padding: "4px 6px 4px 12px",
+    }}
+  >
+    <button
+      onClick={() => loadRemoteTrack(track.file_url, track.name)}
+      style={{
+        maxWidth: 150,
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        color: "rgba(210,192,165,0.58)",
+        fontSize: 12,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+      }}
+    >
+      {track.name}
+    </button>
+
+    <button
+      onClick={() => handleDeleteTrack(track.id)}
+      style={{
+        border: "none",
+        background: "transparent",
+        color: "rgba(175,158,132,0.35)",
+        cursor: "pointer",
+        fontSize: 16,
+        lineHeight: 1,
+        padding: "4px 6px",
+      }}
+    >
+      ×
+    </button>
   </div>
+))}
+</div>
 )}
 
           {error && (

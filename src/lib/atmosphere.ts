@@ -16,7 +16,14 @@ export async function loadAtmosphereTracks() {
   if (error) throw error;
   return data ?? [];
 }
+export async function deleteAtmosphereTrack(id: string) {
+  const { error } = await supabase
+    .from("atmosphere_tracks")
+    .delete()
+    .eq("id", id);
 
+  if (error) throw error;
+}
 export async function uploadAtmosphereTrack(file: File) {
   const {
     data: { user },

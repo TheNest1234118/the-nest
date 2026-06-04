@@ -170,8 +170,9 @@ export function WeatherLayer() {
   };
 
   useEffect(() => {
-    if (settings.enabled) startAudio();
-    else stopAudio();
+    if (settings.enabled) {
+      startAudio();
+    }
   }, [settings.enabled]);
 
   useEffect(() => {
@@ -179,11 +180,11 @@ export function WeatherLayer() {
       const audio = audioRef.current;
       const s = settingsRef.current;
 
-      if (audio && s.enabled && audioUnlockedRef.current) {
-        const rain = clamp01(s.rain);
-        const wind = clamp01(s.wind);
-        const thunder = clamp01(s.thunder);
-        const storm = clamp01(s.storm);
+      if (audio && audioUnlockedRef.current) {
+        const rain = s.enabled ? clamp01(s.rain) : 0;
+        const wind = s.enabled ? clamp01(s.wind) : 0;
+        const thunder = s.enabled ? clamp01(s.thunder) : 0;
+        const storm = s.enabled ? clamp01(s.storm) : 0;
 
         let targetRainLight = 0;
         let targetRainMedium = 0;
@@ -220,6 +221,21 @@ export function WeatherLayer() {
         setVolume(audio.rainHeavy, cv.rainHeavy);
         setVolume(audio.wind, cv.wind);
         setVolume(audio.thunder, cv.thunder);
+        const almostSilent =
+  cv.rainLight < 0.003 &&
+  cv.rainMedium < 0.003 &&
+  cv.rainHeavy < 0.003 &&
+  cv.wind < 0.003 &&
+  cv.thunder < 0.003;
+
+if (!s.enabled && almostSilent) {
+  Object.values(audio).forEach((a) => {
+    a.pause();
+    a.currentTime = 0;
+  });
+
+  audioUnlockedRef.current = false;
+}
       }
 
       rafAudioRef.current = requestAnimationFrame(tick);

@@ -426,6 +426,7 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
   }, [stopAmbience, getCtx, getOutputGains]);
 
   const setSpeed = useCallback((key: SpeedKey) => {
+    saveSpeed(key);
   
     const rate = SPEEDS[key].rate;
     if (sourceRef.current && audioCtxRef.current) {
@@ -455,11 +456,11 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
     const dur = bufferRef.current?.duration ?? 0;
     const clamped = Math.max(0, Math.min(dur, seconds));
   
-    stopMusic();
     offsetRef.current = clamped;
     setCurrentTime(clamped);
   
     if (isPlayingRef.current && bufferRef.current) {
+      stopMusic();
       launchMusic(clamped);
     }
   }, [stopMusic, launchMusic]);
