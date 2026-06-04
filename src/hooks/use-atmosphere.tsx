@@ -427,7 +427,13 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
   }, [stopAmbience, getCtx, getOutputGains]);
 
   const setSpeed = useCallback((key: SpeedKey) => {
-    saveSpeed(key); // eslint-disable-line react-hooks/exhaustive-deps
+    saveSpeed(key);
+  
+    if (htmlAudioRef.current?.src) {
+      htmlAudioRef.current.playbackRate = SPEEDS[key].rate;
+      return;
+    }
+  
     const rate = SPEEDS[key].rate;
     if (sourceRef.current && audioCtxRef.current) {
       const t = audioCtxRef.current.currentTime;
@@ -498,6 +504,7 @@ export function AtmosphereProvider({ children }: { children: React.ReactNode }) 
       audio.src = url;
       audio.currentTime = 0;
       audio.volume = musicVolRef.current;
+      audio.playbackRate = SPEEDS[speedKeyRef.current].rate;
       audio.loop = false;
   
       saveFileName(name);
