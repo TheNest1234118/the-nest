@@ -233,6 +233,7 @@ export function Atmosphere() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [tracks, setTracks] = useState<any[]>([]);
+  const [showSongsFolder, setShowSongsFolder] = useState(false);
   const handleDeleteTrack = async (id: string) => {
     try {
       await deleteAtmosphereTrack(id);
@@ -290,29 +291,111 @@ setTracks(updated);
         isolation: "isolate",
       }}
     >
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(ellipse 65% 35% at 50% 0%, rgba(180,115,30,0.055) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      <div
-        style={{
-          flex: 1,
-          padding: "0 20px",
-          paddingTop: "calc(env(safe-area-inset-top, 0px) + 52px)",
-          paddingBottom: 96,
-          position: "relative",
-          zIndex: 10,
-          display: "flex",
-          flexDirection: "column",
-          gap: 26,
-        }}
-      >
+      {showSongsFolder ? (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 50,
+            background: "#09090d",
+            padding: "calc(env(safe-area-inset-top, 0px) + 52px) 20px",
+            overflowY: "auto",
+          }}
+        >
+          <button
+            onClick={() => setShowSongsFolder(false)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "rgba(185,162,128,0.45)",
+              cursor: "pointer",
+              marginBottom: 25,
+            }}
+          >
+            ← Back
+          </button>
+  
+          <h3 style={{ color: "rgba(225,205,175,0.85)", marginBottom: 20 }}>
+            Songs
+          </h3>
+  
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {tracks.map((track) => (
+              <div
+                key={track.id}
+                style={{
+                  background: "rgba(255,255,255,0.024)",
+                  border: "1px solid rgba(255,255,255,0.058)",
+                  borderRadius: 16,
+                  padding: "15px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <button
+                  onClick={() => {
+                    loadRemoteTrack(track.file_url, track.name);
+                    setShowSongsFolder(false);
+                  }}
+                  style={{
+                    flex: 1,
+                    background: "none",
+                    border: "none",
+                    color: "rgba(225,210,188,0.78)",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {track.name}
+                </button>
+  
+                <button
+                  onClick={() => handleDeleteTrack(track.id)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "rgba(175,158,132,0.35)",
+                    cursor: "pointer",
+                    fontSize: 18,
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "radial-gradient(ellipse 65% 35% at 50% 0%, rgba(180,115,30,0.055) 0%, transparent 70%)",
+              pointerEvents: "none",
+            }}
+          />
+  
+          <div
+            style={{
+              flex: 1,
+              padding: "0 20px",
+              paddingTop: "calc(env(safe-area-inset-top, 0px) + 52px)",
+              paddingBottom: 96,
+              position: "relative",
+              zIndex: 10,
+              display: "flex",
+              flexDirection: "column",
+              gap: 26,
+            }}
+          >
+            
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -346,6 +429,7 @@ setTracks(updated);
           </p>
 
           <div style={{ width: 30 }} />
+          
         </motion.div>
 
         <motion.div
@@ -438,65 +522,26 @@ setTracks(updated);
               </>
             )}
           </label>
-          {tracks.length > 0 && (
-  <div
+          <button
+  onClick={() => setShowSongsFolder(true)}
   style={{
-    display: "flex",
-    gap: 8,
-    overflowX: "auto",
-    paddingBottom: 6,
+    width: "100%",
     marginTop: 12,
+    background: "rgba(255,255,255,0.020)",
+    border: "1px solid rgba(255,255,255,0.065)",
+    borderRadius: 15,
+    padding: "16px 18px",
+    cursor: "pointer",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    color: "rgba(210,192,165,0.58)",
+    fontSize: 13,
   }}
 >
-{tracks.map((track) => (
-  <div
-    key={track.id}
-    style={{
-      flex: "0 0 auto",
-      display: "flex",
-      alignItems: "center",
-      gap: 4,
-      background: "rgba(255,255,255,0.018)",
-      border: "1px solid rgba(255,255,255,0.055)",
-      borderRadius: 999,
-      padding: "4px 6px 4px 12px",
-    }}
-  >
-    <button
-      onClick={() => loadRemoteTrack(track.file_url, track.name)}
-      style={{
-        maxWidth: 150,
-        background: "transparent",
-        border: "none",
-        cursor: "pointer",
-        color: "rgba(210,192,165,0.58)",
-        fontSize: 12,
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-      }}
-    >
-      {track.name}
-    </button>
-
-    <button
-      onClick={() => handleDeleteTrack(track.id)}
-      style={{
-        border: "none",
-        background: "transparent",
-        color: "rgba(175,158,132,0.35)",
-        cursor: "pointer",
-        fontSize: 16,
-        lineHeight: 1,
-        padding: "4px 6px",
-      }}
-    >
-      ×
-    </button>
-  </div>
-))}
-</div>
-)}
+  <span>Songs folder</span>
+  <span>{tracks.length}</span>
+</button>
 
           {error && (
             <p style={{ fontSize: 11, color: "rgba(200,100,70,0.55)", marginTop: 7, paddingLeft: 2 }}>
@@ -685,9 +730,11 @@ setTracks(updated);
 
             <VolumeSlider value={musicVolume} onChange={setMusicVolume} />
           </div>
-        </motion.div>
+          </motion.div>
       </div>
-    </motion.div>
+    </>
+  )}
+</motion.div>
   );
 }
 
