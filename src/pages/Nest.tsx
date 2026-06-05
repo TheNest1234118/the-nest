@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { Feather, Mic, CircleDot, Anchor, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { AudioControls } from "@/components/AudioControls";
 import { useAtmosphere } from "@/hooks/use-atmosphere";
+import { supabase } from "@/lib/supabase";
 
 /* ─── Bird — calm small songbird, sits in nest ───────────── */
 function Bird() {
@@ -473,58 +474,252 @@ function TreeTrunk() {
   );
 }
 
-/* ─── Nest touchpoint — minimal floating label ───────────── */
-interface NestTouchpointProps {
-  href: string;
-  icon: React.ElementType;
+type ThoughtMemory = {
+  text: string;
+  created_at: string;
+};
+
+type NestInsight = {
+  topWords: string[];
+  activeMonth: string;
+  thoughtsLast30: number;
+  monthlyThoughts: number;
+  monthlyMemos: number;
+  monthlyResets: number;
+};
+type ReflectionLookback = {
   label: string;
-  delay: number;
+  thought: ThoughtMemory | null;
+};
+
+type RitualMemory = {
+  name: string;
+  created_at: string;
+};
+
+function daysAgo(date: string) {
+  const diff = Date.now() - new Date(date).getTime();
+  return Math.max(1, Math.floor(diff / 86400000));
 }
 
-function NestTouchpoint({ href, icon: Icon, label, delay }: NestTouchpointProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 1.2, delay, ease: "easeOut" }}
-    >
-      <Link href={href}>
-        <div
-          style={{
-            padding: "9px 13px",
-            background: "rgba(11, 7, 4, 0.42)",
-            border: "1px solid rgba(190, 155, 88, 0.11)",
-            borderRadius: 22,
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            display: "flex",
-            alignItems: "center",
-            gap: 7,
-            cursor: "pointer",
-            userSelect: "none",
-          }}
-        >
-          <Icon size={12} strokeWidth={1.5} color="rgba(198, 162, 98, 0.55)" />
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 300,
-              letterSpacing: "0.07em",
-              color: "rgba(194, 160, 96, 0.52)",
-              whiteSpace: "pre-line",
-              lineHeight: 1.4,
-            }}
-          >
-            {label}
-          </span>
-        </div>
-      </Link>
-    </motion.div>
-  );
+function monthName(date: string) {
+  return new Date(date).toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+}
+function nextMilestone(streak: number) {
+  const milestones = [7, 30, 100, 365];
+  return milestones.find((m) => m > streak) ?? 365;
 }
 
+function calculateStreak(dates: string[]) {
+  const unique = new Set(dates);
+  let streak = 0;
+
+  const cursor = new Date();
+  cursor.setHours(0, 0, 0, 0);
+
+  while (unique.has(cursor.toISOString().slice(0, 10))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return streak;
+}
+
+function pickDailyPrompts() {
+  const prompts = [
+    "Was beschäftigt dich gerade?",
+    "Worauf bist du heute stolz?",
+    "Was solltest du loslassen?",
+    "Was hat dir heute Energie gegeben?",
+    "Was würdest du deinem jüngeren Ich sagen?",
+  ];
+
+  const day = new Date().getDate();
+  return [
+    prompts[day % prompts.length],
+    prompts[(day + 2) % prompts.length],
+    prompts[(day + 4) % prompts.length],
+  ];
+}
+
+function findClosestThought(thoughts: ThoughtMemory[], days: number) {
+  const target = Date.now() - days * 86400000;
+
+  return thoughts
+    .map((t) => ({
+      thought: t,
+      distance: Math.abs(new Date(t.created_at).getTime() - target),
+    }))
+    .sort((a, b) => a.distance - b.distance)[0]?.thought ?? null;
+}
+function buildInsights(thoughts: ThoughtMemory[]): NestInsight {
+  const stopWords = new Set([
+    "ich", "und", "der", "die", "das", "ist", "bin", "mit", "nicht", "mir",
+    "mich", "ein", "eine", "es", "zu", "so", "im", "in", "auf", "für",
+    "the", "and", "you", "that", "this", "with", "have", "was", "but",
+  ]);
+
+  const words = thoughts
+    .flatMap((t) =>
+      t.text.toLowerCase().replace(/[^\p{L}\s]/gu, "").split(/\s+/)
+    )
+    .filter((w) => w.length > 3 && !stopWords.has(w));
+
+  const counts = new Map<string, number>();
+  words.forEach((w) => counts.set(w, (counts.get(w) ?? 0) + 1));
+
+  const topWords = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([word]) => word);
+
+  const monthCounts = new Map<string, number>();
+  thoughts.forEach((t) => {
+    const key = monthName(t.created_at);
+    monthCounts.set(key, (monthCounts.get(key) ?? 0) + 1);
+  });
+
+  const activeMonth =
+    [...monthCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "noch offen";
+
+  const thirtyDaysAgo = Date.now() - 30 * 86400000;
+  const thoughtsLast30 = thoughts.filter(
+    (t) => new Date(t.created_at).getTime() >= thirtyDaysAgo
+  ).length;
+
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  
+  const monthlyThoughts = thoughts.filter(
+    (t) => new Date(t.created_at).getTime() >= monthStart.getTime()
+  ).length;
+  
+  return {
+    topWords: topWords.length ? topWords : ["Ruhe", "Zukunft", "Selbstvertrauen"],
+    activeMonth,
+    thoughtsLast30,
+    monthlyThoughts,
+    monthlyMemos: 0,
+    monthlyResets: 0,
+  };
+}
 /* ─── Nest Screen ─────────────────────────────────────────── */
 export function Nest() {
+  const [stats, setStats] = useState({
+    thoughts: 0,
+    memos: 0,
+    resets: 0,
+    lookbacks: [] as ReflectionLookback[],
+streak: 0,
+prompts: pickDailyPrompts(),
+rituals: [] as RitualMemory[],
+    visits: 0,
+    memberDays: 1,
+    firstEntryDays: 1,
+    memory: null as ThoughtMemory | null,
+    deepMemory: null as ThoughtMemory | null,
+    insights: {
+      topWords: ["Ruhe", "Zukunft", "Selbstvertrauen"],
+      activeMonth: "noch offen",
+      thoughtsLast30: 0,
+    } as NestInsight,
+  });
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await supabase.from("nest_visits").insert({ user_id: user.id });
+
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      
+      const today = new Date().toISOString().slice(0, 10);
+      
+      await supabase
+        .from("nest_daily_activity")
+        .upsert(
+          { user_id: user.id, activity_date: today },
+          { onConflict: "user_id,activity_date" }
+        );
+      
+      const [
+        thoughtsCount,
+        memosCount,
+        resetsCount,
+        visitsCount,
+        thoughtsData,
+        monthlyMemos,
+        monthlyResets,
+        activityData,
+        ritualsData,
+      ] = await Promise.all([
+        supabase.from("thoughts").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("memos").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("reset_sessions").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("nest_visits").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("thoughts").select("text, created_at").eq("user_id", user.id).order("created_at", { ascending: true }),
+        supabase.from("memos").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("created_at", monthStart.toISOString()),
+        supabase.from("reset_sessions").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("created_at", monthStart.toISOString()),
+        supabase.from("nest_daily_activity").select("activity_date").eq("user_id", user.id),
+        supabase.from("rituals").select("name, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(3),
+      ]);
+
+      const thoughts = thoughtsData.data ?? [];
+      const memory = thoughts.length
+        ? thoughts[Math.floor(Math.random() * thoughts.length)]
+        : null;
+        const deepMemory =
+  thoughts.length > 0
+    ? thoughts[0]
+    : null;
+    const lookbacks: ReflectionLookback[] = [
+      { label: "Vor 7 Tagen", thought: findClosestThought(thoughts, 7) },
+      { label: "Vor 30 Tagen", thought: findClosestThought(thoughts, 30) },
+      { label: "Vor 60 Tagen", thought: findClosestThought(thoughts, 60) },
+    ].filter((item) => item.thought);
+    
+    const streak = calculateStreak(
+      (activityData.data ?? []).map((d) => d.activity_date)
+    );
+    
+    const insights = buildInsights(thoughts);
+    insights.monthlyMemos = monthlyMemos.count ?? 0;
+    insights.monthlyResets = monthlyResets.count ?? 0;
+      const firstEntry = thoughts[0]?.created_at ?? user.created_at;
+
+      setStats({
+        thoughts: thoughtsCount.count ?? 0,
+        memos: memosCount.count ?? 0,
+        resets: resetsCount.count ?? 0,
+        visits: visitsCount.count ?? 0,
+        memberDays: Math.max(
+          1,
+          Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)
+        ),
+        firstEntryDays: Math.max(
+          1,
+          Math.floor((Date.now() - new Date(firstEntry).getTime()) / 86400000)
+        ),
+        memory,
+        deepMemory,
+        lookbacks,
+        streak,
+        prompts: pickDailyPrompts(),
+        rituals: ritualsData.data ?? [],
+        insights,
+      });
+    }
+
+    load().catch(console.error);
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -534,56 +729,201 @@ export function Nest() {
         minHeight: "100svh",
         background: "#09080b",
         position: "relative",
-        overflow: "hidden",
+        overflowY: "auto",
+        overflowX: "hidden",
         display: "flex",
         flexDirection: "column",
         maxWidth: 480,
         margin: "0 auto",
       }}
     >
-      {/* ── Top bar — minimal ── */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "46px 20px 0" }}>
-  <Link href="/home">
-    <motion.button
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 0.32 }}
-      transition={{ delay: 0.3, duration: 0.8 }}
-      style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(190,170,135,0.7)", padding: 4 }}
-    >
-      <ChevronLeft size={19} strokeWidth={1.4} />
-    </motion.button>
-  </Link>
+        <Link href="/home">
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.32 }}
+            transition={{ delay: 0.3, duration: 0.8 }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(190,170,135,0.7)", padding: 4 }}
+          >
+            <ChevronLeft size={19} strokeWidth={1.4} />
+          </motion.button>
+        </Link>
+        <div style={{ width: 27 }} />
+      </div>
 
-  <div style={{ width: 27 }} />
-</div>
-
-      {/* ── Tree — fills main area ── */}
-      <div style={{ position: "absolute", inset: 0, bottom: 92, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ position: "fixed", inset: 0, bottom: 92, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.20, pointerEvents: "none" }}>
         <div style={{ width: "100%", height: "100%" }}>
           <TreeTrunk />
         </div>
       </div>
 
-      {/* ── Nav buttons — individually positioned to match reference layout ── */}
-      <div style={{ position: "absolute", zIndex: 10, left: 8, top: "27%" }}>
-        <NestTouchpoint href="/thoughts" icon={Feather}   label="Thoughts"         delay={0.1} />
-      </div>
-      <div style={{ position: "absolute", zIndex: 10, left: 8, top: "55%" }}>
-        <NestTouchpoint href="/reset"    icon={CircleDot} label={"Reality\nReset"}  delay={0.2} />
-      </div>
-      <div style={{ position: "absolute", zIndex: 10, right: 8, top: "38%" }}>
-        <NestTouchpoint href="/memos"    icon={Mic}       label={"Voice\nCapsules"} delay={0.15} />
-      </div>
-      <div style={{ position: "absolute", zIndex: 10, right: 8, top: "62%" }}>
-        <NestTouchpoint href="/anchors"  icon={Anchor}    label={"Reality\nAnchors"} delay={0.25} />
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.22, duration: 0.9 }}
+        style={{
+          position: "relative",
+          zIndex: 12,
+          padding: "104px 20px 128px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 14,
+        }}
+      >
+      <NestCard>
+  <p style={eyebrow}>🌙 Dein Nest</p>
+  <h2 style={title}>Dein Nest wächst.</h2>
+  <p style={softText}>
+    {stats.thoughts} Gedanken haben hier ihren Platz gefunden.
+    <br />
+    {stats.memos} Voice Capsules bewahren Erinnerungen.
+    <br />
+    {stats.resets} Reality Resets haben dich zurückgebracht.
+    <br />
+    Seit {stats.memberDays} Tagen Teil deiner Reise.
+  </p>
+  <p style={{ ...softText, marginTop: 12 }}>
+    {stats.visits > 3
+      ? "Du kommst gerade regelmäßig zurück."
+      : "Dein Nest wird langsam größer."}
+  </p>
+</NestCard>
 
-      {/* ── Bottom quote bar ── */}
+        {stats.memory && (
+          <NestCard>
+            <p style={eyebrow}>🕯️ Erinnerung</p>
+            <p style={softText}>
+              Vor {daysAgo(stats.memory.created_at)} Tagen hast du geschrieben:
+            </p>
+            <p style={quote}>“{stats.memory.text}”</p>
+            <Link href="/thoughts">
+              <button style={quietButton}>Damals ansehen →</button>
+            </Link>
+          </NestCard>
+        )}
+<NestCard>
+  <p style={eyebrow}>🕯️ Rückblicke</p>
+
+  {stats.lookbacks.length > 0 ? (
+    stats.lookbacks.map((item) => (
+      <div key={item.label} style={{ marginBottom: 14 }}>
+        <p style={softText}>{item.label}:</p>
+        <p style={quote}>“{item.thought?.text}”</p>
+      </div>
+    ))
+  ) : (
+    <p style={softText}>Deine ersten Erinnerungen werden hier erscheinen.</p>
+  )}
+</NestCard>
+<NestCard>
+  <p style={eyebrow}>✨ Erkenntnisse</p>
+  <p style={softText}>In letzter Zeit tauchen häufig auf:</p>
+  <p style={quote}>{stats.insights.topWords.join("\n")}</p>
+  <p style={{ ...softText, marginTop: 10 }}>
+    Das Thema {stats.insights.topWords[0]} begleitet dich aktuell oft.
+    <br />
+    Dein aktivster Reflexionsmonat war {stats.insights.activeMonth}.
+  </p>
+</NestCard>
+
+       <NestCard>
+  <p style={eyebrow}>🌿 Deine Reise</p>
+  <p style={softText}>
+    Du bist bereits {stats.visits} Mal zurückgekehrt.
+    <br />
+    Du hast in den letzten 30 Tagen {stats.insights.thoughtsLast30} Gedanken festgehalten.
+    <br />
+    Du hast {stats.memos} Sprachmemos aufgenommen.
+  </p>
+</NestCard>
+<NestCard>
+  <p style={eyebrow}>🔥 Kontinuität</p>
+  <h2 style={title}>{stats.streak} Tage</h2>
+  <p style={softText}>
+    Du bist seit {stats.streak} Tagen zurückgekehrt.
+    <br />
+    Noch {Math.max(0, nextMilestone(stats.streak) - stats.streak)} Tage bis zu deinem nächsten Meilenstein.
+  </p>
+</NestCard>
+<NestCard>
+  <p style={eyebrow}>📝 Heute</p>
+  {stats.prompts.map((prompt) => (
+    <p key={prompt} style={softText}>• {prompt}</p>
+  ))}
+
+  <Link href="/thoughts">
+    <button style={quietButton}>Darüber nachdenken</button>
+  </Link>
+</NestCard>
+
+<NestCard>
+  <p style={eyebrow}>📅 Dieser Monat</p>
+  <p style={softText}>
+    {stats.insights.monthlyThoughts} Gedanken.
+    <br />
+    {stats.insights.monthlyMemos} Sprachmemos.
+    <br />
+    {stats.insights.monthlyResets} Reality Resets.
+  </p>
+  <p style={{ ...softText, marginTop: 10 }}>
+    {stats.insights.topWords[0]} war dein häufigstes Thema.
+  </p>
+</NestCard>
+{stats.deepMemory && (
+  <NestCard>
+    <p style={eyebrow}>🌱 Damals vs Heute</p>
+    <p style={softText}>Damals:</p>
+    <p style={quote}>“{stats.deepMemory.text}”</p>
+    <p style={{ ...softText, marginTop: 12 }}>
+      Heute lebt dieser Gedanke nicht mehr allein. Er ist Teil deiner Geschichte hier.
+    </p>
+  </NestCard>
+)}
+{stats.deepMemory && (
+  <NestCard>
+    <p style={eyebrow}>🪶 Aus den Tiefen des Nests</p>
+
+    <p style={softText}>
+      Vor {daysAgo(stats.deepMemory.created_at)} Tagen:
+    </p>
+
+    <p style={quote}>
+      “{stats.deepMemory.text}”
+    </p>
+
+    <Link href="/thoughts">
+      <button style={quietButton}>Wiederentdecken</button>
+    </Link>
+  </NestCard>
+)}
+<NestCard>
+  <p style={eyebrow}>🌧️ Meine Rituale</p>
+
+  {stats.rituals.length > 0 ? (
+    stats.rituals.map((ritual) => (
+      <p
+        key={ritual.name}
+        style={{
+          ...softText,
+          marginBottom: 10,
+        }}
+      >
+        {ritual.name}
+      </p>
+    ))
+  ) : (
+    <p style={softText}>
+      Deine eigenen Rituale werden hier erscheinen.
+    </p>
+  )}
+</NestCard>
+      </motion.div>
+
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.8 }}
-        style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 20, padding: "0 14px 28px" }}
+        style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, zIndex: 20, padding: "0 14px 28px" }}
       >
         <div style={{
           background: "rgba(12, 9, 6, 0.86)",
@@ -601,7 +941,7 @@ export function Nest() {
             &#8220;
           </span>
           <p style={{ flex: 1, margin: 0, color: "rgba(192,172,140,0.58)", fontSize: 12.5, lineHeight: 1.6, letterSpacing: "0.02em", fontWeight: 300 }}>
-            You've carried enough. Rest here. You are safe.
+            The Nest remembers what you carried.
           </p>
           <AudioControls minimal />
         </div>
@@ -609,3 +949,64 @@ export function Nest() {
     </motion.div>
   );
 }
+function NestCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        background: "rgba(10, 7, 5, 0.62)",
+        border: "1px solid rgba(220, 195, 140, 0.08)",
+        borderRadius: 24,
+        padding: 18,
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        boxShadow: "0 18px 60px rgba(0,0,0,0.34)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+const eyebrow: React.CSSProperties = {
+  fontSize: 10,
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+  color: "rgba(205,170,100,0.42)",
+  marginBottom: 10,
+};
+
+const title: React.CSSProperties = {
+  fontFamily: "Georgia, serif",
+  fontSize: 25,
+  fontWeight: 400,
+  lineHeight: 1.25,
+  color: "rgba(235,215,180,0.92)",
+  marginBottom: 12,
+};
+
+const softText: React.CSSProperties = {
+  fontSize: 13,
+  lineHeight: 1.75,
+  color: "rgba(198,178,150,0.64)",
+};
+
+const quote: React.CSSProperties = {
+  fontFamily: "Georgia, serif",
+  fontSize: 17,
+  lineHeight: 1.55,
+  color: "rgba(235,218,192,0.82)",
+  marginTop: 8,
+};
+
+const quietButton: React.CSSProperties = {
+  marginTop: 16,
+  background: "none",
+  border: "none",
+  borderBottom: "1px solid rgba(205,170,100,0.22)",
+  color: "rgba(205,170,100,0.62)",
+  fontSize: 10,
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+  padding: "8px 0",
+  cursor: "pointer",
+};
