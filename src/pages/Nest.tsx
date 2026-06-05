@@ -530,11 +530,11 @@ function calculateStreak(dates: string[]) {
 
 function pickDailyPrompts() {
   const prompts = [
-    "Was beschäftigt dich gerade?",
-    "Worauf bist du heute stolz?",
-    "Was solltest du loslassen?",
-    "Was hat dir heute Energie gegeben?",
-    "Was würdest du deinem jüngeren Ich sagen?",
+    "What is on your mind right now?",
+    "What are you proud of today?",
+    "What should you let go of?",
+    "What gave you energy today?",
+    "What would you tell your younger self?",
   ];
 
   const day = new Date().getDate();
@@ -583,7 +583,7 @@ function buildInsights(thoughts: ThoughtMemory[]): NestInsight {
   });
 
   const activeMonth =
-    [...monthCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "noch offen";
+    [...monthCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "still open";
 
   const thirtyDaysAgo = Date.now() - 30 * 86400000;
   const thoughtsLast30 = thoughts.filter(
@@ -599,7 +599,7 @@ function buildInsights(thoughts: ThoughtMemory[]): NestInsight {
   ).length;
   
   return {
-    topWords: topWords.length ? topWords : ["Ruhe", "Zukunft", "Selbstvertrauen"],
+    topWords: topWords.length ? topWords : ["Calm", "Future", "Confidence"],
     activeMonth,
     thoughtsLast30,
     monthlyThoughts,
@@ -623,9 +623,12 @@ rituals: [] as RitualMemory[],
     memory: null as ThoughtMemory | null,
     deepMemory: null as ThoughtMemory | null,
     insights: {
-      topWords: ["Ruhe", "Zukunft", "Selbstvertrauen"],
-      activeMonth: "noch offen",
+      topWords: ["Calm", "Future", "Confidence"],
+      activeMonth: "still open",
       thoughtsLast30: 0,
+      monthlyThoughts: 0,
+      monthlyMemos: 0,
+      monthlyResets: 0,
     } as NestInsight,
   });
 
@@ -680,9 +683,9 @@ rituals: [] as RitualMemory[],
     ? thoughts[0]
     : null;
     const lookbacks: ReflectionLookback[] = [
-      { label: "Vor 7 Tagen", thought: findClosestThought(thoughts, 7) },
-      { label: "Vor 30 Tagen", thought: findClosestThought(thoughts, 30) },
-      { label: "Vor 60 Tagen", thought: findClosestThought(thoughts, 60) },
+      { label: "7 days ago", thought: findClosestThought(thoughts, 7) },
+      { label: "30 days ago", thought: findClosestThought(thoughts, 30) },
+      { label: "60 days ago", thought: findClosestThought(thoughts, 60) },
     ].filter((item) => item.thought);
     
     const streak = calculateStreak(
@@ -771,38 +774,38 @@ rituals: [] as RitualMemory[],
         }}
       >
       <NestCard>
-  <p style={eyebrow}>🌙 Dein Nest</p>
-  <h2 style={title}>Dein Nest wächst.</h2>
+      <p style={eyebrow}>🌙 Your Nest</p>
+      <h2 style={title}>Your nest is growing.</h2>
   <p style={softText}>
-    {stats.thoughts} Gedanken haben hier ihren Platz gefunden.
+    {stats.thoughts} thoughts have found their place here.
     <br />
-    {stats.memos} Voice Capsules bewahren Erinnerungen.
+    {stats.memos} Voice Capsules preserve memories.
     <br />
-    {stats.resets} Reality Resets haben dich zurückgebracht.
+    {stats.resets} Reality Resets brought you back.
     <br />
-    Seit {stats.memberDays} Tagen Teil deiner Reise.
+    Part of your journey for {stats.memberDays} days.
   </p>
   <p style={{ ...softText, marginTop: 12 }}>
     {stats.visits > 3
-      ? "Du kommst gerade regelmäßig zurück."
-      : "Dein Nest wird langsam größer."}
+      ? "You are returning regularly right now."
+      : "Your nest is slowly growing."}
   </p>
 </NestCard>
 
         {stats.memory && (
           <NestCard>
-            <p style={eyebrow}>🕯️ Erinnerung</p>
+            <p style={eyebrow}>🕯️ Memory</p>
             <p style={softText}>
-              Vor {daysAgo(stats.memory.created_at)} Tagen hast du geschrieben:
+            {daysAgo(stats.memory.created_at)} days ago you wrote:
             </p>
             <p style={quote}>“{stats.memory.text}”</p>
             <Link href="/thoughts">
-              <button style={quietButton}>Damals ansehen →</button>
+              <button style={quietButton}>View then →</button>
             </Link>
           </NestCard>
         )}
 <NestCard>
-  <p style={eyebrow}>🕯️ Rückblicke</p>
+  <p style={eyebrow}>🕯️ Reflections</p>
 
   {stats.lookbacks.length > 0 ? (
     stats.lookbacks.map((item) => (
@@ -812,79 +815,79 @@ rituals: [] as RitualMemory[],
       </div>
     ))
   ) : (
-    <p style={softText}>Deine ersten Erinnerungen werden hier erscheinen.</p>
+    <p style={softText}>Your first memories will appear here.</p>
   )}
 </NestCard>
 <NestCard>
-  <p style={eyebrow}>✨ Erkenntnisse</p>
-  <p style={softText}>In letzter Zeit tauchen häufig auf:</p>
+  <p style={eyebrow}>✨ Insights</p>
+  <p style={softText}>Recently appearing themes:</p>
   <p style={quote}>{stats.insights.topWords.join("\n")}</p>
   <p style={{ ...softText, marginTop: 10 }}>
-    Das Thema {stats.insights.topWords[0]} begleitet dich aktuell oft.
+    The theme {stats.insights.topWords[0]} has been with you often lately.
     <br />
-    Dein aktivster Reflexionsmonat war {stats.insights.activeMonth}.
+    Your most reflective month was {stats.insights.activeMonth}.
   </p>
 </NestCard>
 
        <NestCard>
-  <p style={eyebrow}>🌿 Deine Reise</p>
+  <p style={eyebrow}>🌿 Your Journey</p>
   <p style={softText}>
-    Du bist bereits {stats.visits} Mal zurückgekehrt.
+    You have returned {stats.visits} times.
     <br />
-    Du hast in den letzten 30 Tagen {stats.insights.thoughtsLast30} Gedanken festgehalten.
+    You captured {stats.insights.thoughtsLast30} thoughts in the last 30 days.
     <br />
-    Du hast {stats.memos} Sprachmemos aufgenommen.
+    You recorded {stats.memos} voice memos.
   </p>
 </NestCard>
 <NestCard>
-  <p style={eyebrow}>🔥 Kontinuität</p>
-  <h2 style={title}>{stats.streak} Tage</h2>
+  <p style={eyebrow}>🔥 Consistency</p>
+  <h2 style={title}>{stats.streak} days</h2>
   <p style={softText}>
-    Du bist seit {stats.streak} Tagen zurückgekehrt.
+  You've returned for {stats.streak} days.
     <br />
-    Noch {Math.max(0, nextMilestone(stats.streak) - stats.streak)} Tage bis zu deinem nächsten Meilenstein.
+    {Math.max(0, nextMilestone(stats.streak) - stats.streak)} days until your next milestone.
   </p>
 </NestCard>
 <NestCard>
-  <p style={eyebrow}>📝 Heute</p>
+  <p style={eyebrow}>📝 Today</p>
   {stats.prompts.map((prompt) => (
     <p key={prompt} style={softText}>• {prompt}</p>
   ))}
 
   <Link href="/thoughts">
-    <button style={quietButton}>Darüber nachdenken</button>
+    <button style={quietButton}>Reflect on this</button>
   </Link>
 </NestCard>
 
 <NestCard>
-  <p style={eyebrow}>📅 Dieser Monat</p>
+  <p style={eyebrow}>📅 This Month</p>
   <p style={softText}>
-    {stats.insights.monthlyThoughts} Gedanken.
+    {stats.insights.monthlyThoughts} thoughts.
     <br />
-    {stats.insights.monthlyMemos} Sprachmemos.
+    {stats.insights.monthlyMemos} voice memos.
     <br />
     {stats.insights.monthlyResets} Reality Resets.
   </p>
   <p style={{ ...softText, marginTop: 10 }}>
-    {stats.insights.topWords[0]} war dein häufigstes Thema.
+    {stats.insights.topWords[0]} was your most frequent theme.
   </p>
 </NestCard>
 {stats.deepMemory && (
   <NestCard>
-    <p style={eyebrow}>🌱 Damals vs Heute</p>
-    <p style={softText}>Damals:</p>
+    <p style={eyebrow}>🌱 Then vs Now</p>
+    <p style={softText}>Then:</p>
     <p style={quote}>“{stats.deepMemory.text}”</p>
     <p style={{ ...softText, marginTop: 12 }}>
-      Heute lebt dieser Gedanke nicht mehr allein. Er ist Teil deiner Geschichte hier.
+      Now:<br />This thought is no longer alone.<br />It has become part of your story.
     </p>
   </NestCard>
 )}
 {stats.deepMemory && (
   <NestCard>
-    <p style={eyebrow}>🪶 Aus den Tiefen des Nests</p>
+    <p style={eyebrow}>🪶 From the Depths of the Nest</p>
 
     <p style={softText}>
-      Vor {daysAgo(stats.deepMemory.created_at)} Tagen:
+      {daysAgo(stats.deepMemory.created_at)} days ago:
     </p>
 
     <p style={quote}>
@@ -892,12 +895,12 @@ rituals: [] as RitualMemory[],
     </p>
 
     <Link href="/thoughts">
-      <button style={quietButton}>Wiederentdecken</button>
+      <button style={quietButton}>Rediscover</button>
     </Link>
   </NestCard>
 )}
 <NestCard>
-  <p style={eyebrow}>🌧️ Meine Rituale</p>
+  <p style={eyebrow}>🌧️ My Rituals</p>
 
   {stats.rituals.length > 0 ? (
     stats.rituals.map((ritual) => (
@@ -913,7 +916,7 @@ rituals: [] as RitualMemory[],
     ))
   ) : (
     <p style={softText}>
-      Deine eigenen Rituale werden hier erscheinen.
+      Your personal rituals will appear here.
     </p>
   )}
 </NestCard>
