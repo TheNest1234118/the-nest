@@ -10,8 +10,11 @@ interface Thought {
   created_at: string;
 }
 
-export function Thoughts() {
-  const [thoughts, setThoughts] = useState<Thought[]>([]);  const [newThought, setNewThought] = useState("");
+
+  export function Thoughts() {
+    const [thoughts, setThoughts] = useState<Thought[]>([]);
+    const [newThought, setNewThought] = useState("");
+    const [search, setSearch] = useState("");
   useEffect(() => {
     async function init() {
       const data = await loadThoughts();
@@ -132,6 +135,22 @@ export function Thoughts() {
             </p>
           </div>
         </motion.header>
+        <input
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  placeholder="Search thoughts..."
+  style={{
+    width: "100%",
+    marginBottom: 18,
+    background: "rgba(255,255,255,0.026)",
+    border: "1px solid rgba(255,255,255,0.065)",
+    borderRadius: 14,
+    padding: "13px 15px",
+    color: "rgba(225,210,188,0.84)",
+    outline: "none",
+    fontSize: 13,
+  }}
+/>
 
         <motion.div
           initial={{ opacity: 0, y: 8 }}

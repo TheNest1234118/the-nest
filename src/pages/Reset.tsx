@@ -345,11 +345,19 @@ export function Reset() {
   useEffect(() => {
     if (!done || !selected) return;
   
-    saveLastSession({
+    const lastResetSession = {
       key: selected.key,
       label: selected.label,
       completedAt: Date.now(),
-    }).catch((err) => {
+      notes: "",
+    };
+    
+    localStorage.setItem(
+      "nest_last_reset_session",
+      JSON.stringify(lastResetSession)
+    );
+    
+    saveLastSession(lastResetSession).catch((err) => {
       console.error("Could not save last session", err);
     });
   }, [done, selected]);

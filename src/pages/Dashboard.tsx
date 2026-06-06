@@ -25,7 +25,7 @@ interface AnchorItem {
   createdAt: number;
 }
 
-interface LastSession {
+interface LastResetSession {
   key: string;
   label: string;
   completedAt: number;
@@ -81,11 +81,23 @@ const TOOLS = [
   { href: "/reset",    icon: CircleDot,  label: "Reality Reset",  desc: "Come down from the noise" },
   { href: "/anchors",  icon: Anchor,     label: "Anchors",        desc: "Real things. This room. Right now." },
 ];
+function formatRelativeTime(time: number) {
+  const diff = Date.now() - time;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
 
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  if (days === 1) return "yesterday";
+  return `${days} days ago`;
+}
 export function Dashboard() {
   const [, navigate] = useLocation();
   const [authOpen, setAuthOpen] = useState(false);
 const [user, setUser] = useState<User | null>(null);
+const [streak, setStreak] = useState(0);
 
 useEffect(() => {
   supabase.auth.getUser().then(({ data }) => {
@@ -100,58 +112,34 @@ useEffect(() => {
     listener.subscription.unsubscribe();
   };
 }, []);
-
 const handleLogout = async () => {
   await supabase.auth.signOut();
   setUser(null);
 };
-supabase.auth.getUser().then(async ({ data }) => {
-  setUser(data.user ?? null);
 
-  if (!data.user) return;
+const state = localStorage.getItem("nest_state") || null;
+const dashboardMode = localStorage.getItem("nest_dashboard_mode") || null;
 
-  const { data: activity } = await supabase
-    .from("nest_daily_activity")
-    .select("activity_date")
-    .eq("user_id", data.user.id);
-
-  const dates = new Set((activity ?? []).map((d) => d.activity_date));
-  let current = 0;
-  const cursor = new Date();
-  cursor.setHours(0, 0, 0, 0);
-
-  while (dates.has(cursor.toISOString().slice(0, 10))) {
-    current++;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-
-  setStreak(current);
-});
-
-  const state      = localStorage.getItem("nest_state") || null;
-  const dashboardMode = localStorage.getItem("nest_dashboard_mode") || null;
 const isQuietDashboard = dashboardMode === "quiet";
 const visibleTools = isQuietDashboard
   ? TOOLS.filter((tool) => tool.href === "/thoughts")
   : TOOLS;
-  const stateNote  = state ? STATE_NOTES[state]  ?? null : null;
-  const sessionName = state ? SESSION_NAMES[state] ?? null : null;
-  const [streak, setStreak] = useState(0);
-  const sessionNote = state ? SESSION_NOTES[state] ?? null : null;
 
-  const lastSession = useMemo<LastSession | null>(() => {
-    try {
-      const raw = localStorage.getItem("nest_last_session");
-      if (!raw) return null;
-      const parsed = JSON.parse(raw) as LastSession;
-      const hoursSince = (Date.now() - parsed.completedAt) / (1000 * 60 * 60);
-      return hoursSince < 24 ? parsed : null;
-    } catch { return null; }
-  }, []);
+const stateNote = state ? STATE_NOTES[state] ?? null : null;
+const sessionName = state ? SESSION_NAMES[state] ?? null : null;
+const sessionNote = state ? SESSION_NOTES[state] ?? null : null;
 
-  const showContinue = !!(lastSession && lastSession.key === state);
-  const showSession  = showContinue || !!sessionName;
+const lastResetSession = useMemo<LastResetSession | null>(() => {
+  try {
+    const raw = localStorage.getItem("nest_last_reset_session");
+    if (!raw) return null;
+    return JSON.parse(raw) as LastResetSession;
+  } catch {
+    return null;
+  }
+}, []);
 
+const showSession = !!sessionName;
   const [anchors] = useLocalStorage<AnchorItem[]>("nest_anchors", []);
   const previewAnchors = useMemo(() => anchors.slice(0, 3), [anchors]);
 
@@ -380,74 +368,155 @@ const visibleTools = isQuietDashboard
           </Link>
         </motion.div>
 
-        {/* ── Recommended / Continue session ── */}
-        {showSession && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.22, duration: 0.7 }}
-          >
-            <p
-              style={{
-                fontSize: 10,
-                letterSpacing: "0.16em",
-                textTransform: "uppercase",
-                color: "rgba(185, 158, 115, 0.36)",
-                marginBottom: 10,
-                fontWeight: 500,
-              }}
-            >
-              {showContinue ? "Continue where you left off" : "For right now"}
-            </p>
-            <button
-              onClick={() =>
-                handleStartSession(showContinue ? lastSession!.key : state)
-              }
-              style={{
-                width: "100%",
-                background: "rgba(205, 170, 100, 0.05)",
-                border: "1px solid rgba(205, 170, 100, 0.12)",
-                borderRadius: 16,
-                padding: "18px 20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                cursor: "pointer",
-                textAlign: "left",
-              }}
-            >
-              <div>
-                <div
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 400,
-                    color: "rgba(225, 200, 155, 0.88)",
-                    letterSpacing: "0.01em",
-                    marginBottom: 5,
-                    fontFamily: "Georgia, 'Times New Roman', serif",
-                  }}
-                >
-                  {showContinue ? lastSession!.label : sessionName}
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "rgba(175, 152, 112, 0.45)",
-                    fontWeight: 300,
-                    letterSpacing: "0.01em",
-                  }}
-                >
-                  {showContinue ? "Continue last session" : sessionNote}
-                </div>
-              </div>
-              <ArrowRight
-                size={15}
-                color="rgba(205, 170, 100, 0.40)"
-                strokeWidth={1.5}
-              />
-            </button>
-          </motion.div>
-        )}
+        {lastResetSession && (
+  <motion.div
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.20, duration: 0.7 }}
+  >
+    <p
+      style={{
+        fontSize: 10,
+        letterSpacing: "0.16em",
+        textTransform: "uppercase",
+        color: "rgba(185, 158, 115, 0.36)",
+        marginBottom: 10,
+        fontWeight: 500,
+      }}
+    >
+      Continue where you left off
+    </p>
+
+    <button
+      onClick={() => handleStartSession(lastResetSession.key)}
+      style={{
+        width: "100%",
+        background: "rgba(205, 170, 100, 0.05)",
+        border: "1px solid rgba(205, 170, 100, 0.12)",
+        borderRadius: 16,
+        padding: "18px 20px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        cursor: "pointer",
+        textAlign: "left",
+      }}
+    >
+      <div>
+        <div
+          style={{
+            fontSize: 16,
+            fontWeight: 400,
+            color: "rgba(225, 200, 155, 0.88)",
+            letterSpacing: "0.01em",
+            marginBottom: 5,
+            fontFamily: "Georgia, 'Times New Roman', serif",
+          }}
+        >
+          Last session:
+        </div>
+
+        <div
+          style={{
+            fontSize: 13,
+            color: "rgba(220, 205, 182, 0.72)",
+            fontWeight: 300,
+            lineHeight: 1.45,
+          }}
+        >
+          “{lastResetSession.label}”
+        </div>
+
+        <div
+          style={{
+            fontSize: 11,
+            color: "rgba(175, 152, 112, 0.42)",
+            fontWeight: 300,
+            marginTop: 6,
+            letterSpacing: "0.01em",
+          }}
+        >
+          {formatRelativeTime(lastResetSession.completedAt)}
+        </div>
+      </div>
+
+      <ArrowRight
+        size={15}
+        color="rgba(205, 170, 100, 0.40)"
+        strokeWidth={1.5}
+      />
+    </button>
+  </motion.div>
+)}
+
+{showSession && (
+  <motion.div
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.24, duration: 0.7 }}
+  >
+    <p
+      style={{
+        fontSize: 10,
+        letterSpacing: "0.16em",
+        textTransform: "uppercase",
+        color: "rgba(185, 158, 115, 0.36)",
+        marginBottom: 10,
+        fontWeight: 500,
+      }}
+    >
+      For right now
+    </p>
+
+    <button
+      onClick={() => handleStartSession(state)}
+      style={{
+        width: "100%",
+        background: "rgba(255, 255, 255, 0.024)",
+        border: "1px solid rgba(255, 255, 255, 0.058)",
+        borderRadius: 16,
+        padding: "18px 20px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        cursor: "pointer",
+        textAlign: "left",
+      }}
+    >
+      <div>
+        <div
+          style={{
+            fontSize: 16,
+            fontWeight: 400,
+            color: "rgba(225, 200, 155, 0.80)",
+            letterSpacing: "0.01em",
+            marginBottom: 5,
+            fontFamily: "Georgia, 'Times New Roman', serif",
+          }}
+        >
+          {sessionName}
+        </div>
+
+        <div
+          style={{
+            fontSize: 12,
+            color: "rgba(175, 152, 112, 0.45)",
+            fontWeight: 300,
+            letterSpacing: "0.01em",
+          }}
+        >
+          {sessionNote}
+        </div>
+      </div>
+
+      <ArrowRight
+        size={15}
+        color="rgba(205, 170, 100, 0.32)"
+        strokeWidth={1.5}
+      />
+    </button>
+  </motion.div>
+)}
         <motion.div
   initial={{ opacity: 0, y: 8 }}
   animate={{ opacity: 1, y: 0 }}
