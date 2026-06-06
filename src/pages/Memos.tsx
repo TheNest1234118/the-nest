@@ -51,6 +51,7 @@ const CHUNK_SECONDS = 60;
   const startTimeRef = useRef<number>(0);
   const chunkIndexRef = useRef(0);
 const lastChunkTimeRef = useRef(0);
+const [search, setSearch] = useState("");
   const streamRef = useRef<MediaStream | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -239,7 +240,11 @@ lastChunkTimeRef.current = Date.now();
     const m = Math.floor(s / 60);
     return `${m}:${(s % 60).toString().padStart(2, "0")}`;
   };
-
+  const visibleMemos = memos.filter((memo) =>
+    (memo.title || "Voice capsule")
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -448,9 +453,9 @@ lastChunkTimeRef.current = Date.now();
           )}
         </motion.div>
 
-        {memos.length > 0 ? (
+        {visibleMemos.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 32 }}>
-            {memos.map((memo, i) => (
+            {visibleMemos.map((memo, i) => (
               <motion.div
                 key={memo.id}
                 data-testid={`memo-item-${memo.id}`}

@@ -547,13 +547,17 @@ function pickDailyPrompts() {
 
 function findClosestThought(thoughts: ThoughtMemory[], days: number) {
   const target = Date.now() - days * 86400000;
+  const tolerance = 3 * 86400000;
 
-  return thoughts
-    .map((t) => ({
-      thought: t,
-      distance: Math.abs(new Date(t.created_at).getTime() - target),
-    }))
-    .sort((a, b) => a.distance - b.distance)[0]?.thought ?? null;
+  return (
+    thoughts
+      .map((t) => ({
+        thought: t,
+        distance: Math.abs(new Date(t.created_at).getTime() - target),
+      }))
+      .filter((item) => item.distance <= tolerance)
+      .sort((a, b) => a.distance - b.distance)[0]?.thought ?? null
+  );
 }
 function buildInsights(thoughts: ThoughtMemory[]): NestInsight {
   const stopWords = new Set([
@@ -675,22 +679,30 @@ rituals: [] as RitualMemory[],
       ]);
 
       const thoughts = thoughtsData.data ?? [];
-      const memory = thoughts.length
-        ? thoughts[Math.floor(Math.random() * thoughts.length)]
-        : null;
-        const deepMemory =
-  thoughts.length > 0
-    ? thoughts[0]
-    : null;
-    const lookbacks: ReflectionLookback[] = [
-      { label: "7 days ago", thought: findClosestThought(thoughts, 7) },
-      { label: "30 days ago", thought: findClosestThought(thoughts, 30) },
-      { label: "60 days ago", thought: findClosestThought(thoughts, 60) },
-    ].filter((item) => item.thought);
-    
-    const streak = calculateStreak(
-      (activityData.data ?? []).map((d) => d.activity_date)
-    );
+
+const memory = thoughts.length
+  ? thoughts[Math.floor(Math.random() * thoughts.length)]
+  : null;
+
+const deepMemory = thoughts.length > 0 ? thoughts[0] : null;
+
+const memberDays = Math.max(
+  1,
+  Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)
+);
+
+const lookbackTargets = [7, 30, 60].filter((days) => days <= memberDays);
+
+const lookbacks: ReflectionLookback[] = lookbackTargets
+  .map((days) => ({
+    label: `${days} days ago`,
+    thought: findClosestThought(thoughts, days),
+  }))
+  .filter((item) => item.thought);
+
+const streak = calculateStreak(
+  (activityData.data ?? []).map((d) => d.activity_date)
+);
     
     const insights = buildInsights(thoughts);
     insights.monthlyMemos = monthlyMemos.count ?? 0;
@@ -815,7 +827,7 @@ rituals: [] as RitualMemory[],
       </div>
     ))
   ) : (
-    <p style={softText}>Your first memories will appear here.</p>
+    <p style={softText}>Your first older memories will appear here as your journey grows.</p>
   )}
 </NestCard>
 <NestCard>

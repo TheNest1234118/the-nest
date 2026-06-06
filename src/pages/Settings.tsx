@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "wouter";
+import { exportNestData } from "@/lib/exportNest";
 import { motion } from "framer-motion";
 import { ChevronLeft, Trash2, Shield } from "lucide-react";
 
@@ -208,6 +209,11 @@ export function Settings() {
               overflow: "hidden",
             }}
           >
+            <SettingRow
+  label="Download my Nest"
+  description="Export thoughts, memos, anchors, tags and sessions"
+  onTap={() => exportNestData().then(() => flash("Backup downloaded"))}
+/>
             <SettingRow
               label="Clear session history"
               description="Check-ins, last session, state memory"

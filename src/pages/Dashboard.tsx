@@ -47,6 +47,7 @@ const STATE_NOTES: Record<string, string> = {
   disconnected:   "You've been in the feed. You're back now.",
   looping:        "Same thoughts, same loop. Time to break it.",
   slow_down:      "Brain still running at internet speed.",
+  
   numb:           "Scrolled past feeling. That's okay.",
   scrolling:      "Come down from the noise.",
   quiet:          "No more input needed.",
@@ -104,6 +105,28 @@ const handleLogout = async () => {
   await supabase.auth.signOut();
   setUser(null);
 };
+supabase.auth.getUser().then(async ({ data }) => {
+  setUser(data.user ?? null);
+
+  if (!data.user) return;
+
+  const { data: activity } = await supabase
+    .from("nest_daily_activity")
+    .select("activity_date")
+    .eq("user_id", data.user.id);
+
+  const dates = new Set((activity ?? []).map((d) => d.activity_date));
+  let current = 0;
+  const cursor = new Date();
+  cursor.setHours(0, 0, 0, 0);
+
+  while (dates.has(cursor.toISOString().slice(0, 10))) {
+    current++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  setStreak(current);
+});
 
   const state      = localStorage.getItem("nest_state") || null;
   const dashboardMode = localStorage.getItem("nest_dashboard_mode") || null;
@@ -113,6 +136,7 @@ const visibleTools = isQuietDashboard
   : TOOLS;
   const stateNote  = state ? STATE_NOTES[state]  ?? null : null;
   const sessionName = state ? SESSION_NAMES[state] ?? null : null;
+  const [streak, setStreak] = useState(0);
   const sessionNote = state ? SESSION_NOTES[state] ?? null : null;
 
   const lastSession = useMemo<LastSession | null>(() => {
@@ -424,6 +448,34 @@ const visibleTools = isQuietDashboard
             </button>
           </motion.div>
         )}
+        <motion.div
+  initial={{ opacity: 0, y: 8 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.19, duration: 0.7 }}
+  style={{
+    background: "rgba(255,255,255,0.022)",
+    border: "1px solid rgba(255,255,255,0.055)",
+    borderRadius: 16,
+    padding: "15px 18px",
+  }}
+>
+  <p style={{
+    fontSize: 10,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    color: "rgba(205,170,100,0.40)",
+    marginBottom: 6,
+  }}>
+    Consistency
+  </p>
+  <p style={{
+    fontSize: 13,
+    color: "rgba(220,205,182,0.68)",
+    lineHeight: 1.6,
+  }}>
+    🔥 You have returned for {streak} {streak === 1 ? "day" : "days"}.
+  </p>
+</motion.div>
 
         {/* ── Atmosphere card ── */}
         <motion.div

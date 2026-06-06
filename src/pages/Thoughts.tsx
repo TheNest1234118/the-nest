@@ -37,7 +37,9 @@ export function Thoughts() {
   
     setNewThought("");
   };
-
+  const visibleThoughts = thoughts.filter((thought) =>
+    thought.text.toLowerCase().includes(search.toLowerCase())
+  );
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -178,9 +180,9 @@ export function Thoughts() {
           </div>
         </motion.div>
 
-        {thoughts.length > 0 ? (
+        {visibleThoughts.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 32 }}>
-            {thoughts.map((thought, i) => (
+            {visibleThoughts.map((thought, i) => (
               <motion.div
                 key={thought.id}
                 initial={{ opacity: 0, y: 8, scale: 0.98 }}
