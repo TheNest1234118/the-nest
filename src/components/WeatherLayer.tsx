@@ -72,32 +72,22 @@ function makeLoop(src: string) {
 function setVolume(audio: HTMLAudioElement | null, volume: number) {
   if (!audio) return;
 
-  const v = clamp01(volume);
-  if (v <= 0.02) {
+  const raw = clamp01(volume);
+  const output = safeVolume(raw);
+
+  if (raw <= 0.02 || output <= 0.001) {
+    audio.volume = 0;
     audio.pause();
     audio.currentTime = 0;
     return;
   }
-  
-  if (audio.paused) {
-    audio.play().catch(() => {});
-  }
-  
-  audio.volume = v;
 
-  if (v <= 0.001) {
-    if (!audio.paused) {
-      audio.pause();
-      audio.currentTime = 0;
-    }
-    return;
-  }
+  audio.volume = output;
 
   if (audio.paused) {
     audio.play().catch(() => {});
   }
 }
-
 function fadeTowards(current: number, target: number, speed = 0.22) {
   if (target === 0 && current < 0.03) return 0;
   return current + (target - current) * speed;
@@ -277,8 +267,12 @@ if (rain > 0) {
         targetRainLight *= 0.75;
         targetRainMedium *= 0.9;
         targetRainHeavy *= 1.0;
-        const targetWind = wind * 0.75 + storm * 0.2;
-        const targetThunder = thunder * 0.75;
+        const mobileScale = /iphone|ipad|ipod|android/i.test(navigator.userAgent)
+        ? 0.18
+        : 1;
+      
+      const targetWind = (wind * 0.75 + storm * 0.2) * mobileScale;
+      const targetThunder = thunder * 0.75 * mobileScale;
 
         const cv = currentVolumesRef.current;
         cv.rainLight = fadeTowards(cv.rainLight, targetRainLight);
