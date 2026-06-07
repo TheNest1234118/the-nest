@@ -63,7 +63,8 @@ function setVolume(audio: HTMLAudioElement | null, volume: number) {
   audio.volume = clamp01(volume);
 }
 
-function fadeTowards(current: number, target: number, speed = 0.08) {
+function fadeTowards(current: number, target: number, speed = 0.22) {
+  if (target === 0 && current < 0.03) return 0;
   return current + (target - current) * speed;
 }
 
@@ -172,7 +173,27 @@ export function WeatherLayer() {
   useEffect(() => {
     if (settings.enabled) {
       startAudio();
+      return;
     }
+  
+    const audio = audioRef.current;
+    if (!audio) return;
+  
+    currentVolumesRef.current = {
+      rainLight: 0,
+      rainMedium: 0,
+      rainHeavy: 0,
+      wind: 0,
+      thunder: 0,
+    };
+  
+    Object.values(audio).forEach((a) => {
+      a.volume = 0;
+      a.pause();
+      a.currentTime = 0;
+    });
+  
+    audioUnlockedRef.current = false;
   }, [settings.enabled]);
 
   useEffect(() => {
@@ -202,12 +223,11 @@ export function WeatherLayer() {
           }
         }
 
-        targetRainLight *= 0.46;
-        targetRainMedium *= 0.52;
-        targetRainHeavy *= 0.58;
-
-        const targetWind = wind * 0.44 + storm * 0.16;
-        const targetThunder = thunder * 0.48 + storm * 0.16;
+        targetRainLight *= 0.75;
+        targetRainMedium *= 0.9;
+        targetRainHeavy *= 1.0;
+        const targetWind = wind * 0.75 + storm * 0.2;
+        const targetThunder = thunder * 0.75 + storm * 0.2;
 
         const cv = currentVolumesRef.current;
         cv.rainLight = fadeTowards(cv.rainLight, targetRainLight);
