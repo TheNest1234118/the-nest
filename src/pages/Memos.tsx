@@ -372,6 +372,19 @@ recorder.onstop = async () => {
     fontSize: 13,
   }}
 />
+<p
+  style={{
+    fontSize: 11,
+    lineHeight: 1.6,
+    color: "rgba(175,158,132,0.42)",
+    marginBottom: 14,
+    textAlign: "center",
+  }}
+>
+  A gentle tip:
+  <br />
+  For longer voice capsules, recording in ~10 minute parts helps keep your memories safe if your connection is interrupted.
+</p>
           <button
             data-testid="button-record-toggle"
             onClick={isRecording ? stopRecording : startRecording}
