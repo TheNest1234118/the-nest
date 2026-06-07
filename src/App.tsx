@@ -1,7 +1,7 @@
 import { Rituals } from "@/pages/Rituals";
 import { RitualPlayer } from "@/pages/RitualPlayer";
 import { Analytics } from "@vercel/analytics/react";
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -43,20 +43,32 @@ function Router() {
     </Switch>
   );
 }
+function AppLayers() {
+  const [location] = useLocation();
 
+  const heavyEffectsAllowed =
+    location !== "/" && location !== "/onboarding";
+
+  if (!heavyEffectsAllowed) return null;
+
+  return (
+    <>
+      <HeartBackground />
+      <WeatherLayer />
+    </>
+  );
+}
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
       <AudioProvider>
   <AtmosphereProvider>
-    <HeartBackground />
-    <WeatherLayer />
-
-    <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-      <Router />
-      <MiniPlayer />
-    </WouterRouter>
+  <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+  <AppLayers />
+  <Router />
+  <MiniPlayer />
+</WouterRouter>
 
     <Toaster />
     <Analytics />
