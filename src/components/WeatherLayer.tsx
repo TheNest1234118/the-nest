@@ -60,7 +60,21 @@ function makeLoop(src: string) {
 
 function setVolume(audio: HTMLAudioElement | null, volume: number) {
   if (!audio) return;
-  audio.volume = clamp01(volume);
+
+  const v = clamp01(volume);
+  audio.volume = v;
+
+  if (v <= 0.001) {
+    if (!audio.paused) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    return;
+  }
+
+  if (audio.paused) {
+    audio.play().catch(() => {});
+  }
 }
 
 function fadeTowards(current: number, target: number, speed = 0.22) {
@@ -127,29 +141,10 @@ export function WeatherLayer() {
     return audioRef.current;
   };
 
-  const startAudio = async () => {
-    const audio = ensureAudio();
-  
+  const startAudio = () => {
+    ensureAudio();
     audioUnlockedRef.current = true;
-  
-    const all = [
-      audio.rainLight,
-      audio.rainMedium,
-      audio.rainHeavy,
-      audio.wind,
-      audio.thunder,
-    ];
-  
-    for (const a of all) {
-      try {
-        a.muted = false;
-        await a.play();
-      } catch (err) {
-        console.warn("Weather audio blocked or failed:", a.src, err);
-      }
-    }
   };
-
   const stopAudio = () => {
     const audio = audioRef.current;
     if (!audio) return;
