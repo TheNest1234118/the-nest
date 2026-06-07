@@ -44,7 +44,7 @@ export function Memos() {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const MAX_RECORDING_SECONDS = 3 * 60 * 60;
-const CHUNK_SECONDS = 60;
+  const CHUNK_SECONDS = 15 * 60;
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -99,56 +99,58 @@ const [search, setSearch] = useState("");
       chunkIndexRef.current = 0;
 lastChunkTimeRef.current = Date.now();
 
-      recorder.ondataavailable = async (e) => {
-        if (!e.data || e.data.size === 0) return;
-      
-        const now = Date.now();
-        const duration = Math.max(
-          1,
-          Math.round((now - lastChunkTimeRef.current) / 1000)
-        );
-      
-        lastChunkTimeRef.current = now;
-        chunkIndexRef.current += 1;
-      
-        const title =
-          `${memoTitle.trim() || "Voice journal"} · part ${chunkIndexRef.current}`;
-      
-        try {
-          const saved = await saveMemo(
-            e.data,
-            duration,
-            e.data.type || recorder.mimeType || mimeType || "audio/mp4",
-            title
-          );
-      
-          if (saved) {
-            setMemos((prev) => [saved as Memo, ...prev]);
-          }
-        } catch (err) {
-          console.error("Could not save memo chunk", err);
-          setError("One part could not save. Keep recording or stop and try again.");
-        }
-      };
+recorder.ondataavailable = (e) => {
+  if (!e.data || e.data.size === 0) return;
+  audioChunksRef.current.push(e.data);
+};
 
-      recorder.onstop = () => {
-        streamRef.current?.getTracks().forEach((t) => t.stop());
-        streamRef.current = null;
-      
-        if (timerRef.current) clearInterval(timerRef.current);
-      
-        setMemoTitle("");
-        setRecordingTime(0);
-        setIsRecording(false);
-      };
+recorder.onstop = async () => {
+  streamRef.current?.getTracks().forEach((t) => t.stop());
+  streamRef.current = null;
 
+  if (timerRef.current) clearInterval(timerRef.current);
+
+  try {
+    const duration = Math.max(
+      1,
+      Math.round((Date.now() - startTimeRef.current) / 1000)
+    );
+
+    const type =
+      recorder.mimeType ||
+      mimeType ||
+      audioChunksRef.current[0]?.type ||
+      "audio/mp4";
+
+    const blob = new Blob(audioChunksRef.current, { type });
+
+    const saved = await saveMemo(
+      blob,
+      duration,
+      type,
+      memoTitle.trim() || "Voice capsule"
+    );
+
+    if (saved) {
+      setMemos((prev) => [saved as Memo, ...prev]);
+    }
+  } catch (err) {
+    console.error("Could not save memo", err);
+    setError("Could not save this memo. Try a shorter recording or check your connection.");
+  }
+
+  audioChunksRef.current = [];
+  setMemoTitle("");
+  setRecordingTime(0);
+  setIsRecording(false);
+};
       recorder.onerror = () => {
         setError("Recording failed. Please try again.");
         stream.getTracks().forEach((t) => t.stop());
         setIsRecording(false);
       };
 
-      recorder.start(CHUNK_SECONDS * 1000);
+      recorder.start();
 
       setIsRecording(true);
       setRecordingTime(0);

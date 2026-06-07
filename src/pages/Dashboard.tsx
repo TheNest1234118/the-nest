@@ -5,6 +5,13 @@ import { AuthModal } from "@/components/AuthModal";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import {
+  loadMoodContinuity,
+  saveDailyMood,
+  saveDailyIntention,
+  completeDailyIntention,
+  type MoodKey,
+} from "@/lib/dailyNest";
+import {
   Feather,
   Mic,
   CircleDot,
@@ -93,16 +100,171 @@ function formatRelativeTime(time: number) {
   if (days === 1) return "yesterday";
   return `${days} days ago`;
 }
+const MOODS: { key: MoodKey; label: string }[] = [
+  { key: "calm", label: "🌙 Calm" },
+  { key: "good", label: "🌤 Good" },
+  { key: "neutral", label: "🌫 Neutral" },
+  { key: "overstimulated", label: "⚡ Overstimulated" },
+  { key: "anxious", label: "🌧 Anxious" },
+  { key: "sad", label: "🖤 Sad" },
+];
+
+const INTENTIONS = [
+  "Save one thought",
+  "Record one voice note",
+  "Take a quiet moment",
+  "Reflect on something meaningful",
+  "Do a Reality Reset",
+];
+
+function moodLabel(mood: string | null) {
+  return MOODS.find((m) => m.key === mood)?.label.replace(/^.+?\s/, "") ?? mood;
+}
+const quietSmallButton: React.CSSProperties = {
+  marginTop: 12,
+  background: "none",
+  border: "none",
+  borderBottom: "1px solid rgba(205,170,100,0.22)",
+  color: "rgba(205,170,100,0.62)",
+  fontSize: 10,
+  letterSpacing: "0.16em",
+  textTransform: "uppercase",
+  padding: "8px 0",
+  cursor: "pointer",
+};
 export function Dashboard() {
   const [, navigate] = useLocation();
   const [authOpen, setAuthOpen] = useState(false);
-const [user, setUser] = useState<User | null>(null);
-const [streak, setStreak] = useState(0);
-
+  const [user, setUser] = useState<User | null>(null);
+  const [streak, setStreak] = useState(0);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [dailyOpen, setDailyOpen] = useState(false);
+  const [todayMood, setTodayMood] = useState<string | null>(null);
+  const [yesterdayMood, setYesterdayMood] = useState<string | null>(null);
+  const [dailyIntention, setDailyIntention] = useState<string | null>(null);
+  const [intentionDone, setIntentionDone] = useState(false);
+  function CalmModal({ children }: { children: React.ReactNode }) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 300,
+          background: "rgba(6,5,8,0.86)",
+          backdropFilter: "blur(10px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 12, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          style={{
+            width: "100%",
+            maxWidth: 360,
+            background: "rgba(18,15,12,0.96)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 24,
+            padding: 24,
+            boxShadow: "0 20px 80px rgba(0,0,0,0.45)",
+          }}
+        >
+          {children}
+        </motion.div>
+      </motion.div>
+    );
+  }
+  
+  const modalEyebrow: React.CSSProperties = {
+    fontSize: 10,
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+    color: "rgba(205,170,100,0.42)",
+    marginBottom: 10,
+  };
+  
+  const modalTitle: React.CSSProperties = {
+    fontFamily: "Georgia, serif",
+    fontSize: 24,
+    fontWeight: 400,
+    lineHeight: 1.25,
+    color: "rgba(235,215,180,0.92)",
+    marginBottom: 14,
+  };
+  
+  const modalText: React.CSSProperties = {
+    fontSize: 13,
+    lineHeight: 1.65,
+    color: "rgba(198,178,150,0.62)",
+    marginBottom: 16,
+  };
+  
+  const modalButton: React.CSSProperties = {
+    width: "100%",
+    background: "none",
+    border: "none",
+    borderTop: "1px solid rgba(255,255,255,0.06)",
+    padding: "14px 0",
+    color: "rgba(220,205,182,0.68)",
+    fontSize: 12,
+    letterSpacing: "0.08em",
+    cursor: "pointer",
+    textAlign: "left",
+  };
 useEffect(() => {
-  supabase.auth.getUser().then(({ data }) => {
+  async function init() {
+    const today = new Date().toISOString().slice(0, 10);
+
+    const { data } = await supabase.auth.getUser();
     setUser(data.user ?? null);
-  });
+
+    if (localStorage.getItem("nest_welcome_seen") !== "true") {
+      setWelcomeOpen(true);
+    }
+
+    if (localStorage.getItem("nest_daily_checkin_date") !== today) {
+      setDailyOpen(true);
+    }
+
+    const continuity = await loadMoodContinuity();
+    setTodayMood(continuity.todayMood);
+    setYesterdayMood(continuity.yesterdayMood);
+
+    const savedIntentionDate = localStorage.getItem("nest_daily_intention_date");
+    if (savedIntentionDate === today) {
+      setDailyIntention(localStorage.getItem("nest_daily_intention"));
+    }
+
+    setIntentionDone(
+      localStorage.getItem("nest_daily_intention_completed") === today
+    );
+
+    if (data.user) {
+      const { data: activity } = await supabase
+        .from("nest_daily_activity")
+        .select("activity_date")
+        .eq("user_id", data.user.id);
+
+      const dates = new Set((activity ?? []).map((d) => d.activity_date));
+      let current = 0;
+      const cursor = new Date();
+      cursor.setHours(0, 0, 0, 0);
+
+      while (dates.has(cursor.toISOString().slice(0, 10))) {
+        current++;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+
+      setStreak(current);
+    }
+  }
+
+  init();
 
   const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
     setUser(session?.user ?? null);
@@ -116,7 +278,6 @@ const handleLogout = async () => {
   await supabase.auth.signOut();
   setUser(null);
 };
-
 const state = localStorage.getItem("nest_state") || null;
 const dashboardMode = localStorage.getItem("nest_dashboard_mode") || null;
 
@@ -140,6 +301,7 @@ const lastResetSession = useMemo<LastResetSession | null>(() => {
 }, []);
 
 const showSession = !!sessionName;
+
   const [anchors] = useLocalStorage<AnchorItem[]>("nest_anchors", []);
   const previewAnchors = useMemo(() => anchors.slice(0, 3), [anchors]);
 
@@ -208,20 +370,20 @@ const showSession = !!sessionName;
             >
               {getGreeting()}.
             </p>
-            {stateNote && (
-              <p
-                style={{
-                  fontSize: 13,
-                  color: "rgba(185, 162, 128, 0.50)",
-                  fontWeight: 300,
-                  lineHeight: 1.5,
-                  maxWidth: 260,
-                  letterSpacing: "0.01em",
-                }}
-              >
-                {stateNote}
-              </p>
-            )}
+            <p
+  style={{
+    fontSize: 13,
+    color: "rgba(185, 162, 128, 0.50)",
+    fontWeight: 300,
+    lineHeight: 1.5,
+    maxWidth: 280,
+    letterSpacing: "0.01em",
+  }}
+>
+  {yesterdayMood && !todayMood
+    ? `Yesterday you felt ${moodLabel(yesterdayMood)}. How are you today?`
+    : stateNote || "Your Nest is here if you need it."}
+</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
   <button
@@ -291,6 +453,7 @@ const showSession = !!sessionName;
                   pointerEvents: "none",
                 }}
               />
+             
               <motion.div
                 animate={{ opacity: [0.55, 0.75, 0.55] }}
                 transition={{
@@ -367,7 +530,65 @@ const showSession = !!sessionName;
             </div>
           </Link>
         </motion.div>
+        <motion.div
+  initial={{ opacity: 0, y: 8 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.18, duration: 0.7 }}
+  style={{
+    background: "rgba(255,255,255,0.022)",
+    border: "1px solid rgba(255,255,255,0.055)",
+    borderRadius: 16,
+    padding: "16px 18px",
+  }}
+>
+  <p style={{
+    fontSize: 10,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    color: "rgba(205,170,100,0.40)",
+    marginBottom: 8,
+  }}>
+    Today
+  </p>
 
+  {dailyIntention ? (
+    <>
+      <p style={{
+        fontSize: 13,
+        color: "rgba(220,205,182,0.72)",
+        lineHeight: 1.6,
+      }}>
+        {intentionDone ? "Done gently." : dailyIntention}
+      </p>
+
+      {!intentionDone && (
+        <button
+          onClick={async () => {
+            await completeDailyIntention();
+            setIntentionDone(true);
+          }}
+          style={quietSmallButton}
+        >
+          Complete gently
+        </button>
+      )}
+    </>
+  ) : (
+    <>
+      <p style={{
+        fontSize: 13,
+        color: "rgba(220,205,182,0.62)",
+        lineHeight: 1.6,
+      }}>
+        You don’t have to do anything. But you can choose one quiet intention.
+      </p>
+
+      <button onClick={() => setDailyOpen(true)} style={quietSmallButton}>
+        Set intention
+      </button>
+    </>
+  )}
+</motion.div>
         {lastResetSession && (
   <motion.div
     initial={{ opacity: 0, y: 8 }}
@@ -784,7 +1005,109 @@ const showSession = !!sessionName;
           <AudioControls minimal />
         </div>
       </div>
+      {welcomeOpen && (
+  <CalmModal>
+    <p style={modalEyebrow}>Welcome</p>
+    <h2 style={modalTitle}>This is your place to slow down.</h2>
+    <p style={modalText}>
+      You can use The Nest without an account.
+      <br /><br />
+      Creating a free account lets your Nest remember your thoughts, voice capsules,
+      streaks, rituals and reflections across devices.
+    </p>
 
+    <button
+      onClick={() => {
+        localStorage.setItem("nest_welcome_seen", "true");
+        setWelcomeOpen(false);
+      }}
+      style={modalButton}
+    >
+      Continue without account
+    </button>
+
+    <button
+      onClick={() => {
+        localStorage.setItem("nest_welcome_seen", "true");
+        setWelcomeOpen(false);
+        setAuthOpen(true);
+      }}
+      style={{ ...modalButton, color: "rgba(205,170,100,0.76)" }}
+    >
+      Create free account
+    </button>
+  </CalmModal>
+)}
+{dailyOpen && (
+  <CalmModal>
+    <p style={modalEyebrow}>A new day</p>
+    <h2 style={modalTitle}>
+      {yesterdayMood
+        ? `Yesterday felt ${moodLabel(yesterdayMood)}.`
+        : "Good morning."}
+    </h2>
+    <p style={modalText}>How does your mind feel today?</p>
+
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+      {MOODS.map((mood) => (
+        <button
+          key={mood.key}
+          onClick={async () => {
+            await saveDailyMood(mood.key);
+            setTodayMood(mood.key);
+          }}
+          style={{
+            background:
+              todayMood === mood.key
+                ? "rgba(205,170,100,0.12)"
+                : "rgba(255,255,255,0.035)",
+            border: "1px solid rgba(255,255,255,0.065)",
+            borderRadius: 13,
+            padding: "12px 10px",
+            color: "rgba(225,210,188,0.78)",
+            fontSize: 12,
+            cursor: "pointer",
+          }}
+        >
+          {mood.label}
+        </button>
+      ))}
+    </div>
+
+    <p style={{ ...modalText, marginTop: 18 }}>Choose a gentle intention?</p>
+
+    {INTENTIONS.map((item) => (
+      <button
+        key={item}
+        onClick={async () => {
+          await saveDailyIntention(item);
+          setDailyIntention(item);
+          localStorage.setItem(
+            "nest_daily_checkin_date",
+            new Date().toISOString().slice(0, 10)
+          );
+          setDailyOpen(false);
+        }}
+        style={modalButton}
+      >
+        {item}
+      </button>
+    ))}
+
+    <button
+      onClick={() => {
+        localStorage.setItem(
+          "nest_daily_checkin_date",
+          new Date().toISOString().slice(0, 10)
+        );
+        setDailyOpen(false);
+      }}
+      style={{ ...modalButton, color: "rgba(175,158,132,0.44)" }}
+    >
+      Skip for now
+    </button>
+  </CalmModal>
+)}
       <AuthModal
         open={authOpen}
         onClose={() => setAuthOpen(false)}
