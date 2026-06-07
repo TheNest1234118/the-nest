@@ -110,7 +110,29 @@ export function WeatherLayer() {
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
-
+  useEffect(() => {
+    const unlock = () => {
+      const s = settingsRef.current;
+  
+      if (s.enabled) {
+        startAudio();
+      }
+  
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("touchstart", unlock);
+      window.removeEventListener("click", unlock);
+    };
+  
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("touchstart", unlock, { once: true });
+    window.addEventListener("click", unlock, { once: true });
+  
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("touchstart", unlock);
+      window.removeEventListener("click", unlock);
+    };
+  }, []);
   useEffect(() => {
     const onChange = (e: Event) => {
       const detail = (e as CustomEvent<WeatherSettings>).detail;
