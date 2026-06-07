@@ -51,14 +51,6 @@ function clamp01(v: number) {
 function isMobileAudioDevice() {
   return /iphone|ipad|ipod|android/i.test(navigator.userAgent);
 }
-
-function safeVolume(v: number) {
-  const x = clamp01(v);
-
-  if (!isMobileAudioDevice()) return x;
-
-  return x * 0.35;
-}
 function makeLoop(src: string) {
   const audio = new Audio(src);
   audio.loop = true;
@@ -71,24 +63,27 @@ function makeLoop(src: string) {
 function setVolume(audio: HTMLAudioElement | null, volume: number) {
   if (!audio) return;
 
-  const raw = clamp01(volume);
-  const output = safeVolume(raw);
+  const v = clamp01(volume);
 
-  if (raw <= 0.005 || output <= 0.001) {
+  if (v <= 0.001) {
     audio.volume = 0;
     audio.pause();
     audio.currentTime = 0;
     return;
   }
 
-  audio.volume = output;
+  if (!isMobileAudioDevice()) {
+    audio.volume = v;
+  } else {
+    audio.volume = 1;
+  }
 
   if (audio.paused) {
     audio.play().catch(() => {});
   }
 }
-function fadeTowards(current: number, target: number, speed = 0.22) {
-  if (target === 0 && current < 0.03) return 0;
+
+function fadeTowards(current: number, target: number, speed = 0.08) {
   return current + (target - current) * speed;
 }
 
@@ -100,13 +95,18 @@ export function WeatherLayer() {
   const settingsRef = useRef(settings);
 
   const audioRef = useRef<{
+    
     rainLight: HTMLAudioElement;
     rainMedium: HTMLAudioElement;
     rainHeavy: HTMLAudioElement;
     wind: HTMLAudioElement;
     thunder: HTMLAudioElement;
   } | null>(null);
-
+  const webAudioRef = useRef<{
+    ctx: AudioContext;
+    gains: Record<string, GainNode>;
+    connected: WeakSet<HTMLAudioElement>;
+  } | null>(null);
   const audioUnlockedRef = useRef(false);
   const rafAudioRef = useRef<number | null>(null);
   const currentVolumesRef = useRef({
@@ -120,29 +120,7 @@ export function WeatherLayer() {
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
-  useEffect(() => {
-    const unlock = () => {
-      const s = settingsRef.current;
-  
-      if (s.enabled) {
-        startAudio();
-      }
-  
-      window.removeEventListener("pointerdown", unlock);
-      window.removeEventListener("touchstart", unlock);
-      window.removeEventListener("click", unlock);
-    };
-  
-    window.addEventListener("pointerdown", unlock, { once: true });
-    window.addEventListener("touchstart", unlock, { once: true });
-    window.addEventListener("click", unlock, { once: true });
-  
-    return () => {
-      window.removeEventListener("pointerdown", unlock);
-      window.removeEventListener("touchstart", unlock);
-      window.removeEventListener("click", unlock);
-    };
-  }, []);
+
   useEffect(() => {
     const onChange = (e: Event) => {
       const detail = (e as CustomEvent<WeatherSettings>).detail;
@@ -172,12 +150,51 @@ export function WeatherLayer() {
 
     return audioRef.current;
   };
-
+  const ensureWebAudio = () => {
+    if (!isMobileAudioDevice()) return null;
+  
+    const audio = ensureAudio();
+  
+    if (!webAudioRef.current) {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioCtx();
+  
+      webAudioRef.current = {
+        ctx,
+        gains: {},
+        connected: new WeakSet<HTMLAudioElement>(),
+      };
+    }
+  
+    const wa = webAudioRef.current;
+  
+    Object.entries(audio).forEach(([key, element]) => {
+      if (wa.connected.has(element)) return;
+  
+      const source = wa.ctx.createMediaElementSource(element);
+      const gain = wa.ctx.createGain();
+  
+      gain.gain.value = 0;
+      source.connect(gain);
+      gain.connect(wa.ctx.destination);
+  
+      wa.gains[key] = gain;
+      wa.connected.add(element);
+    });
+  
+    return wa;
+  };
   const startAudio = () => {
     ensureAudio();
-    audioUnlockedRef.current = true;
   
+    if (isMobileAudioDevice()) {
+      const wa = ensureWebAudio();
+      wa?.ctx.resume().catch(() => {});
+    }
+  
+    audioUnlockedRef.current = true;
   };
+
   const stopAudio = () => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -199,29 +216,8 @@ export function WeatherLayer() {
   };
 
   useEffect(() => {
-    if (settings.enabled) {
-      startAudio();
-      return;
-    }
-  
-    const audio = audioRef.current;
-    if (!audio) return;
-  
-    currentVolumesRef.current = {
-      rainLight: 0,
-      rainMedium: 0,
-      rainHeavy: 0,
-      wind: 0,
-      thunder: 0,
-    };
-  
-    Object.values(audio).forEach((a) => {
-      a.volume = 0;
-      a.pause();
-      a.currentTime = 0;
-    });
-  
-    audioUnlockedRef.current = false;
+    if (settings.enabled) startAudio();
+    else stopAudio();
   }, [settings.enabled]);
 
   useEffect(() => {
@@ -229,49 +225,34 @@ export function WeatherLayer() {
       const audio = audioRef.current;
       const s = settingsRef.current;
 
-      if (audio && audioUnlockedRef.current) {
-        const rain = s.enabled ? clamp01(s.rain) : 0;
-        const wind = s.enabled ? clamp01(s.wind) : 0;
-        const thunder = s.enabled ? clamp01(s.thunder) : 0;
-        const storm = s.enabled ? clamp01(s.storm) : 0;
+      if (audio && s.enabled && audioUnlockedRef.current) {
+        const rain = clamp01(s.rain);
+        const wind = clamp01(s.wind);
+        const thunder = clamp01(s.thunder);
+        const storm = clamp01(s.storm);
 
         let targetRainLight = 0;
         let targetRainMedium = 0;
         let targetRainHeavy = 0;
 
-        const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent);
+        if (rain > 0) {
+          if (rain <= 0.5) {
+            const t = rain / 0.5;
+            targetRainLight = (1 - t) * Math.min(1, rain * 2.2);
+            targetRainMedium = t * Math.min(1, rain * 1.55);
+          } else {
+            const t = (rain - 0.5) / 0.5;
+            targetRainMedium = (1 - t) * 0.82;
+            targetRainHeavy = t;
+          }
+        }
 
-if (rain > 0) {
-  if (isMobile) {
-    if (rain < 0.34) {
-      targetRainLight = rain;
-    } else if (rain < 0.67) {
-      targetRainMedium = rain;
-    } else {
-      targetRainHeavy = rain;
-    }
-  } else {
-    if (rain <= 0.5) {
-      const t = rain / 0.5;
-      targetRainLight = (1 - t) * Math.min(1, rain * 2.2);
-      targetRainMedium = t * Math.min(1, rain * 1.55);
-    } else {
-      const t = (rain - 0.5) / 0.5;
-      targetRainMedium = (1 - t) * 0.82;
-      targetRainHeavy = t;
-    }
-  }
-}
+        targetRainLight *= 0.46;
+        targetRainMedium *= 0.52;
+        targetRainHeavy *= 0.58;
 
-        targetRainLight *= 0.75;
-        targetRainMedium *= 0.9;
-        targetRainHeavy *= 1.0;
-        const mobileScale = /iphone|ipad|ipod|android/i.test(navigator.userAgent)
-        ? 0.45
-        : 1;
-      
-        const targetWind = (wind * 0.75 + storm * 0.45) * mobileScale;
-        const targetThunder = (thunder * 0.75 + storm * 0.35) * mobileScale;
+        const targetWind = wind * 0.44 + storm * 0.16;
+        const targetThunder = thunder * 0.48 + storm * 0.16;
 
         const cv = currentVolumesRef.current;
         cv.rainLight = fadeTowards(cv.rainLight, targetRainLight);
@@ -285,21 +266,17 @@ if (rain > 0) {
         setVolume(audio.rainHeavy, cv.rainHeavy);
         setVolume(audio.wind, cv.wind);
         setVolume(audio.thunder, cv.thunder);
-        const almostSilent =
-  cv.rainLight < 0.003 &&
-  cv.rainMedium < 0.003 &&
-  cv.rainHeavy < 0.003 &&
-  cv.wind < 0.003 &&
-  cv.thunder < 0.003;
-
-if (!s.enabled && almostSilent) {
-  Object.values(audio).forEach((a) => {
-    a.pause();
-    a.currentTime = 0;
-  });
-
-  audioUnlockedRef.current = false;
-}
+        if (isMobileAudioDevice()) {
+          const wa = ensureWebAudio();
+        
+          if (wa) {
+            wa.gains.rainLight.gain.value = cv.rainLight;
+            wa.gains.rainMedium.gain.value = cv.rainMedium;
+            wa.gains.rainHeavy.gain.value = cv.rainHeavy;
+            wa.gains.wind.gain.value = cv.wind;
+            wa.gains.thunder.gain.value = cv.thunder;
+          }
+        }
       }
 
       rafAudioRef.current = requestAnimationFrame(tick);
