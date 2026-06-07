@@ -57,8 +57,7 @@ function safeVolume(v: number) {
 
   if (!isMobileAudioDevice()) return x;
 
-  // Mobile: viel sanfter, damit 1% nicht direkt laut wirkt
-  return Math.pow(x, 2.2) * 0.55;
+  return x * 0.35;
 }
 function makeLoop(src: string) {
   const audio = new Audio(src);
@@ -75,7 +74,7 @@ function setVolume(audio: HTMLAudioElement | null, volume: number) {
   const raw = clamp01(volume);
   const output = safeVolume(raw);
 
-  if (raw <= 0.02 || output <= 0.001) {
+  if (raw <= 0.005 || output <= 0.001) {
     audio.volume = 0;
     audio.pause();
     audio.currentTime = 0;
@@ -268,11 +267,11 @@ if (rain > 0) {
         targetRainMedium *= 0.9;
         targetRainHeavy *= 1.0;
         const mobileScale = /iphone|ipad|ipod|android/i.test(navigator.userAgent)
-        ? 0.18
+        ? 0.45
         : 1;
       
-      const targetWind = (wind * 0.75 + storm * 0.2) * mobileScale;
-      const targetThunder = thunder * 0.75 * mobileScale;
+        const targetWind = (wind * 0.75 + storm * 0.45) * mobileScale;
+        const targetThunder = (thunder * 0.75 + storm * 0.35) * mobileScale;
 
         const cv = currentVolumesRef.current;
         cv.rainLight = fadeTowards(cv.rainLight, targetRainLight);
