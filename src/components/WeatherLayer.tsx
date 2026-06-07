@@ -48,7 +48,18 @@ export function writeWeatherSettings(settings: WeatherSettings) {
 function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));
 }
+function isMobileAudioDevice() {
+  return /iphone|ipad|ipod|android/i.test(navigator.userAgent);
+}
 
+function safeVolume(v: number) {
+  const x = clamp01(v);
+
+  if (!isMobileAudioDevice()) return x;
+
+  // Mobile: viel sanfter, damit 1% nicht direkt laut wirkt
+  return Math.pow(x, 2.2) * 0.55;
+}
 function makeLoop(src: string) {
   const audio = new Audio(src);
   audio.loop = true;
@@ -62,7 +73,7 @@ function setVolume(audio: HTMLAudioElement | null, volume: number) {
   if (!audio) return;
 
   const v = clamp01(volume);
-  audio.volume = v;
+  audio.volume = safeVolume(v);
 
   if (v <= 0.001) {
     if (!audio.paused) {
@@ -166,6 +177,7 @@ export function WeatherLayer() {
   const startAudio = () => {
     ensureAudio();
     audioUnlockedRef.current = true;
+  
   };
   const stopAudio = () => {
     const audio = audioRef.current;
