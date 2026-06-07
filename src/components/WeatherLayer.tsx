@@ -73,7 +73,17 @@ function setVolume(audio: HTMLAudioElement | null, volume: number) {
   if (!audio) return;
 
   const v = clamp01(volume);
-  audio.volume = safeVolume(v);
+  if (v <= 0.02) {
+    audio.pause();
+    audio.currentTime = 0;
+    return;
+  }
+  
+  if (audio.paused) {
+    audio.play().catch(() => {});
+  }
+  
+  audio.volume = v;
 
   if (v <= 0.001) {
     if (!audio.paused) {
@@ -240,23 +250,35 @@ export function WeatherLayer() {
         let targetRainMedium = 0;
         let targetRainHeavy = 0;
 
-        if (rain > 0) {
-          if (rain <= 0.5) {
-            const t = rain / 0.5;
-            targetRainLight = (1 - t) * Math.min(1, rain * 2.2);
-            targetRainMedium = t * Math.min(1, rain * 1.55);
-          } else {
-            const t = (rain - 0.5) / 0.5;
-            targetRainMedium = (1 - t) * 0.82;
-            targetRainHeavy = t;
-          }
-        }
+        const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent);
+
+if (rain > 0) {
+  if (isMobile) {
+    if (rain < 0.34) {
+      targetRainLight = rain;
+    } else if (rain < 0.67) {
+      targetRainMedium = rain;
+    } else {
+      targetRainHeavy = rain;
+    }
+  } else {
+    if (rain <= 0.5) {
+      const t = rain / 0.5;
+      targetRainLight = (1 - t) * Math.min(1, rain * 2.2);
+      targetRainMedium = t * Math.min(1, rain * 1.55);
+    } else {
+      const t = (rain - 0.5) / 0.5;
+      targetRainMedium = (1 - t) * 0.82;
+      targetRainHeavy = t;
+    }
+  }
+}
 
         targetRainLight *= 0.75;
         targetRainMedium *= 0.9;
         targetRainHeavy *= 1.0;
         const targetWind = wind * 0.75 + storm * 0.2;
-        const targetThunder = thunder * 0.75 + storm * 0.2;
+        const targetThunder = thunder * 0.75;
 
         const cv = currentVolumesRef.current;
         cv.rainLight = fadeTowards(cv.rainLight, targetRainLight);
