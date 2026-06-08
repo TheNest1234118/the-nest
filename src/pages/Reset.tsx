@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Mic, MicOff } from "lucide-react";
+import { markPwaEngagement } from "@/lib/pwa";
 import {
   loadUserSettings,
   saveVoiceIntensity,
@@ -361,7 +362,7 @@ export function Reset() {
       console.error("Could not save last session", err);
     });
   }, [done, selected]);
-
+  markPwaEngagement("completed_reflection_session");
   useEffect(() => {
     const requestedKey = localStorage.getItem("nest_reset_state");
     if (!requestedKey) return;

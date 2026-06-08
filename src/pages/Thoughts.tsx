@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { loadThoughts, saveThought } from "@/lib/userData";
 import { ChevronLeft } from "lucide-react";
+import { markPwaEngagement } from "@/lib/pwa";
 
 interface Thought {
   id: string;
@@ -27,15 +28,11 @@ interface Thought {
   const handleSave = async () => {
     if (!newThought.trim()) return;
   
-    const saved = await saveThought(
-      newThought.trim()
-    );
+    const saved = await saveThought(newThought.trim());
   
     if (saved) {
-      setThoughts([
-        saved,
-        ...thoughts
-      ]);
+      setThoughts([saved, ...thoughts]);
+      markPwaEngagement("saved_thought");
     }
   
     setNewThought("");

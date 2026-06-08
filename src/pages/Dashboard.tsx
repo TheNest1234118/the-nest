@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
+import { registerVisitForPwaPrompt } from "@/lib/pwa";
 import { AuthModal } from "@/components/AuthModal";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
@@ -218,6 +219,7 @@ export function Dashboard() {
   };
 useEffect(() => {
   async function init() {
+    registerVisitForPwaPrompt();
     const today = new Date().toISOString().slice(0, 10);
 
     const { data } = await supabase.auth.getUser();

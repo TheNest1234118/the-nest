@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { Landing } from "@/pages/Landing";
+import { PwaInstallFlow } from "@/components/PwaInstallFlow";
 import { Onboarding } from "@/pages/Onboarding";
 import { Dashboard } from "@/pages/Dashboard";
 import { Nest } from "@/pages/Nest";
@@ -68,6 +69,7 @@ function App() {
   <AppLayers />
   <Router />
   <MiniPlayer />
+  <PwaInstallFlow />
 </WouterRouter>
 
     <Toaster />
