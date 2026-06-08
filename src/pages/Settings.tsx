@@ -496,5 +496,31 @@ function SettingRow({ label, description, value, destructive, danger, last, onTa
         <Trash2 size={13} strokeWidth={1.4} color={danger ? "rgba(215,100,80,0.45)" : "rgba(175,155,128,0.28)"} style={{ flexShrink: 0 }} />
       )}
     </button>
+    
   );
 }
+<button
+  onClick={async () => {
+    if (Notification.permission !== "granted") {
+      await Notification.requestPermission();
+    }
+
+    setTimeout(() => {
+      new Notification("The Nest", {
+        body: "This is a test notification.",
+        icon: "/icons/icon-192.png",
+      });
+    }, 10000);
+  }}
+  style={{
+    width: "100%",
+    padding: "14px",
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(255,255,255,0.03)",
+    color: "rgba(225,210,188,0.82)",
+    cursor: "pointer",
+  }}
+>
+  Test notification (10s)
+</button>
