@@ -148,10 +148,15 @@ export function PwaInstallFlow() {
               Use your browser menu to add The Nest to your device or desktop.
             </p>
           )}
-
-          <button style={buttonQuiet} onClick={() => setShowGuide(false)}>
-            Done
-          </button>
+<button
+  style={buttonQuiet}
+  onClick={() => {
+    setShowGuide(false);
+    window.location.reload();
+  }}
+>
+  Done
+</button>
         </NestModal>
       )}
 
@@ -169,7 +174,21 @@ export function PwaInstallFlow() {
           <button style={buttonPrimary} onClick={enableNotifications}>
             Enable notifications
           </button>
-
+          <button
+  style={buttonQuiet}
+  onClick={() => {
+    window.setTimeout(() => {
+      if (Notification.permission === "granted") {
+        new Notification("The Nest", {
+          body: "A gentle reminder: your Nest is here if you need it.",
+          icon: "/icons/icon-192.png",
+        });
+      }
+    }, 10000);
+  }}
+>
+  Send test in 10 seconds
+</button>
           <button
             style={buttonQuiet}
             onClick={() => setShowNotificationAsk(false)}
