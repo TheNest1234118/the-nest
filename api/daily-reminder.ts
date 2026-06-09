@@ -3,10 +3,6 @@ export default async function handler(req: any, res: any) {
     const appId = process.env.ONESIGNAL_APP_ID;
     const apiKey = process.env.ONESIGNAL_REST_API_KEY;
 
-    console.log("API HIT");
-    console.log("Has appId:", !!appId);
-    console.log("Has apiKey:", !!apiKey);
-
     if (!appId || !apiKey) {
       return res.status(500).json({
         ok: false,
@@ -16,15 +12,15 @@ export default async function handler(req: any, res: any) {
       });
     }
 
-    const response = await fetch("https://onesignal.com/api/v1/notifications", {
+    const response = await fetch("https://api.onesignal.com/notifications", {
       method: "POST",
       headers: {
-        Authorization: `Basic ${apiKey}`,
+        Authorization: `Key ${apiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
         app_id: appId,
-        included_segments: ["Subscribed Users"],
+        included_segments: ["Total Subscriptions"],
         headings: { en: "The Nest" },
         contents: { en: "How are you feeling today?" },
         url: "https://the-nest-dun.vercel.app/home"
