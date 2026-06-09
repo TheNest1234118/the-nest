@@ -1,3 +1,4 @@
+import React from "react";
 import { Rituals } from "@/pages/Rituals";
 import { RitualPlayer } from "@/pages/RitualPlayer";
 import { Analytics } from "@vercel/analytics/react";
@@ -5,6 +6,8 @@ import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { MoodLog } from "@/pages/MoodLog";
+import { trackNotificationOpenFromUrl } from "@/lib/notifications";
 import NotFound from "@/pages/not-found";
 import { Landing } from "@/pages/Landing";
 import { PwaInstallFlow } from "@/components/PwaInstallFlow";
@@ -30,9 +33,10 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/rituals" component={Rituals} />
-<Route path="/rituals/:id" component={RitualPlayer} />
+      <Route path="/rituals/:id" component={RitualPlayer} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/home" component={Dashboard} />
+      <Route path="/mood-log" component={MoodLog} />
       <Route path="/nest" component={Nest} />
       <Route path="/thoughts" component={Thoughts} />
       <Route path="/memos" component={Memos} />
@@ -44,6 +48,7 @@ function Router() {
     </Switch>
   );
 }
+
 function AppLayers() {
   const [location] = useLocation();
 
@@ -59,23 +64,28 @@ function AppLayers() {
     </>
   );
 }
+
 function App() {
+  React.useEffect(() => {
+    trackNotificationOpenFromUrl();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-      <AudioProvider>
-  <AtmosphereProvider>
-  <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-  <AppLayers />
-  <Router />
-  <MiniPlayer />
-  <PwaInstallFlow />
-</WouterRouter>
+        <AudioProvider>
+          <AtmosphereProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <AppLayers />
+              <Router />
+              <MiniPlayer />
+              <PwaInstallFlow />
+            </WouterRouter>
 
-    <Toaster />
-    <Analytics />
-  </AtmosphereProvider>
-</AudioProvider>
+            <Toaster />
+            <Analytics />
+          </AtmosphereProvider>
+        </AudioProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

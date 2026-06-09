@@ -785,6 +785,32 @@ const streak = calculateStreak(
           gap: 14,
         }}
       >
+        <Link href="/mood-log">
+  <div style={{
+    background: "rgba(255,255,255,0.024)",
+    border: "1px solid rgba(255,255,255,0.055)",
+    borderRadius: 18,
+    padding: "18px 18px",
+    cursor: "pointer",
+  }}>
+    <p style={{
+      fontSize: 10,
+      letterSpacing: "0.18em",
+      textTransform: "uppercase",
+      color: "rgba(205,170,100,0.40)",
+      marginBottom: 8,
+    }}>
+      Mood Log
+    </p>
+    <p style={{
+      fontSize: 13,
+      color: "rgba(220,205,182,0.68)",
+      lineHeight: 1.6,
+    }}>
+      See how your days have felt over time.
+    </p>
+  </div>
+</Link>
       <NestCard>
       <p style={eyebrow}>🌙 Your Nest</p>
       <h2 style={title}>Your nest is growing.</h2>

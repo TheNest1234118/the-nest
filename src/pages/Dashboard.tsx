@@ -283,10 +283,7 @@ const handleLogout = async () => {
 const state = localStorage.getItem("nest_state") || null;
 const dashboardMode = localStorage.getItem("nest_dashboard_mode") || null;
 
-const isQuietDashboard = dashboardMode === "quiet";
-const visibleTools = isQuietDashboard
-  ? TOOLS.filter((tool) => tool.href === "/thoughts")
-  : TOOLS;
+const visibleTools = TOOLS;
 
 const stateNote = state ? STATE_NOTES[state] ?? null : null;
 const sessionName = state ? SESSION_NAMES[state] ?? null : null;

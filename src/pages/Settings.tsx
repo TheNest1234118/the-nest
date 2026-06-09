@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "wouter";
 import OneSignal from "react-onesignal";
+import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { exportNestData } from "@/lib/exportNest";
 import { motion } from "framer-motion";
 import { ChevronLeft, Trash2, Shield } from "lucide-react";
@@ -194,7 +195,14 @@ export function Settings() {
             />
           </div>
         </motion.div>
-
+        <motion.div
+  initial={{ opacity: 0, y: 8 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.16, duration: 0.6 }}
+>
+  <SectionLabel>Notifications</SectionLabel>
+  <NotificationPreferences flash={flash} />
+</motion.div>
         {/* Data section */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -214,50 +222,6 @@ export function Settings() {
   label="Download my Nest"
   description="Export thoughts, memos, anchors, tags and sessions"
   onTap={() => exportNestData().then(() => flash("Backup downloaded"))}
-/>
-<SettingRow
-  label="Test notification"
-  description="Sends a test reminder after 10 seconds"
-  onTap={async () => {
-    if (!("Notification" in window)) {
-      flash("Notifications are not supported here");
-      return;
-    }
-
-    if (Notification.permission !== "granted") {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        flash("Notifications not allowed");
-        return;
-      }
-    }
-
-    flash("Test notification in 10 seconds");
-
-    setTimeout(() => {
-      new Notification("The Nest", {
-        body: "This is a test notification.",
-        icon: "/icons/icon-192.png",
-      });
-    }, 10000);
-  }}
-/>
-<SettingRow
-  label="Enable gentle reminders"
-  description="Receive occasional reminders from The Nest"
-  onTap={async () => {
-    await OneSignal.Notifications.requestPermission();
-  }}
-/><SettingRow
-  label="Test push setup"
-  description="Check if notifications are connected"
-  onTap={async () => {
-    const id = await OneSignal.User.PushSubscription.id;
-
-    console.log("Player ID:", id);
-
-    flash(id ? "Connected to OneSignal" : "Not connected");
-  }}
 />
             <SettingRow
               label="Clear session history"

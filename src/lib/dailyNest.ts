@@ -103,3 +103,19 @@ export async function completeDailyIntention() {
     .eq("user_id", user.id)
     .eq("intention_date", today);
 }
+export async function loadMoodLog() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("user_daily_mood")
+    .select("id, mood, mood_date, created_at")
+    .eq("user_id", user.id)
+    .order("mood_date", { ascending: false });
+
+  if (error) throw error;
+  return data ?? [];
+}

@@ -5,8 +5,8 @@ import { ChevronLeft } from "lucide-react";
 import { loadRituals, type Ritual } from "@/lib/rituals";
 
 export function RitualPlayer() {
-  const [, params] = useRoute("/rituals/:id");
-  const id = params?.id;
+  const [, params] = useRoute<{ id: string }>("/rituals/:id");
+  const id = params?.id ?? "";
 
   const [ritual, setRitual] = useState<Ritual | null>(null);
   const [started, setStarted] = useState(false);

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
+import { markThoughtSavedForNotifications } from "@/lib/notifications";
 import { motion } from "framer-motion";
 import { loadThoughts, saveThought } from "@/lib/userData";
 import { ChevronLeft } from "lucide-react";
@@ -33,8 +34,8 @@ interface Thought {
     if (saved) {
       setThoughts([saved, ...thoughts]);
       markPwaEngagement("saved_thought");
+      markThoughtSavedForNotifications();
     }
-  
     setNewThought("");
   };
   const visibleThoughts = thoughts.filter((thought) =>

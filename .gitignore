@@ -1,14 +1,8 @@
+node_modules/
+dist/public/audio/
+public/audio/weather/
+src/components/public/audio/weather/
+*.mp3
 
-public/audio/weather/*.mp3
-
-public/audio/weather/*.mp3
-dist/public/audio/weather/*.mp3
-src/components/public/audio/weather/*.mp3
-
-public/audio/weather/*.mp3
-dist/public/audio/weather/*.mp3
-src/components/public/audio/weather/*.mp3
-
-public/audio/weather/*.mp3
-dist/public/audio/weather/*.mp3
-src/components/public/audio/weather/*.mp3
+.vercel
+.env*
