@@ -1,17 +1,13 @@
 export default async function handler(req: any, res: any) {
-  try {
-    const appId = process.env.ONESIGNAL_APP_ID;
-    const apiKey = process.env.ONESIGNAL_REST_API_KEY;
+  const key = process.env.ONESIGNAL_REST_API_KEY || "";
 
-    if (!appId || !apiKey) {
-      return res.status(500).json({
-        ok: false,
-        error: "Missing OneSignal env vars",
-        hasAppId: !!appId,
-        hasApiKey: !!apiKey
-      });
-    }
-
+  return res.status(200).json({
+    hasKey: !!key,
+    keyStart: key.substring(0, 15),
+    keyLength: key.length,
+    appId: process.env.ONESIGNAL_APP_ID
+  });
+}
     const response = await fetch("https://api.onesignal.com/notifications", {
       method: "POST",
       headers: {
