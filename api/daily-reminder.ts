@@ -32,7 +32,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       delayed_option: "timezone",
       delivery_time_of_day: "21:00",
-      throttle_rate_per_minute: 0
     })
   });
 
