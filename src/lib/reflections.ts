@@ -88,7 +88,14 @@ export async function generateReflection(type: ReflectionType) {
       body: JSON.stringify({ type }),
     });
   
-    const data = await response.json();
+    const raw = await response.text();
+  
+    let data: any;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      throw new Error(raw.slice(0, 300));
+    }
   
     if (!response.ok) {
       throw new Error(data.error || "Could not generate reflection.");
