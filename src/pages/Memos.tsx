@@ -5,6 +5,7 @@ import {
   loadMemos,
   saveMemo,
   deleteMemoFromSupabase,
+  transcribeMemo,
   type SupabaseMemo,
 } from "@/lib/memos";
 import { ChevronLeft, Mic, Square, Play, Pause, Trash2 } from "lucide-react";
@@ -116,33 +117,17 @@ recorder.onstop = async () => {
       Math.round((Date.now() - startTimeRef.current) / 1000)
     );
 
-    const type =
-      recorder.mimeType ||
-      mimeType ||
-      audioChunksRef.current[0]?.type ||
-      "audio/mp4";
+    // ...
 
-    const blob = new Blob(audioChunksRef.current, { type });
-
-    const saved = await saveMemo(
-      blob,
-      duration,
-      type,
-      memoTitle.trim() || "Voice capsule"
-    );
-
-    if (saved) {
-      setMemos((prev) => [saved as Memo, ...prev]);
-    }
+    audioChunksRef.current = [];
+    setMemoTitle("");
+    setRecordingTime(0);
+    setIsRecording(false);
   } catch (err) {
     console.error("Could not save memo", err);
-    setError("Could not save this memo. Try a shorter recording or check your connection.");
+    setError("Could not save memo.");
+    setIsRecording(false);
   }
-
-  audioChunksRef.current = [];
-  setMemoTitle("");
-  setRecordingTime(0);
-  setIsRecording(false);
 };
       recorder.onerror = () => {
         setError("Recording failed. Please try again.");

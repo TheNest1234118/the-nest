@@ -7,6 +7,7 @@ export interface SupabaseMemo {
   mime_type: string;
   duration: number;
   created_at: string;
+  transcript_text?: string | null;
 }
 
 export async function loadMemos() {
@@ -76,4 +77,30 @@ export async function deleteMemoFromSupabase(id: string) {
     .eq("id", id);
 
   if (error) throw error;
+}
+export async function transcribeMemo(memoId: string) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error("Please log in first.");
+  }
+
+  const response = await fetch("/api/transcribe-memo", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ memoId }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Could not transcribe memo.");
+  }
+
+  return data.memo;
 }

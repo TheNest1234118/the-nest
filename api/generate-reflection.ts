@@ -79,7 +79,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         error: "Please allow AI reflections first.",
       });
     }
-
+    const { data: memos, error: memosError } = await supabase
+    .from("memos")
+    .select("title, transcript_text, created_at")
+    .eq("user_id", user.id)
+    .gte("created_at", period.startIso)
+    .lte("created_at", period.endIso)
+    .not("transcript_text", "is", null)
+    .order("created_at", { ascending: true });
+  
+  if (memosError) throw memosError;
     const { data: existing } = await supabase
       .from("reflections")
       .select("*")
@@ -103,9 +112,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (thoughtsError) throw thoughtsError;
 
-    const entries = (thoughts ?? []).map(
-      (t) => `[thought | ${t.created_at}]\n${t.text}`
-    );
+    const entries = [
+        ...(thoughts ?? []).map(
+          (t) => `[thought | ${t.created_at}]\n${t.text}`
+        ),
+        ...(memos ?? []).map(
+          (m) =>
+            `[voice memo transcript | ${m.created_at} | ${
+              m.title || "Voice capsule"
+            }]\n${m.transcript_text}`
+        ),
+      ];
 
     if (entries.length < 2) {
       return res.status(400).json({
