@@ -117,8 +117,29 @@ recorder.onstop = async () => {
       Math.round((Date.now() - startTimeRef.current) / 1000)
     );
 
-    // ...
+    // 1. Blob aus Chunks bauen
+    const blob = new Blob(audioChunksRef.current, {
+      type: recorder.mimeType || "audio/webm",
+    });
 
+    // 2. optional: Titel fallback
+    const finalTitle =
+      memoTitle.trim().length > 0 ? memoTitle : "Voice capsule";
+
+    // 3. SPEICHERN (Supabase + Storage)
+    const saved = await saveMemo(
+      blob,
+      duration,
+      recorder.mimeType || "audio/webm",
+      finalTitle
+    );
+
+    // 4. UI updaten
+    if (saved) {
+      setMemos((prev) => [saved, ...prev]);
+    }
+
+    // 5. cleanup
     audioChunksRef.current = [];
     setMemoTitle("");
     setRecordingTime(0);
@@ -129,12 +150,6 @@ recorder.onstop = async () => {
     setIsRecording(false);
   }
 };
-      recorder.onerror = () => {
-        setError("Recording failed. Please try again.");
-        stream.getTracks().forEach((t) => t.stop());
-        setIsRecording(false);
-      };
-
       recorder.start();
 
       setIsRecording(true);
