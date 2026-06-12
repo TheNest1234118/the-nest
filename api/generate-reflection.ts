@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
+import ws from "ws";
 
 type ReflectionType = "weekly" | "monthly";
 
@@ -34,9 +35,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const supabase = createClient(
-      process.env.VITE_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+        process.env.VITE_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+          },
+          realtime: {
+            transport: ws as any,
+          },
+        }
+      );
 
     const token = req.headers.authorization?.replace("Bearer ", "");
     if (!token) return res.status(401).json({ ok: false, error: "Missing login token" });
