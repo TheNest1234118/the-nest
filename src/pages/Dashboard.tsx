@@ -18,6 +18,7 @@ import {
   CircleDot,
   Anchor,
   Sparkles,
+  BookOpen,
   Settings,
   ChevronRight,
   ArrowRight,
@@ -85,6 +86,7 @@ function getGreeting() {
 const TOOLS = [
   { href: "/thoughts", icon: Feather,    label: "Thoughts",      desc: "Put it down. Leave it here." },
   { href: "/memos",    icon: Mic,        label: "Capsules",       desc: "Voice note before you forget" },
+  { href: "/reflections", icon: BookOpen, label: "Reflections", desc: "See what keeps returning." },
   { href: "/rituals", icon: Sparkles, label: "Rituals", desc: "Your own way down." },
   { href: "/reset",    icon: CircleDot,  label: "Reality Reset",  desc: "Come down from the noise" },
   { href: "/anchors",  icon: Anchor,     label: "Anchors",        desc: "Real things. This room. Right now." },

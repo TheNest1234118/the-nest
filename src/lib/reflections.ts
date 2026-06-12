@@ -70,3 +70,29 @@ export async function loadReflections() {
 
   return (data ?? []) as Reflection[];
 }
+export async function generateReflection(type: ReflectionType) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+  
+    if (!session?.access_token) {
+      throw new Error("Please log in first.");
+    }
+  
+    const response = await fetch("/api/generate-reflection", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ type }),
+    });
+  
+    const data = await response.json();
+  
+    if (!response.ok) {
+      throw new Error(data.error || "Could not generate reflection.");
+    }
+  
+    return data.reflection as Reflection;
+  }

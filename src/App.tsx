@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { Reflections } from "@/pages/Reflections";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MoodLog } from "@/pages/MoodLog";
 import { trackNotificationOpenFromUrl } from "@/lib/notifications";
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/home" component={Dashboard} />
       <Route path="/mood-log" component={MoodLog} />
       <Route path="/nest" component={Nest} />
+      <Route path="/reflections" component={Reflections} />
       <Route path="/thoughts" component={Thoughts} />
       <Route path="/memos" component={Memos} />
       <Route path="/reset" component={Reset} />
