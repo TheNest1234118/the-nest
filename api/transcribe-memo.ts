@@ -55,19 +55,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ ok: false, error: "Memo not found" });
     }
 
-    const audioResponse = await fetch(memo.audio_url);
+    /**
+     * ✅ STABLE FIX: kein fetch(publicUrl) mehr
+     */
 
-    if (!audioResponse.ok) {
+    const url = new URL(memo.audio_url);
+    const parts = url.pathname.split("/");
+
+    const bucketIndex = parts.findIndex((p) => p === "memos");
+    const filePath = parts.slice(bucketIndex + 1).join("/");
+
+    const { data: file, error: downloadError } = await supabase.storage
+      .from("memos")
+      .download(filePath);
+
+    if (downloadError || !file) {
       return res.status(500).json({
         ok: false,
-        error: "Could not fetch audio file",
+        error: "Could not download audio file",
       });
     }
 
-    const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
-    const base64Audio = audioBuffer.toString("base64");
+    const arrayBuffer = await file.arrayBuffer();
+
+    if (!arrayBuffer.byteLength) {
+      return res.status(500).json({
+        ok: false,
+        error: "Audio file is empty",
+      });
+    }
+
+    const base64Audio = Buffer.from(arrayBuffer).toString("base64");
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+
     const model = genAI.getGenerativeModel({
       model: "gemini-2.0-flash",
     });

@@ -50,22 +50,25 @@ export async function saveMemo(blob: Blob, duration: number, mimeType: string, t
 
   if (upload.error) throw upload.error;
 
-  const { data: publicData } = supabase.storage
-    .from("memos")
-    .getPublicUrl(path);
+  const { data: signed, error: signedError } = await supabase.storage
+  .from("memos")
+  .createSignedUrl(path, 60 * 60 * 24); // 24h gültig
 
-  const { data, error } = await supabase
-    .from("memos")
-    .insert({
-      user_id: user.id,
-      title: title || "Voice capsule",
-      audio_url: publicData.publicUrl,
-      mime_type: mimeType,
-      duration,
-    })
-    .select()
-    .single();
+if (signedError) throw signedError;
 
+const audioUrl = signed.signedUrl;
+
+const { data, error } = await supabase
+  .from("memos")
+  .insert({
+    user_id: user.id,
+    title: title || "Voice capsule",
+    audio_url: audioUrl,
+    mime_type: mimeType,
+    duration,
+  })
+  .select()
+  .single();
   if (error) throw error;
   return data;
 }
