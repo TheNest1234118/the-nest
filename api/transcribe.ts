@@ -61,14 +61,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 console.log("audio_url:", memo.audio_url);
 console.log("buffer size:", arrayBuffer.byteLength);
     // 🔥 IMPORTANT: Node File korrekt bauen
-    const file = new File(
-      [Buffer.from(arrayBuffer)],
-      "audio.webm",
-      {
-        type: memo.mime_type || "audio/webm",
-      }
-    );
-    
+
+    const buffer = Buffer.from(arrayBuffer);
+
+    const file = await OpenAI.toFile(buffer, "audio.webm", {
+      type: memo.mime_type || "audio/webm",
+    });
     // OpenAI
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY!,
@@ -76,7 +74,7 @@ console.log("buffer size:", arrayBuffer.byteLength);
     
     const transcription = await openai.audio.transcriptions.create({
       model: "gpt-4o-mini-transcribe",
-      file, // ✅ jetzt korrekt
+      file,
     });
     const text = transcription.text;
 

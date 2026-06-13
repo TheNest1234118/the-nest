@@ -52,7 +52,7 @@ export async function saveMemo(blob: Blob, duration: number, mimeType: string, t
 
   const { data: signed, error: signedError } = await supabase.storage
   .from("memos")
-  .createSignedUrl(path, 60 * 60 * 24); // 24h gültig
+  .createSignedUrl(path, 60 * 60 * 24 * 7) // 24h gültig
 
 if (signedError) throw signedError;
 
@@ -105,5 +105,5 @@ export async function transcribeMemo(memoId: string) {
     throw new Error(data.error || "Could not transcribe memo.");
   }
 
-  return data.memo;
+  return data;
 }
