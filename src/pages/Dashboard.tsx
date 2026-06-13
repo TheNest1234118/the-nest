@@ -104,12 +104,12 @@ const TOOLS = [
     locked: true,
   },
   {
-    href: "#",
-    icon: CircleDot,
-    label: "Reality Reset",
-    desc: "Coming soon",
-    locked: true,
-  },
+  href: "#",
+  icon: CircleDot,
+  label: "Reality Reset",
+  desc: "Coming soon",
+  locked: true,
+},
   { href: "/anchors", icon: Anchor, label: "Anchors", desc: "Real things. This room. Right now." },
 ];
 function formatRelativeTime(time: number) {
@@ -1067,6 +1067,14 @@ const showSession = !!sessionName;
           key={mood.key}
           onClick={async () => {
             await saveDailyMood(mood.key);
+          
+            const today = new Date().toISOString().slice(0, 10);
+          
+            await supabase.from("nest_daily_activity").upsert({
+              user_id: user?.id,
+              activity_date: today,
+            });
+          
             setTodayMood(mood.key);
           }}
           style={{
@@ -1094,11 +1102,21 @@ const showSession = !!sessionName;
         key={item}
         onClick={async () => {
           await saveDailyIntention(item);
+        
+          const today = new Date().toISOString().slice(0, 10);
+        
+          await supabase.from("nest_daily_activity").upsert({
+            user_id: user?.id,
+            activity_date: today,
+          });
+        
           setDailyIntention(item);
+        
           localStorage.setItem(
             "nest_daily_checkin_date",
             new Date().toISOString().slice(0, 10)
           );
+        
           setDailyOpen(false);
         }}
         style={modalButton}
