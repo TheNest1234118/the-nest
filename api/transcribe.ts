@@ -47,26 +47,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: "Memo not found" });
     }
 
-    // --- Audio downloaden aus Supabase Storage (signed URL)
-    const audioResponse = await fetch(memo.audio_url);
+   // --- Audio downloaden aus Supabase Storage (signed URL)
+const audioResponse = await fetch(memo.audio_url);
 
-    if (!audioResponse.ok) {
-      throw new Error(`Failed to download audio: ${audioResponse.status}`);
-    }
-    
-    const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
+if (!audioResponse.ok) {
+  throw new Error(`Failed to download audio: ${audioResponse.status}`);
+}
 
-    const blob = new Blob([audioBuffer], { type: memo.mime_type });
+const arrayBuffer = await audioResponse.arrayBuffer();
+const buffer = Buffer.from(arrayBuffer);
 
-    // --- OpenAI Transcription
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY!,
-    });
+// --- OpenAI Transcription
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+});
 
-    const transcription = await openai.audio.transcriptions.create({
-      model: "gpt-4o-mini-transcribe",
-      file: blob as any,
-    });
+const transcription = await openai.audio.transcriptions.create({
+  model: "gpt-4o-mini-transcribe",
+  file: new File([buffer], "audio.webm") as any,
+});
 
     const text = transcription.text;
 
