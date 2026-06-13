@@ -599,7 +599,7 @@ const showSession = !!sessionName;
     </>
   )}
 </motion.div>
-        {lastResetSession && (
+  {/*  {lastResetSession && (
   <motion.div
     initial={{ opacity: 0, y: 8 }}
     animate={{ opacity: 1, y: 0 }}
@@ -679,7 +679,7 @@ const showSession = !!sessionName;
     </button>
   </motion.div>
 )}
-
+*/}
 {showSession && (
   <motion.div
     initial={{ opacity: 0, y: 8 }}
