@@ -58,10 +58,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     const arrayBuffer = await audioResponse.arrayBuffer();
     
-    // 🔥 WICHTIG: Blob statt File
-    const blob = new Blob([arrayBuffer], {
-      type: memo.mime_type || "audio/webm",
-    });
+    // 🔥 IMPORTANT: Node File korrekt bauen
+    const file = new File(
+      [Buffer.from(arrayBuffer)],
+      "audio.webm",
+      {
+        type: memo.mime_type || "audio/webm",
+      }
+    );
     
     // OpenAI
     const openai = new OpenAI({
@@ -70,9 +74,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     const transcription = await openai.audio.transcriptions.create({
       model: "gpt-4o-mini-transcribe",
-      file: blob as any,
+      file, // ✅ jetzt korrekt
     });
-
     const text = transcription.text;
 
     // --- In Supabase speichern
