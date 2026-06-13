@@ -92,7 +92,7 @@ const TOOLS = [
     href: "/reflections",
     icon: BookOpen,
     label: "Reflections",
-    desc: "Coming soon",
+    
     locked: false,
   },
 

@@ -49,13 +49,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // --- Audio downloaden aus Supabase Storage (signed URL)
     const audioResponse = await fetch(memo.audio_url);
-    const audioBuffer = await audioResponse.arrayBuffer();
 
-    const file = new File(
-      [audioBuffer],
-      "audio." + (memo.mime_type?.includes("mp4") ? "m4a" : "webm"),
-      { type: memo.mime_type }
-    );
+    if (!audioResponse.ok) {
+      throw new Error(`Failed to download audio: ${audioResponse.status}`);
+    }
+    
+    const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
+
+    const blob = new Blob([audioBuffer], { type: memo.mime_type });
 
     // --- OpenAI Transcription
     const openai = new OpenAI({
@@ -64,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const transcription = await openai.audio.transcriptions.create({
       model: "gpt-4o-mini-transcribe",
-      file,
+      file: blob as any,
     });
 
     const text = transcription.text;
