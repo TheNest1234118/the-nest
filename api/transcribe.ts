@@ -57,7 +57,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     const arrayBuffer = await audioResponse.arrayBuffer();
-    
+    console.log("mime_type:", memo.mime_type);
+console.log("audio_url:", memo.audio_url);
+console.log("buffer size:", arrayBuffer.byteLength);
     // 🔥 IMPORTANT: Node File korrekt bauen
     const file = new File(
       [Buffer.from(arrayBuffer)],

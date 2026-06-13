@@ -13,6 +13,7 @@ type Memo = SupabaseMemo;
 
 function getSupportedMimeType(): string {
   const types = [
+    "audio/webm;codecs=opus",
     "audio/mp4",
     "audio/aac",
     "audio/webm;codecs=opus",
@@ -90,8 +91,15 @@ const [search, setSearch] = useState("");
       streamRef.current = stream;
 
       const mimeType = getSupportedMimeType();
+
       const options: MediaRecorderOptions = {};
-      if (mimeType) options.mimeType = mimeType;
+      
+      if (mimeType && MediaRecorder.isTypeSupported(mimeType)) {
+        options.mimeType = mimeType;
+        console.log("Using mimeType:", mimeType);
+      } else {
+        console.warn("No supported mimeType found, using default");
+      }
 
       const recorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = recorder;
@@ -134,11 +142,11 @@ recorder.onstop = async () => {
       recorder.mimeType || "audio/webm",
       finalTitle
     );
-    if (saved?.id) {
-      transcribeMemo(saved.id).catch((err) => {
-        console.error("Transcription failed", err);
-      });
-    }
+if (saved?.id) {
+  transcribeMemo(saved.id).catch((err) => {
+    console.error("Transcription failed", err);
+  });
+}
     // 4. UI updaten
     if (saved) {
       setMemos((prev) => [saved, ...prev]);
