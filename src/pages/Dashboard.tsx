@@ -84,12 +84,21 @@ function getGreeting() {
 }
 
 const TOOLS = [
-  { href: "/thoughts", icon: Feather,    label: "Thoughts",      desc: "Put it down. Leave it here." },
-  { href: "/memos",    icon: Mic,        label: "Capsules",       desc: "Voice note before you forget" },
-  { href: "/reflections", icon: BookOpen, label: "Reflections", desc: "See what keeps returning." },
+  { href: "/thoughts", icon: Feather, label: "Thoughts", desc: "Put it down. Leave it here." },
+  { href: "/memos", icon: Mic, label: "Capsules", desc: "Voice note before you forget" },
+
+  // 🔒 LOCKED
+  {
+    href: "#",
+    icon: BookOpen,
+    label: "Reflections",
+    desc: "Coming soon",
+    locked: true,
+  },
+
   { href: "/rituals", icon: Sparkles, label: "Rituals", desc: "Your own way down." },
-  { href: "/reset",    icon: CircleDot,  label: "Reality Reset",  desc: "Come down from the noise" },
-  { href: "/anchors",  icon: Anchor,     label: "Anchors",        desc: "Real things. This room. Right now." },
+  { href: "/reset", icon: CircleDot, label: "Reality Reset", desc: "Come down from the noise" },
+  { href: "/anchors", icon: Anchor, label: "Anchors", desc: "Real things. This room. Right now." },
 ];
 function formatRelativeTime(time: number) {
   const diff = Date.now() - time;
@@ -868,59 +877,50 @@ const showSession = !!sessionName;
             }}
           >
             {visibleTools.map((tool, i) => (
-              <motion.div
-                key={tool.href}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.30 + i * 0.04, duration: 0.6 }}
-              >
-                <Link href={tool.href}>
-                  <div
-                    style={{
-                      background: "rgba(255, 255, 255, 0.026)",
-                      border: "1px solid rgba(255, 255, 255, 0.065)",
-                      borderRadius: 16,
-                      padding: "16px 14px",
-                      cursor: "pointer",
-                      minHeight: 90,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 7,
-                    }}
-                  >
-                    <tool.icon
-                      size={16}
-                      strokeWidth={1.4}
-                      color="rgba(205, 170, 100, 0.60)"
-                    />
-                    <div>
-                      <div
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 400,
-                          color: "rgba(225, 210, 188, 0.80)",
-                          letterSpacing: "0.01em",
-                          marginBottom: 3,
-                        }}
-                      >
-                        {tool.label}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 11,
-                          color: "rgba(175, 158, 132, 0.36)",
-                          fontWeight: 300,
-                          lineHeight: 1.4,
-                          letterSpacing: "0.01em",
-                        }}
-                      >
-                        {tool.desc}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
+  <motion.div key={tool.href}>
+    {tool.locked ? (
+      <div
+        style={{
+          background: "rgba(255,255,255,0.015)",
+          border: "1px solid rgba(255,255,255,0.04)",
+          borderRadius: 16,
+          padding: "16px 14px",
+          opacity: 0.45,
+          cursor: "not-allowed",
+          filter: "grayscale(1)",
+        }}
+      >
+        <tool.icon size={16} strokeWidth={1.4} color="rgba(200,200,200,0.3)" />
+        <div>
+          <div style={{ fontSize: 13, color: "rgba(200,200,200,0.5)" }}>
+            {tool.label} 🔒
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(200,200,200,0.3)" }}>
+            Coming soon
+          </div>
+        </div>
+      </div>
+    ) : (
+      <Link href={tool.href}>
+        <div
+          style={{
+            background: "rgba(255,255,255,0.026)",
+            border: "1px solid rgba(255,255,255,0.065)",
+            borderRadius: 16,
+            padding: "16px 14px",
+            cursor: "pointer",
+          }}
+        >
+          <tool.icon size={16} strokeWidth={1.4} />
+          <div>
+            <div style={{ fontSize: 13 }}>{tool.label}</div>
+            <div style={{ fontSize: 11 }}>{tool.desc}</div>
+          </div>
+        </div>
+      </Link>
+    )}
+  </motion.div>
+))}
           </div>
         </motion.div>
 
