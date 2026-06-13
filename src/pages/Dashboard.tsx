@@ -93,7 +93,7 @@ const TOOLS = [
     icon: BookOpen,
     label: "Reflections",
     desc: "Coming soon",
-    locked: true,
+    locked: false,
   },
 
   {

@@ -90,7 +90,7 @@ export async function transcribeMemo(memoId: string) {
     throw new Error("Please log in first.");
   }
 
-  const response = await fetch("/api/transcribe-memo", {
+  const response = await fetch("/api/transcribe", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${session.access_token}`,
