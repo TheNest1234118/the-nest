@@ -89,7 +89,7 @@ const TOOLS = [
 
   // 🔒 LOCKED
   {
-    href: "#",
+    href: "/reflections",
     icon: BookOpen,
     label: "Reflections",
     desc: "Coming soon",
