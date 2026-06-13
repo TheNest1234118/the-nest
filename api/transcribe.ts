@@ -15,11 +15,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // --- Supabase (Service Role nötig!)
-    const supabase = createClient(
-      process.env.VITE_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Missing Supabase env vars");
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
     // --- User aus Token holen
     const token = req.headers.authorization?.replace("Bearer ", "");
     if (!token) {
