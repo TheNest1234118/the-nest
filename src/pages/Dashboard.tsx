@@ -96,8 +96,20 @@ const TOOLS = [
     locked: true,
   },
 
-  { href: "/rituals", icon: Sparkles, label: "Rituals", desc: "Your own way down." },
-  { href: "/reset", icon: CircleDot, label: "Reality Reset", desc: "Come down from the noise" },
+  {
+    href: "#",
+    icon: Sparkles,
+    label: "Rituals",
+    desc: "Coming soon",
+    locked: true,
+  },
+  {
+    href: "#",
+    icon: CircleDot,
+    label: "Reality Reset",
+    desc: "Coming soon",
+    locked: true,
+  },
   { href: "/anchors", icon: Anchor, label: "Anchors", desc: "Real things. This room. Right now." },
 ];
 function formatRelativeTime(time: number) {
