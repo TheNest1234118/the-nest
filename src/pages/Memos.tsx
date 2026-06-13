@@ -125,7 +125,8 @@ recorder.onstop = async () => {
     // 2. optional: Titel fallback
     const finalTitle =
       memoTitle.trim().length > 0 ? memoTitle : "Voice capsule";
-
+      console.log("chunks:", audioChunksRef.current.length);
+      console.log("blob size:", blob.size);
     // 3. SPEICHERN (Supabase + Storage)
     const saved = await saveMemo(
       blob,
