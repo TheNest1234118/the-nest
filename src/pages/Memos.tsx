@@ -134,7 +134,11 @@ recorder.onstop = async () => {
       recorder.mimeType || "audio/webm",
       finalTitle
     );
-
+    if (saved?.id) {
+      transcribeMemo(saved.id).catch((err) => {
+        console.error("Transcription failed", err);
+      });
+    }
     // 4. UI updaten
     if (saved) {
       setMemos((prev) => [saved, ...prev]);
