@@ -109,7 +109,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .gte("created_at", period.startIso)
       .lte("created_at", period.endIso)
       .order("created_at", { ascending: true });
-
+      console.log("THOUGHTS:", thoughts?.length);
+      console.log("MEMOS:", memos?.length);
     if (thoughtsError) throw thoughtsError;
 
     const entries = [
@@ -123,7 +124,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }]\n${m.transcript_text}`
         ),
       ];
-
+      console.log("ENTRIES:", entries.length);
+      console.log(entries.slice(0, 2));
     if (entries.length < 2) {
       return res.status(400).json({
         ok: false,
@@ -171,7 +173,11 @@ ${entries.join("\n\n---\n\n")}
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const result = await model.generateContent(prompt);
+    console.log("GEMINI RAW:");
+console.log(result.response.text());
     const parsed = parseGeminiJson(result.response.text());
+    console.log("PARSED:");
+console.log(parsed);
 
     const { data: reflection, error: insertError } = await supabase
       .from("reflections")

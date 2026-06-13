@@ -77,7 +77,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const arrayBuffer = await file.arrayBuffer();
-
+    console.log("file size bytes:", arrayBuffer.byteLength);
+    console.log("mime:", memo.mime_type);
     if (!arrayBuffer.byteLength) {
       return res.status(500).json({
         ok: false,
@@ -113,7 +114,14 @@ If parts are unclear, write [unclear].
     ]);
 
     const transcript = result.response.text().trim();
-
+    console.log("=== TRANSCRIPT RAW ===");
+    console.log(transcript);
+    console.log("length:", transcript?.length);
+    console.log("UPDATING MEMO WITH:");
+console.log({
+  id: memo.id,
+  transcriptPreview: transcript?.slice(0, 100),
+});
     const { data: updated, error: updateError } = await supabase
       .from("memos")
       .update({
