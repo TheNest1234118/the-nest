@@ -23,14 +23,22 @@ interface ConfirmState {
 }
 
 export function Settings() {
-  const [voiceIntensity, setVoiceIntensity] = useState<VoiceIntensity>(readVoiceIntensity);
+  const [voiceIntensity, setVoiceIntensity] =
+    useState<VoiceIntensity>(readVoiceIntensity);
+
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [cleared, setCleared] = useState<string | null>(null);
 
+  const [openDataSecurity, setOpenDataSecurity] = useState(false);
+
   const cycleVoice = () => {
     const next: VoiceIntensity =
-      voiceIntensity === "off" ? "minimal" :
-      voiceIntensity === "minimal" ? "guided" : "off";
+      voiceIntensity === "off"
+        ? "minimal"
+        : voiceIntensity === "minimal"
+        ? "guided"
+        : "off";
+
     setVoiceIntensity(next);
     try {
       localStorage.setItem("nest_voice_intensity", next);
@@ -66,12 +74,16 @@ export function Settings() {
   };
 
   const clearCapsules = () => {
-    try { localStorage.removeItem("nest_memos"); } catch (_) {}
+    try {
+      localStorage.removeItem("nest_memos");
+    } catch (_) {}
     flash("Voice capsules removed");
   };
 
   const clearAnchors = () => {
-    try { localStorage.removeItem("nest_anchors"); } catch (_) {}
+    try {
+      localStorage.removeItem("nest_anchors");
+    } catch (_) {}
     flash("Anchors cleared");
   };
 
@@ -85,7 +97,9 @@ export function Settings() {
   };
 
   const clearThoughts = () => {
-    try { localStorage.removeItem("nest_thoughts"); } catch (_) {}
+    try {
+      localStorage.removeItem("nest_thoughts");
+    } catch (_) {}
     flash("Thoughts cleared");
   };
 
@@ -93,11 +107,15 @@ export function Settings() {
     try {
       const keep = ["nest_voice_intensity"];
       const keys: string[] = [];
+
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && k.startsWith("nest_") && !keep.includes(k)) keys.push(k);
+        if (k && k.startsWith("nest_") && !keep.includes(k)) {
+          keys.push(k);
+        }
       }
-      keys.forEach(k => localStorage.removeItem(k));
+
+      keys.forEach((k) => localStorage.removeItem(k));
     } catch (_) {}
     flash("All data cleared");
   };
@@ -159,6 +177,7 @@ export function Settings() {
               <ChevronLeft size={22} strokeWidth={1.4} />
             </button>
           </Link>
+
           <p
             style={{
               fontSize: 10,
@@ -172,13 +191,14 @@ export function Settings() {
           </p>
         </motion.div>
 
-        {/* Voice section */}
+        {/* Voice */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.12, duration: 0.6 }}
         >
           <SectionLabel>Voice</SectionLabel>
+
           <div
             style={{
               background: "rgba(255,255,255,0.024)",
@@ -195,109 +215,154 @@ export function Settings() {
             />
           </div>
         </motion.div>
+
+        {/* Notifications */}
         <motion.div
-  initial={{ opacity: 0, y: 8 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ delay: 0.16, duration: 0.6 }}
->
-  <SectionLabel>Notifications</SectionLabel>
-  <NotificationPreferences flash={flash} />
-</motion.div>
-        {/* Data section */}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.16, duration: 0.6 }}
+        >
+          <SectionLabel>Notifications</SectionLabel>
+          <NotificationPreferences flash={flash} />
+        </motion.div>
+
+        {/* DATA + SECURITY */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.18, duration: 0.6 }}
         >
-          <SectionLabel>Data</SectionLabel>
-          <div
-            style={{
-              background: "rgba(255,255,255,0.024)",
-              border: "1px solid rgba(255,255,255,0.062)",
-              borderRadius: 16,
-              overflow: "hidden",
-            }}
-          >
-            <SettingRow
-  label="Download my Nest"
-  description="Export thoughts, memos, anchors, tags and sessions"
-  onTap={() => exportNestData().then(() => flash("Backup downloaded"))}
-/>
-            <SettingRow
-              label="Clear session history"
-              description="Check-ins, last session, state memory"
-              destructive
-              onTap={() => doConfirm("Clear session history?", clearSessions)}
-            />
-            <SettingRow
-              label="Clear thoughts"
-              description="All written thoughts"
-              destructive
-              onTap={() => doConfirm("Clear all thoughts?", clearThoughts)}
-            />
-            <SettingRow
-              label="Remove voice capsules"
-              description="All recorded audio memos"
-              destructive
-              onTap={() => doConfirm("Remove all voice capsules?", clearCapsules)}
-            />
-            <SettingRow
-              label="Clear anchors"
-              description="Your reality anchor list"
-              destructive
-              onTap={() => doConfirm("Clear all anchors?", clearAnchors)}
-            />
-            <SettingRow
-              label="Reset atmosphere"
-              description="Uploaded track reference and preset"
-              destructive
-              onTap={() => doConfirm("Reset atmosphere settings?", clearAtmosphere)}
-            />
-            <SettingRow
-              label="Clear everything"
-              description="All local data except voice preference"
-              destructive
-              danger
-              onTap={() => doConfirm("Clear all data? This cannot be undone.", clearAll)}
-              last
-            />
-          </div>
-        </motion.div>
+          <SectionLabel>Data & Security</SectionLabel>
 
-        {/* Privacy section */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.24, duration: 0.6 }}
-        >
-          <SectionLabel>Privacy</SectionLabel>
-          <div
+          <button
+            onClick={() => setOpenDataSecurity(!openDataSecurity)}
             style={{
-              background: "rgba(255,255,255,0.016)",
-              border: "1px solid rgba(255,255,255,0.048)",
+              width: "100%",
+              textAlign: "left",
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.06)",
               borderRadius: 16,
-              padding: "16px 18px",
-              display: "flex",
-              gap: 12,
-              alignItems: "flex-start",
+              padding: "14px 16px",
+              cursor: "pointer",
+              color: "rgba(220,205,182,0.78)",
+              marginBottom: 8,
             }}
           >
-            <Shield size={14} strokeWidth={1.4} color="rgba(185,158,115,0.30)" style={{ marginTop: 1, flexShrink: 0 }} />
-            <p
+            {openDataSecurity
+              ? "Hide options"
+              : "Manage stored data & privacy"}
+          </button>
+
+          {openDataSecurity && (
+            <div
               style={{
-                fontSize: 12,
-                fontWeight: 300,
-                color: "rgba(175,158,132,0.42)",
-                lineHeight: 1.65,
-                letterSpacing: "0.01em",
+                background: "rgba(255,255,255,0.024)",
+                border: "1px solid rgba(255,255,255,0.062)",
+                borderRadius: 16,
+                overflow: "hidden",
               }}
             >
-            </p>
-          </div>
+              <SettingRow
+                label="Download my Nest"
+                description="Export thoughts, memos, anchors, tags and sessions"
+                onTap={() =>
+                  exportNestData().then(() =>
+                    flash("Backup downloaded")
+                  )
+                }
+              />
+
+              <SettingRow
+                label="Clear session history"
+                destructive
+                onTap={() =>
+                  doConfirm("Clear session history?", clearSessions)
+                }
+              />
+
+              <SettingRow
+                label="Clear thoughts"
+                destructive
+                onTap={() =>
+                  doConfirm("Clear all thoughts?", clearThoughts)
+                }
+              />
+
+              <SettingRow
+                label="Remove voice capsules"
+                destructive
+                onTap={() =>
+                  doConfirm(
+                    "Remove all voice capsules?",
+                    clearCapsules
+                  )
+                }
+              />
+
+              <SettingRow
+                label="Clear anchors"
+                destructive
+                onTap={() =>
+                  doConfirm("Clear all anchors?", clearAnchors)
+                }
+              />
+
+              <SettingRow
+                label="Reset atmosphere"
+                destructive
+                onTap={() =>
+                  doConfirm(
+                    "Reset atmosphere settings?",
+                    clearAtmosphere
+                  )
+                }
+              />
+
+              <SettingRow
+                label="Clear everything"
+                description="All local data except voice preference"
+                destructive
+                danger
+                onTap={() =>
+                  doConfirm(
+                    "Clear all data? This cannot be undone.",
+                    clearAll
+                  )
+                }
+                last
+              />
+
+              <div
+                style={{
+                  padding: 16,
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "flex-start",
+                }}
+              >
+                <Shield
+                  size={14}
+                  strokeWidth={1.4}
+                  color="rgba(185,158,115,0.30)"
+                  style={{ marginTop: 1 }}
+                />
+                <p
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 300,
+                    color: "rgba(175,158,132,0.42)",
+                    lineHeight: 1.65,
+                  }}
+                >
+                  Your data stays on-device unless explicitly exported.
+                </p>
+              </div>
+            </div>
+          )}
         </motion.div>
       </div>
 
-      {/* Confirmation overlay */}
+      {/* CONFIRM */}
       {confirm && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -307,111 +372,55 @@ export function Settings() {
             inset: 0,
             background: "rgba(6,5,8,0.88)",
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             zIndex: 100,
-            padding: "0 32px",
-            backdropFilter: "blur(8px)",
           }}
           onClick={() => setConfirm(null)}
         >
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            onClick={e => e.stopPropagation()}
+          <div
+            onClick={(e) => e.stopPropagation()}
             style={{
               background: "rgba(18,15,12,0.96)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 20,
-              padding: "28px 24px",
+              padding: 24,
+              borderRadius: 16,
               maxWidth: 320,
               width: "100%",
-              display: "flex",
-              flexDirection: "column",
-              gap: 20,
             }}
           >
-            <p
-              style={{
-                fontSize: 14,
-                fontWeight: 400,
-                color: "rgba(225,205,178,0.80)",
-                lineHeight: 1.5,
-                textAlign: "center",
-                letterSpacing: "0.01em",
-              }}
-            >
+            <p style={{ color: "#fff", marginBottom: 12 }}>
               {confirm.label}
             </p>
             <div style={{ display: "flex", gap: 10 }}>
-              <button
-                onClick={() => setConfirm(null)}
-                style={{
-                  flex: 1,
-                  background: "rgba(255,255,255,0.040)",
-                  border: "1px solid rgba(255,255,255,0.07)",
-                  borderRadius: 11,
-                  padding: "12px",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  color: "rgba(185,168,145,0.55)",
-                  letterSpacing: "0.08em",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={runConfirm}
-                style={{
-                  flex: 1,
-                  background: "rgba(190,80,60,0.12)",
-                  border: "1px solid rgba(190,80,60,0.22)",
-                  borderRadius: 11,
-                  padding: "12px",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  color: "rgba(215,110,90,0.75)",
-                  letterSpacing: "0.08em",
-                }}
-              >
-                Clear
-              </button>
+              <button onClick={() => setConfirm(null)}>Cancel</button>
+              <button onClick={runConfirm}>Clear</button>
             </div>
-          </motion.div>
+          </div>
         </motion.div>
       )}
 
-      {/* Flash toast */}
+      {/* TOAST */}
       {cleared && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
+        <div
           style={{
             position: "fixed",
-            bottom: 36,
+            bottom: 30,
             left: "50%",
             transform: "translateX(-50%)",
-            background: "rgba(20,17,13,0.94)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 32,
-            padding: "10px 20px",
-            fontSize: 12,
-            color: "rgba(185,162,128,0.60)",
-            letterSpacing: "0.06em",
-            fontWeight: 300,
-            zIndex: 200,
-            backdropFilter: "blur(10px)",
-            whiteSpace: "nowrap",
+            background: "#111",
+            padding: "8px 14px",
+            borderRadius: 20,
+            color: "#fff",
           }}
         >
           {cleared}
-        </motion.div>
+        </div>
       )}
     </motion.div>
   );
 }
+
+/* UI helpers */
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -441,7 +450,15 @@ interface SettingRowProps {
   onTap?: () => void;
 }
 
-function SettingRow({ label, description, value, destructive, danger, last, onTap }: SettingRowProps) {
+function SettingRow({
+  label,
+  description,
+  value,
+  destructive,
+  danger,
+  last,
+  onTap,
+}: SettingRowProps) {
   return (
     <button
       onClick={onTap}
@@ -449,13 +466,13 @@ function SettingRow({ label, description, value, destructive, danger, last, onTa
         width: "100%",
         background: "none",
         border: "none",
-        borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.044)",
+        borderBottom: last
+          ? "none"
+          : "1px solid rgba(255,255,255,0.044)",
         padding: "15px 18px",
         cursor: onTap ? "pointer" : "default",
         display: "flex",
-        alignItems: "center",
         justifyContent: "space-between",
-        gap: 12,
         textAlign: "left",
       }}
     >
@@ -463,48 +480,28 @@ function SettingRow({ label, description, value, destructive, danger, last, onTa
         <div
           style={{
             fontSize: 13,
-            fontWeight: 400,
             color: danger
               ? "rgba(215,100,80,0.62)"
               : destructive
               ? "rgba(210,185,155,0.55)"
               : "rgba(220,205,182,0.78)",
-            letterSpacing: "0.01em",
           }}
         >
           {label}
         </div>
+
         {description && (
-          <div
-            style={{
-              fontSize: 11,
-              color: "rgba(155,140,118,0.36)",
-              fontWeight: 300,
-              marginTop: 2,
-              letterSpacing: "0.01em",
-            }}
-          >
+          <div style={{ fontSize: 11, opacity: 0.5 }}>
             {description}
           </div>
         )}
       </div>
-      {value && (
-        <span
-          style={{
-            fontSize: 12,
-            color: "rgba(205,170,100,0.52)",
-            fontWeight: 300,
-            letterSpacing: "0.06em",
-            flexShrink: 0,
-          }}
-        >
-          {value}
-        </span>
-      )}
+
+      {value && <span style={{ fontSize: 12 }}>{value}</span>}
+
       {destructive && !value && (
-        <Trash2 size={13} strokeWidth={1.4} color={danger ? "rgba(215,100,80,0.45)" : "rgba(175,155,128,0.28)"} style={{ flexShrink: 0 }} />
+        <Trash2 size={13} strokeWidth={1.4} opacity={0.5} />
       )}
     </button>
-    
   );
 }
