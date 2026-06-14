@@ -24,14 +24,12 @@ interface ConfirmState {
 
 export function Settings() {
   const [, navigate] = useLocation();
- 
+
   const [voiceIntensity, setVoiceIntensity] =
     useState<VoiceIntensity>(readVoiceIntensity);
 
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [cleared, setCleared] = useState<string | null>(null);
-
-  const [openDataSecurity, setOpenDataSecurity] = useState(false);
 
   const cycleVoice = () => {
     const next: VoiceIntensity =
@@ -122,18 +120,6 @@ export function Settings() {
     flash("All data cleared");
   };
 
-  const VOICE_LABELS: Record<VoiceIntensity, string> = {
-    off: "Off",
-    minimal: "Minimal",
-    guided: "Guided",
-  };
-
-  const VOICE_DESC: Record<VoiceIntensity, string> = {
-    off: "No voice during sessions",
-    minimal: "One quiet phrase, once",
-    guided: "A few short lines with long pauses",
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -159,11 +145,11 @@ export function Settings() {
           gap: 32,
         }}
       >
-        {/* Header */}
+        {/* HEADER */}
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.06, duration: 0.6 }}
+          transition={{ delay: 0.06 }}
           style={{ display: "flex", alignItems: "center", gap: 10 }}
         >
           <Link href="/home">
@@ -193,247 +179,70 @@ export function Settings() {
           </p>
         </motion.div>
 
-        {/* Voice */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12, duration: 0.6 }}
-        >
-          <SectionLabel>Voice</SectionLabel>
+        {/* NOTIFICATIONS */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <SectionLabel>Notifications</SectionLabel>
+          <NotificationPreferences flash={flash} />
+        </motion.div>
 
+        {/* HELP + DATA */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          
+          {/* HELP */}
+          <SectionLabel>Help & Guide</SectionLabel>
           <div
             style={{
               background: "rgba(255,255,255,0.024)",
               border: "1px solid rgba(255,255,255,0.062)",
               borderRadius: 16,
+              overflow: "hidden",
+            }}
+          >
+            <SettingRow label="Open The Nest Guide" description="Revisit the first-time introduction" onTap={() => navigate("/onboarding")} />
+            <SettingRow label="What are Capsules?" description="Voice notes for moments you don’t want to lose" />
+            <SettingRow label="What are Thoughts?" description="Short written notes, ideas or reminders" />
+            <SettingRow label="What are Reflections?" description="Weekly and monthly looks back at what you left behind" />
+            <SettingRow label="What are Anchors?" description="Grounding reminders for overwhelming moments" />
+            <SettingRow label="Privacy & AI Reflections" description="Reflections are created from your own saved thoughts and voice notes" last />
+          </div>
+
+          {/* DATA */}
+          <SectionLabel>Data & Security</SectionLabel>
+          <div
+            style={{
+              background: "rgba(255,255,255,0.024)",
+              border: "1px solid rgba(255,255,255,0.062)",
+              borderRadius: 16,
+              overflow: "hidden",
             }}
           >
             <SettingRow
-              label="Voice during sessions"
-              value={VOICE_LABELS[voiceIntensity]}
-              description={VOICE_DESC[voiceIntensity]}
-              onTap={cycleVoice}
-              last
+              label="Download my Nest"
+              onTap={() => exportNestData().then(() => flash("Backup downloaded"))}
             />
-          </div>
-        </motion.div>
 
-        {/* Notifications */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.16, duration: 0.6 }}
-        >
-          <SectionLabel>Notifications</SectionLabel>
-          <NotificationPreferences flash={flash} />
-        </motion.div>
+            <SettingRow label="Clear session history" destructive onTap={() => doConfirm("Clear session history?", clearSessions)} />
+            <SettingRow label="Clear thoughts" destructive onTap={() => doConfirm("Clear all thoughts?", clearThoughts)} />
+            <SettingRow label="Remove voice capsules" destructive onTap={() => doConfirm("Remove all voice capsules?", clearCapsules)} />
+            <SettingRow label="Clear anchors" destructive onTap={() => doConfirm("Clear all anchors?", clearAnchors)} />
+            <SettingRow label="Reset atmosphere" destructive onTap={() => doConfirm("Reset atmosphere settings?", clearAtmosphere)} />
 
-        {/* DATA + SECURITY */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18, duration: 0.6 }}
-        >
-          {/* Help & Guide */}
-<motion.div
+            <SettingRow
+              label="Clear everything"
+              description="All local data except voice preference"
+              destructive
+              danger
+              last
+              onTap={() => doConfirm("Clear all data? This cannot be undone.", clearAll)}
+            />
 
-initial={{ opacity: 0, y: 8 }}
-
-animate={{ opacity: 1, y: 0 }}
-
-transition={{ delay: 0.17, duration: 0.6 }}
->
-<SectionLabel>Help & Guide</SectionLabel>
-<div
-
-  style={{
-
-    background: "rgba(255,255,255,0.024)",
-
-    border: "1px solid rgba(255,255,255,0.062)",
-
-    borderRadius: 16,
-
-    overflow: "hidden",
-
-  }}
->
-<SettingRow
-
-    label="Open The Nest Guide"
-
-    description="Revisit the first-time introduction"
-
-    onTap={() => navigate("/onboarding")}
-
-  />
-<SettingRow
-
-    label="What are Capsules?"
-
-    description="Voice notes for moments you don’t want to lose"
-
-  />
-<SettingRow
-
-    label="What are Thoughts?"
-
-    description="Short written notes, ideas or reminders"
-
-  />
-<SettingRow
-
-    label="What are Reflections?"
-
-    description="Weekly and monthly looks back at what you left behind"
-
-  />
-<SettingRow
-
-    label="What are Anchors?"
-
-    description="Grounding reminders for overwhelming moments"
-
-  />
-<SettingRow
-
-    label="Privacy & AI Reflections"
-
-    description="Reflections are created from your own saved thoughts and voice notes"
-
-    last
-
-  />
-</div>
-</motion.div>
-
-          <SectionLabel>Data & Security</SectionLabel>
-
-          <button
-            onClick={() => setOpenDataSecurity(!openDataSecurity)}
-            style={{
-              width: "100%",
-              textAlign: "left",
-              background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              borderRadius: 16,
-              padding: "14px 16px",
-              cursor: "pointer",
-              color: "rgba(220,205,182,0.78)",
-              marginBottom: 8,
-            }}
-          >
-            {openDataSecurity
-              ? "Hide options"
-              : "Manage stored data & privacy"}
-          </button>
-
-          {openDataSecurity && (
-            <div
-              style={{
-                background: "rgba(255,255,255,0.024)",
-                border: "1px solid rgba(255,255,255,0.062)",
-                borderRadius: 16,
-                overflow: "hidden",
-              }}
-            >
-              <SettingRow
-                label="Download my Nest"
-                description="Export thoughts, memos, anchors, tags and sessions"
-                onTap={() =>
-                  exportNestData().then(() =>
-                    flash("Backup downloaded")
-                  )
-                }
-              />
-
-              <SettingRow
-                label="Clear session history"
-                destructive
-                onTap={() =>
-                  doConfirm("Clear session history?", clearSessions)
-                }
-              />
-
-              <SettingRow
-                label="Clear thoughts"
-                destructive
-                onTap={() =>
-                  doConfirm("Clear all thoughts?", clearThoughts)
-                }
-              />
-
-              <SettingRow
-                label="Remove voice capsules"
-                destructive
-                onTap={() =>
-                  doConfirm(
-                    "Remove all voice capsules?",
-                    clearCapsules
-                  )
-                }
-              />
-
-              <SettingRow
-                label="Clear anchors"
-                destructive
-                onTap={() =>
-                  doConfirm("Clear all anchors?", clearAnchors)
-                }
-              />
-
-              <SettingRow
-                label="Reset atmosphere"
-                destructive
-                onTap={() =>
-                  doConfirm(
-                    "Reset atmosphere settings?",
-                    clearAtmosphere
-                  )
-                }
-              />
-
-              <SettingRow
-                label="Clear everything"
-                description="All local data except voice preference"
-                destructive
-                danger
-                onTap={() =>
-                  doConfirm(
-                    "Clear all data? This cannot be undone.",
-                    clearAll
-                  )
-                }
-                last
-              />
-
-              <div
-                style={{
-                  padding: 16,
-                  display: "flex",
-                  gap: 10,
-                  alignItems: "flex-start",
-                }}
-              >
-                <Shield
-                  size={14}
-                  strokeWidth={1.4}
-                  color="rgba(185,158,115,0.30)"
-                  style={{ marginTop: 1 }}
-                />
-                <p
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 300,
-                    color: "rgba(175,158,132,0.42)",
-                    lineHeight: 1.65,
-                  }}
-                >
-                  Your data stays on-device unless explicitly exported.
-                </p>
-              </div>
+            <div style={{ padding: 16, display: "flex", gap: 10 }}>
+              <Shield size={14} strokeWidth={1.4} color="rgba(185,158,115,0.30)" />
+              <p style={{ fontSize: 12, color: "rgba(175,158,132,0.42)" }}>
+                Your data stays on-device unless explicitly exported.
+              </p>
             </div>
-          )}
+          </div>
         </motion.div>
       </div>
 
@@ -449,32 +258,17 @@ transition={{ delay: 0.17, duration: 0.6 }}
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 100,
           }}
           onClick={() => setConfirm(null)}
         >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "rgba(18,15,12,0.96)",
-              padding: 24,
-              borderRadius: 16,
-              maxWidth: 320,
-              width: "100%",
-            }}
-          >
-            <p style={{ color: "#fff", marginBottom: 12 }}>
-              {confirm.label}
-            </p>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setConfirm(null)}>Cancel</button>
-              <button onClick={runConfirm}>Clear</button>
-            </div>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#111", padding: 20, borderRadius: 12 }}>
+            <p style={{ color: "#fff" }}>{confirm.label}</p>
+            <button onClick={() => setConfirm(null)}>Cancel</button>
+            <button onClick={runConfirm}>Clear</button>
           </div>
         </motion.div>
       )}
 
-      {/* TOAST */}
       {cleared && (
         <div
           style={{
@@ -495,88 +289,41 @@ transition={{ delay: 0.17, duration: 0.6 }}
   );
 }
 
-/* UI helpers */
+/* helpers */
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p
-      style={{
-        fontSize: 10,
-        letterSpacing: "0.18em",
-        textTransform: "uppercase",
-        color: "rgba(185,158,115,0.36)",
-        fontWeight: 500,
-        marginBottom: 10,
-        paddingLeft: 4,
-      }}
-    >
+    <p style={{ fontSize: 10, letterSpacing: "0.18em", color: "rgba(185,158,115,0.36)", marginBottom: 10 }}>
       {children}
     </p>
   );
 }
 
-interface SettingRowProps {
-  label: string;
-  description?: string;
-  value?: string;
-  destructive?: boolean;
-  danger?: boolean;
-  last?: boolean;
-  onTap?: () => void;
-}
-
 function SettingRow({
   label,
   description,
-  value,
   destructive,
   danger,
   last,
   onTap,
-}: SettingRowProps) {
+}: any) {
   return (
     <button
       onClick={onTap}
       style={{
         width: "100%",
-        background: "none",
         border: "none",
-        borderBottom: last
-          ? "none"
-          : "1px solid rgba(255,255,255,0.044)",
-        padding: "15px 18px",
-        cursor: onTap ? "pointer" : "default",
-        display: "flex",
-        justifyContent: "space-between",
+        background: "none",
+        padding: 14,
+        borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.05)",
         textAlign: "left",
+        cursor: onTap ? "pointer" : "default",
+        color: danger ? "rgba(215,100,80,0.8)" : "white",
       }}
     >
-      <div>
-        <div
-          style={{
-            fontSize: 13,
-            color: danger
-              ? "rgba(215,100,80,0.62)"
-              : destructive
-              ? "rgba(210,185,155,0.55)"
-              : "rgba(220,205,182,0.78)",
-          }}
-        >
-          {label}
-        </div>
-
-        {description && (
-          <div style={{ fontSize: 11, opacity: 0.5 }}>
-            {description}
-          </div>
-        )}
-      </div>
-
-      {value && <span style={{ fontSize: 12 }}>{value}</span>}
-
-      {destructive && !value && (
-        <Trash2 size={13} strokeWidth={1.4} opacity={0.5} />
-      )}
+      <div style={{ fontSize: 13 }}>{label}</div>
+      {description && <div style={{ fontSize: 11, opacity: 0.5 }}>{description}</div>}
+      {destructive && <Trash2 size={12} />}
     </button>
   );
 }
