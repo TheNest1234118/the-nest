@@ -193,13 +193,13 @@ recorder.onstop = async () => {
   const stopRecording = useCallback(() => {
     const recorder = mediaRecorderRef.current;
     if (!recorder || recorder.state === "inactive") return;
-
-    if (isIOS() && recorder.state === "recording") {
-      try {
-        recorder.requestData();
-      } catch (_) {}
-    }
-
+  
+    setIsRecording(false); // 👈 sofort UI stoppen
+  
+    try {
+      recorder.requestData();
+    } catch (_) {}
+  
     recorder.stop();
   }, []);
 
