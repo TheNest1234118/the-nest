@@ -760,7 +760,7 @@ const showSession = !!sessionName;
     </button>
   </motion.div>
 )}
-        <motion.div
+    {/*    <motion.div
   initial={{ opacity: 0, y: 8 }}
   animate={{ opacity: 1, y: 0 }}
   transition={{ delay: 0.19, duration: 0.7 }}
@@ -787,7 +787,7 @@ const showSession = !!sessionName;
   }}>
     🔥 You have returned for {streak} {streak === 1 ? "day" : "days"}.
   </p>
-</motion.div>
+</motion.div> */}
 
         {/* ── Atmosphere card ── */}
         <motion.div
