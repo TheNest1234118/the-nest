@@ -224,8 +224,12 @@ export function Dashboard() {
   const [, navigate] = useLocation();
   const [authOpen, setAuthOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [dailyOpen, setDailyOpen] = useState(false);
+  if (localStorage.getItem("nest_guide_completed") !== "true") {
+    setTimeout(() => setGuideOpen(true), 450);
+   }
   const [todayMood, setTodayMood] = useState<string | null>(null);
   const [yesterdayMood, setYesterdayMood] = useState<string | null>(null);
   const [dailyIntention, setDailyIntention] = useState<string | null>(null);
@@ -1156,7 +1160,33 @@ export function Dashboard() {
           </button>
         </CalmModal>
       )}
-
+{guideOpen && (
+<CalmModal>
+<p style={modalEyebrow}>Welcome</p>
+<h2 style={modalTitle}>A short guide to The Nest.</h2>
+<p style={modalText}>
+     Take less than 30 seconds to understand what this place is for.
+</p>
+<button
+     onClick={() => {
+       setGuideOpen(false);
+       navigate("/onboarding");
+     }}
+     style={{ ...modalButton, color: "rgba(205,170,100,0.76)" }}
+>
+     Open guide
+</button>
+<button
+     onClick={() => {
+       localStorage.setItem("nest_guide_completed", "true");
+       setGuideOpen(false);
+     }}
+     style={{ ...modalButton, color: "rgba(175,158,132,0.44)" }}
+>
+     Skip
+</button>
+</CalmModal>
+)}
       <AuthModal
         open={authOpen}
         onClose={() => setAuthOpen(false)}

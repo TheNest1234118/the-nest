@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import OneSignal from "react-onesignal";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { exportNestData } from "@/lib/exportNest";
@@ -23,6 +23,8 @@ interface ConfirmState {
 }
 
 export function Settings() {
+  const [, navigate] = useLocation();
+ 
   const [voiceIntensity, setVoiceIntensity] =
     useState<VoiceIntensity>(readVoiceIntensity);
 
@@ -232,6 +234,79 @@ export function Settings() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.18, duration: 0.6 }}
         >
+          {/* Help & Guide */}
+<motion.div
+
+initial={{ opacity: 0, y: 8 }}
+
+animate={{ opacity: 1, y: 0 }}
+
+transition={{ delay: 0.17, duration: 0.6 }}
+>
+<SectionLabel>Help & Guide</SectionLabel>
+<div
+
+  style={{
+
+    background: "rgba(255,255,255,0.024)",
+
+    border: "1px solid rgba(255,255,255,0.062)",
+
+    borderRadius: 16,
+
+    overflow: "hidden",
+
+  }}
+>
+<SettingRow
+
+    label="Open The Nest Guide"
+
+    description="Revisit the first-time introduction"
+
+    onTap={() => navigate("/onboarding")}
+
+  />
+<SettingRow
+
+    label="What are Capsules?"
+
+    description="Voice notes for moments you don’t want to lose"
+
+  />
+<SettingRow
+
+    label="What are Thoughts?"
+
+    description="Short written notes, ideas or reminders"
+
+  />
+<SettingRow
+
+    label="What are Reflections?"
+
+    description="Weekly and monthly looks back at what you left behind"
+
+  />
+<SettingRow
+
+    label="What are Anchors?"
+
+    description="Grounding reminders for overwhelming moments"
+
+  />
+<SettingRow
+
+    label="Privacy & AI Reflections"
+
+    description="Reflections are created from your own saved thoughts and voice notes"
+
+    last
+
+  />
+</div>
+</motion.div>
+
           <SectionLabel>Data & Security</SectionLabel>
 
           <button
