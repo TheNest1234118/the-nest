@@ -2,8 +2,12 @@ import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { markThoughtSavedForNotifications } from "@/lib/notifications";
 import { motion } from "framer-motion";
-import { loadThoughts, saveThought } from "@/lib/userData";
-import { ChevronLeft } from "lucide-react";
+import {
+  loadThoughts,
+  saveThought,
+  deleteThought,
+} from "@/lib/userData";
+import { ChevronLeft, Trash2 } from "lucide-react";
 import { markPwaEngagement } from "@/lib/pwa";
 
 interface Thought {
@@ -37,6 +41,14 @@ interface Thought {
       markThoughtSavedForNotifications();
     }
     setNewThought("");
+  };
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteThought(id);
+      setThoughts((prev) => prev.filter((t) => t.id !== id));
+    } catch (err) {
+      console.error("Could not delete thought", err);
+    }
   };
   const visibleThoughts = thoughts.filter((thought) =>
     thought.text.toLowerCase().includes(search.toLowerCase())
@@ -198,93 +210,117 @@ interface Thought {
         </motion.div>
 
         {visibleThoughts.length > 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 32 }}>
-            {visibleThoughts.map((thought, i) => (
-              <motion.div
-                key={thought.id}
-                initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.65, delay: Math.min(0.22 + i * 0.04, 0.55) }}
-                style={{
-                  background: "rgba(255, 255, 255, 0.026)",
-                  border: "1px solid rgba(255, 255, 255, 0.065)",
-                  borderRadius: 16,
-                  padding: "18px 18px",
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 300,
-                    lineHeight: 1.6,
-                    color: "rgba(220, 205, 182, 0.74)",
-                    letterSpacing: "0.01em",
-                    whiteSpace: "pre-wrap",
-                    marginBottom: 14,
-                  }}
-                >
-                  {thought.text}
-                </p>
+  <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 32 }}>
+    {visibleThoughts.map((thought, i) => (
+      <motion.div
+        key={thought.id}
+        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.65, delay: Math.min(0.22 + i * 0.04, 0.55) }}
+        style={{
+          background: "rgba(255, 255, 255, 0.026)",
+          border: "1px solid rgba(255, 255, 255, 0.065)",
+          borderRadius: 16,
+          padding: "18px 18px",
+        }}
+      >
+        <p
+          style={{
+            fontSize: 13,
+            fontWeight: 300,
+            lineHeight: 1.6,
+            color: "rgba(220, 205, 182, 0.74)",
+            letterSpacing: "0.01em",
+            whiteSpace: "pre-wrap",
+            marginBottom: 14,
+          }}
+        >
+          {thought.text}
+        </p>
 
-                <time
-                  style={{
-                    fontSize: 10,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.16em",
-                    color: "rgba(175, 158, 132, 0.34)",
-                  }}
-                >
-                  {new Date(thought.created_at).toLocaleDateString(undefined, {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                  {" · "}
-                  {new Date(thought.created_at).toLocaleTimeString(undefined, {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </time>
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.22, duration: 0.7 }}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: 12,
+          }}
+        >
+          <time
             style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              paddingBottom: 80,
+              fontSize: 10,
+              textTransform: "uppercase",
+              letterSpacing: "0.16em",
+              color: "rgba(175, 158, 132, 0.34)",
             }}
           >
-            <div
-              style={{
-                background: "rgba(255, 255, 255, 0.024)",
-                border: "1px solid rgba(255, 255, 255, 0.055)",
-                borderRadius: 18,
-                padding: "22px 24px",
-                maxWidth: 260,
-                textAlign: "center",
-              }}
-            >
-              <p
-                style={{
-                  fontSize: 13,
-                  color: "rgba(175, 158, 132, 0.42)",
-                  fontWeight: 300,
-                  lineHeight: 1.6,
-                  fontStyle: "italic",
-                }}
-              >
-                Your mind is quiet for now.
-              </p>
-            </div>
-          </motion.div>
-        )}
+            {new Date(thought.created_at).toLocaleDateString(undefined, {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            })}
+            {" · "}
+            {new Date(thought.created_at).toLocaleTimeString(undefined, {
+              hour: "numeric",
+              minute: "2-digit",
+            })}
+          </time>
+
+          <button
+            onClick={() => handleDelete(thought.id)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 10,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "rgba(220,120,120,0.6)",
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </motion.div>
+    ))}
+  </div>
+) : (
+  <motion.div
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.22, duration: 0.7 }}
+    style={{
+      flex: 1,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingBottom: 80,
+    }}
+  >
+    <div
+      style={{
+        background: "rgba(255, 255, 255, 0.024)",
+        border: "1px solid rgba(255, 255, 255, 0.055)",
+        borderRadius: 18,
+        padding: "22px 24px",
+        maxWidth: 260,
+        textAlign: "center",
+      }}
+    >
+      <p
+        style={{
+          fontSize: 13,
+          color: "rgba(175, 158, 132, 0.42)",
+          fontWeight: 300,
+          lineHeight: 1.6,
+          fontStyle: "italic",
+        }}
+      >
+        Your mind is quiet for now.
+      </p>
+    </div>
+  </motion.div>
+)}
       </div>
     </motion.div>
   );

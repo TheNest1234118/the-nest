@@ -910,33 +910,7 @@ export function Nest() {
         </section>
       </motion.main>
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.8 }}
-        style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, zIndex: 20, padding: "0 14px 28px" }}
-      >
-        <div style={{
-          background: "rgba(12, 9, 6, 0.86)",
-          border: "1px solid rgba(220, 195, 140, 0.08)",
-          borderRadius: "32px 36px 30px 34px / 30px 34px 32px 36px",
-          padding: "14px 16px",
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          boxShadow: "0 4px 32px rgba(0,0,0,0.70)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-        }}>
-          <span style={{ color: "rgba(165, 140, 92, 0.45)", fontSize: 18, lineHeight: 1, fontFamily: "Georgia, serif", flexShrink: 0, marginTop: -2 }}>
-            &#8220;
-          </span>
-          <p style={{ flex: 1, margin: 0, color: "rgba(192,172,140,0.58)", fontSize: 12.5, lineHeight: 1.6, letterSpacing: "0.02em", fontWeight: 300 }}>
-            The Nest remembers what you carried.
-          </p>
-          <AudioControls minimal />
-        </div>
-      </motion.div>
+      
     </motion.div>
   );
 }

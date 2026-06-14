@@ -18,7 +18,14 @@ export async function loadThoughts() {
 
   return data || [];
 }
+export async function deleteThought(id: string) {
+  const { error } = await supabase
+    .from("thoughts")
+    .delete()
+    .eq("id", id);
 
+  if (error) throw error;
+}
 export async function saveThought(text: string) {
   const user = await getCurrentUser();
   if (!user) return null;
