@@ -39,23 +39,156 @@ function getGreeting() {
   return "Back again";
 }
 
-const MOODS: { key: MoodKey; label: string }[] = [
+type DashboardMoodKey =
+  | MoodKey
+  | "tired"
+  | "frustrated"
+  | "foggy"
+  | "motivated";
+
+const MOODS: { key: DashboardMoodKey; label: string }[] = [
   { key: "calm", label: "🌙 Calm" },
   { key: "good", label: "🌤 Good" },
   { key: "neutral", label: "🌫 Neutral" },
+  { key: "tired", label: "🕯 Tired" },
   { key: "overstimulated", label: "⚡ Overstimulated" },
   { key: "anxious", label: "🌧 Anxious" },
   { key: "sad", label: "🖤 Sad" },
+  { key: "frustrated", label: "🌑 Frustrated" },
+  { key: "foggy", label: "🌫 Foggy" },
+  { key: "motivated", label: "✨ Motivated" },
 ];
 
 const INTENTIONS = [
   "Record one voice note",
   "Write one thought",
   "Pause for one minute",
+  "Notice one real thing around you",
+  "Leave one thing behind",
+  "Capture something worth remembering",
 ];
+
+const DAILY_CHECKIN_VARIANTS: Record<
+  string,
+  {
+    titles: string[];
+    invitations: string[];
+  }
+> = {
+  calm: {
+    titles: ["A Quiet Start", "Still Here", "Soft Morning"],
+    invitations: [
+      "Capture something worth remembering",
+      "Write one thought",
+      "Notice one real thing around you",
+    ],
+  },
+  good: {
+    titles: ["Something Light", "A Good Place", "Keep This Close"],
+    invitations: [
+      "Capture something worth remembering",
+      "Record one voice note",
+      "Write one thought",
+    ],
+  },
+  neutral: {
+    titles: ["A New Day", "Start Gently", "Nothing Forced"],
+    invitations: [
+      "Write one thought",
+      "Pause for one minute",
+      "Leave one thing behind",
+    ],
+  },
+  tired: {
+    titles: ["Move Slowly", "Still Enough", "Low Flame"],
+    invitations: [
+      "Pause for one minute",
+      "Leave one thing behind",
+      "Record one voice note",
+    ],
+  },
+  overstimulated: {
+    titles: ["Less Noise", "Come Back Slowly", "Room To Breathe"],
+    invitations: [
+      "Pause for one minute",
+      "Notice one real thing around you",
+      "Leave one thing behind",
+    ],
+  },
+  anxious: {
+    titles: ["One Small Place", "Still Here", "A Softer Minute"],
+    invitations: [
+      "Notice one real thing around you",
+      "Write one thought",
+      "Pause for one minute",
+    ],
+  },
+  sad: {
+    titles: ["Still Here", "A Gentle Place", "No Pressure"],
+    invitations: [
+      "Leave one thing behind",
+      "Record one voice note",
+      "Write one thought",
+    ],
+  },
+  frustrated: {
+    titles: ["Set It Down", "Without Force", "Let It Land"],
+    invitations: [
+      "Leave one thing behind",
+      "Record one voice note",
+      "Write one thought",
+    ],
+  },
+  foggy: {
+    titles: ["Through The Fog", "One Clear Thing", "Slow Return"],
+    invitations: [
+      "Notice one real thing around you",
+      "Pause for one minute",
+      "Write one thought",
+    ],
+  },
+  motivated: {
+    titles: ["Keep The Spark", "Something To Keep", "Clear Energy"],
+    invitations: [
+      "Capture something worth remembering",
+      "Record one voice note",
+      "Write one thought",
+    ],
+  },
+};
 
 function moodLabel(mood: string | null) {
   return MOODS.find((m) => m.key === mood)?.label.replace(/^.+?\s/, "") ?? mood;
+}
+
+function cleanMoodLabel(mood: string | null) {
+  return (moodLabel(mood) || "").toLowerCase();
+}
+
+function pickDailyItem(items: string[], mood: string | null) {
+  const today = new Date().toISOString().slice(0, 10);
+  const seed = `${today}-${mood || "neutral"}`;
+
+  const total = seed
+    .split("")
+    .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+
+  return items[total % items.length];
+}
+
+function getDailyCheckin(todayMood: string | null, yesterdayMood: string | null) {
+  const moodForTone = todayMood || yesterdayMood || "neutral";
+  const variants =
+    DAILY_CHECKIN_VARIANTS[moodForTone] || DAILY_CHECKIN_VARIANTS.neutral;
+
+  return {
+    title: pickDailyItem(variants.titles, moodForTone),
+    yesterday: yesterdayMood
+      ? `Yesterday you checked in as ${cleanMoodLabel(yesterdayMood)}.`
+      : "",
+    question: "How does your mind feel today?",
+    invitation: pickDailyItem(variants.invitations, moodForTone),
+  };
 }
 
 const quietSmallButton: React.CSSProperties = {
@@ -216,6 +349,11 @@ export function Dashboard() {
 
   const [anchors] = useLocalStorage<AnchorItem[]>("nest_anchors", []);
   const previewAnchors = useMemo(() => anchors.slice(0, 2), [anchors]);
+
+  const dailyCheckin = useMemo(
+    () => getDailyCheckin(todayMood, yesterdayMood),
+    [todayMood, yesterdayMood]
+  );
 
   return (
     <motion.div
@@ -467,7 +605,7 @@ export function Dashboard() {
               lineHeight: 1.6,
             }}
           >
-            {dailyIntention || "You don’t have to do anything. You can leave one small thing here."}
+            {dailyIntention || dailyCheckin.invitation}
           </p>
 
           <button onClick={() => setDailyOpen(true)} style={quietSmallButton}>
@@ -927,22 +1065,22 @@ export function Dashboard() {
 
       {dailyOpen && (
         <CalmModal>
-          <p style={modalEyebrow}>A new day</p>
+          <p style={modalEyebrow}>{dailyCheckin.title}</p>
 
-          <h2 style={modalTitle}>
-            {yesterdayMood
-              ? `Yesterday felt ${moodLabel(yesterdayMood)}.`
-              : "Good morning."}
-          </h2>
+          {dailyCheckin.yesterday && (
+            <p style={{ ...modalText, marginBottom: 10 }}>
+              {dailyCheckin.yesterday}
+            </p>
+          )}
 
-          <p style={modalText}>How does your mind feel today?</p>
+          <h2 style={modalTitle}>{dailyCheckin.question}</h2>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {MOODS.map((mood) => (
               <button
                 key={mood.key}
                 onClick={async () => {
-                  await saveDailyMood(mood.key);
+                  await saveDailyMood(mood.key as MoodKey);
 
                   const today = new Date().toISOString().slice(0, 10);
 
@@ -974,10 +1112,10 @@ export function Dashboard() {
           </div>
 
           <p style={{ ...modalText, marginTop: 18 }}>
-            Choose one quiet invitation?
+            One quiet invitation for today:
           </p>
 
-          {INTENTIONS.map((item) => (
+          {[dailyCheckin.invitation, ...INTENTIONS.filter((item) => item !== dailyCheckin.invitation)].map((item) => (
             <button
               key={item}
               onClick={async () => {
