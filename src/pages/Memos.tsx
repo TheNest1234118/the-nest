@@ -165,7 +165,7 @@ recorder.onstop = async () => {
     setIsRecording(false);
   }
 };
-      recorder.start();
+      recorder.start(1000);
 
       setIsRecording(true);
       setRecordingTime(0);
