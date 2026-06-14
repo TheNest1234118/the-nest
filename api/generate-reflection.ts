@@ -115,6 +115,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
      .lte("created_at", period.endIso)
      .order("created_at", { ascending: true });
    if (thoughtsError) throw thoughtsError;
+   const { data: anchors, error: anchorsError } = await supabase
+ .from("anchors")
+ .select("type, content, created_at")
+ .eq("user_id", user.id)
+ .gte("created_at", period.startIso)
+ .lte("created_at", period.endIso)
+ .order("created_at", { ascending: true });
+if (anchorsError) throw anchorsError;
    const { data: memos, error: memosError } = await supabase
      .from("memos")
      .select("title, transcript_text, created_at")
@@ -125,9 +133,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
      .order("created_at", { ascending: true });
    if (memosError) throw memosError;
    const thoughtCount = thoughts?.length ?? 0;
+   const anchorCount = anchors?.length ?? 0;
    const memoCount = memos?.length ?? 0;
    const hasEnoughContent =
-     thoughtCount >= minimums.thoughts || memoCount >= minimums.memos;
+   thoughtCount >= minimums.thoughts ||
+   memoCount >= minimums.memos ||
+   anchorCount >= 3 ||
+   thoughtCount + memoCount + anchorCount >= 5;
    if (!hasEnoughContent) {
      return res.status(400).json({
        ok: false,
@@ -135,26 +147,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
      });
    }
    const entries = [
-
     ...(thoughts ?? []).map(
-  
       (t) => `[thought | ${t.created_at}]\n${t.text}`
-  
     ),
-  
     ...(memos ?? []).map(
-  
       (m) =>
-  
         `[voice memo transcript | ${m.created_at} | ${
-  
           m.title || "Voice capsule"
-  
         }]\n${m.transcript_text}`
-  
     ),
-  
-  ];
+    ...(anchors ?? []).map(
+      (a) =>
+        `[anchor | ${a.created_at} | ${a.type}]\n${a.content}`
+    ),
+   ];
   
   const weeklyJson = `
   
