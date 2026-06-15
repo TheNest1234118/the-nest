@@ -43,6 +43,7 @@ export function Memos() {
     const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [memoTitle, setMemoTitle] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const MAX_RECORDING_SECONDS = 3 * 60 * 60;
@@ -159,6 +160,7 @@ recorder.onstop = async () => {
     setMemoTitle("");
     setRecordingTime(0);
     setIsRecording(false);
+    setIsSaving(false);
   } catch (err) {
     console.error("Could not save memo", err);
     setError("Could not save memo.");
@@ -194,7 +196,8 @@ recorder.onstop = async () => {
     const recorder = mediaRecorderRef.current;
     if (!recorder || recorder.state === "inactive") return;
   
-    setIsRecording(false); // 👈 sofort UI stoppen
+    setIsRecording(false);
+    setIsSaving(true);
   
     try {
       recorder.requestData();

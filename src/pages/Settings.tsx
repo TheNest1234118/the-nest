@@ -205,7 +205,7 @@ export function Settings() {
             <SettingRow label="What are Anchors?" description="Grounding reminders for overwhelming moments" />
             <SettingRow label="Privacy & AI Reflections" description="Reflections are created from your own saved thoughts and voice notes" last />
           </div>
-
+          <div style={{ height: 18 }} />
           {/* DATA */}
           <SectionLabel>Data & Security</SectionLabel>
           <button
