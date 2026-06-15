@@ -24,7 +24,7 @@ interface ConfirmState {
 
 export function Settings() {
   const [, navigate] = useLocation();
-
+  const [dataOpen, setDataOpen] = useState(false);
   const [voiceIntensity, setVoiceIntensity] =
     useState<VoiceIntensity>(readVoiceIntensity);
 
@@ -208,14 +208,30 @@ export function Settings() {
 
           {/* DATA */}
           <SectionLabel>Data & Security</SectionLabel>
-          <div
-            style={{
-              background: "rgba(255,255,255,0.024)",
-              border: "1px solid rgba(255,255,255,0.062)",
-              borderRadius: 16,
-              overflow: "hidden",
-            }}
-          >
+          <button
+  onClick={() => setDataOpen(!dataOpen)}
+  style={{
+    width: "100%",
+    padding: 16,
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,0.062)",
+    background: "rgba(255,255,255,0.024)",
+    color: "white",
+    cursor: "pointer",
+  }}
+>
+  Data & Security
+</button>
+{dataOpen && (
+  <div
+    style={{
+      background: "rgba(255,255,255,0.024)",
+      border: "1px solid rgba(255,255,255,0.062)",
+      borderRadius: 16,
+      overflow: "hidden",
+      marginTop: 10,
+    }}
+  >
             <SettingRow
               label="Download my Nest"
               onTap={() => exportNestData().then(() => flash("Backup downloaded"))}
@@ -242,7 +258,9 @@ export function Settings() {
                 Your data stays on-device unless explicitly exported.
               </p>
             </div>
+
           </div>
+           )}
         </motion.div>
       </div>
 
@@ -325,5 +343,6 @@ function SettingRow({
       {description && <div style={{ fontSize: 11, opacity: 0.5 }}>{description}</div>}
       {destructive && <Trash2 size={12} />}
     </button>
+    
   );
 }

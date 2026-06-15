@@ -842,8 +842,11 @@ export function Nest() {
         <section>
           <SectionHeader eyebrow="Memories" title="Old thoughts, softer now" />
           {memoryCards.length > 0 ? (
-            <div style={memoryRail}>
-              {memoryCards.map((card) => (
+       <div
+       style={memoryRail}
+       className="hide-scrollbar"
+     >
+       {memoryCards.map((card) => (
                 <MemoryCard key={`${card.label}-${card.title}`} {...card} />
               ))}
             </div>
@@ -950,9 +953,20 @@ function CompactMetric({ label, value, suffix }: { label: string; value: string 
 function MemoryCard({ label, title, text, action }: { label: string; title: string; text: string; action?: string }) {
   return (
     <article style={memoryCard}>
-      <p style={miniLabel}>{label}</p>
-      <h3 style={memoryTitle}>{title}</h3>
-      <p style={memoryQuote}>“{text}”</p>
+     <p style={miniLabel}>{label}</p>
+
+<h3 style={memoryTitle}>{title}</h3>
+
+<div
+  style={{
+    width: 40,
+    height: 1,
+    background: "rgba(205,170,100,0.25)",
+    marginTop: 12,
+  }}
+/>
+
+<p style={memoryQuote}>“{text}”</p>
       {action && (
         <Link href="/thoughts">
           <button style={tinyButton}>{action}</button>
@@ -1153,6 +1167,8 @@ const tinyButton: React.CSSProperties = {
 
 const memoryRail: React.CSSProperties = {
   display: "flex",
+  msOverflowStyle: "none",
+scrollbarWidth: "none",
   gap: 12,
   overflowX: "auto",
   padding: "2px 2px 12px",
@@ -1161,18 +1177,26 @@ const memoryRail: React.CSSProperties = {
 };
 
 const memoryCard: React.CSSProperties = {
-  flex: "0 0 82%",
-  scrollSnapAlign: "start",
-  background: "linear-gradient(160deg, rgba(20,13,8,0.78), rgba(8,6,5,0.54))",
-  border: "1px solid rgba(220,195,140,0.09)",
-  borderRadius: 24,
-  padding: 17,
-  minHeight: 178,
-  boxShadow: "0 18px 55px rgba(0,0,0,0.32)",
-  backdropFilter: "blur(14px)",
-  WebkitBackdropFilter: "blur(14px)",
-};
+  flex: "0 0 92%",
+  scrollSnapAlign: "center",
 
+  background:
+    "linear-gradient(180deg, rgba(16,11,8,0.96), rgba(9,7,6,0.92))",
+
+  border: "1px solid rgba(205,170,100,0.06)",
+
+  borderRadius: 32,
+
+  padding: 24,
+
+  minHeight: 220,
+
+  boxShadow:
+    "0 25px 80px rgba(0,0,0,0.55)",
+
+  backdropFilter: "blur(18px)",
+  WebkitBackdropFilter: "blur(18px)",
+};
 const memoryTitle: React.CSSProperties = {
   fontFamily: "Georgia, serif",
   fontSize: 18,
@@ -1183,14 +1207,23 @@ const memoryTitle: React.CSSProperties = {
 
 const memoryQuote: React.CSSProperties = {
   fontFamily: "Georgia, serif",
-  fontSize: 15.5,
-  lineHeight: 1.55,
-  color: "rgba(235,218,192,0.76)",
-  margin: "12px 0 0",
+
+  fontSize: 18,
+
+  lineHeight: 1.8,
+
+  color: "rgba(240,225,205,0.84)",
+
+  margin: "18px 0 0",
+
   whiteSpace: "pre-line",
+
   display: "-webkit-box",
-  WebkitLineClamp: 6,
+
+  WebkitLineClamp: 7,
+
   WebkitBoxOrient: "vertical" as any,
+
   overflow: "hidden",
 };
 
