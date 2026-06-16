@@ -1114,8 +1114,8 @@ export function Dashboard() {
               </button>
             ))}
           </div>
-
-          <p style={{ ...modalText, marginTop: 18 }}>
+{/*
+         <p style={{ ...modalText, marginTop: 18 }}>
             One quiet invitation for today:
           </p>
 
@@ -1145,7 +1145,7 @@ export function Dashboard() {
               {item}
             </button>
           ))}
-
+*/}
           <button
             onClick={() => {
               localStorage.setItem(
