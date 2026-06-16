@@ -132,6 +132,15 @@ if (anchorsError) throw anchorsError;
      .not("transcript_text", "is", null)
      .order("created_at", { ascending: true });
    if (memosError) throw memosError;
+   const { data: moods, error: moodsError } = await supabase
+  .from("mood_checkins")
+  .select("mood, note, created_at")
+  .eq("user_id", user.id)
+  .gte("created_at", period.startIso)
+  .lte("created_at", period.endIso)
+  .order("created_at", { ascending: true });
+
+if (moodsError) throw moodsError;
    const thoughtCount = thoughts?.length ?? 0;
    const anchorCount = anchors?.length ?? 0;
    const memoCount = memos?.length ?? 0;
@@ -160,6 +169,12 @@ if (anchorsError) throw anchorsError;
       (a) =>
         `[anchor | ${a.created_at} | ${a.type}]\n${a.content}`
     ),
+    ...(moods ?? []).map(
+        (m) =>
+          `[mood check-in | ${m.created_at}]
+      Mood: ${m.mood}
+      ${m.note || ""}`
+      ),
    ];
   
   const weeklyJson = `
@@ -299,7 +314,31 @@ if (anchorsError) throw anchorsError;
   `
   
   }
-  
+  MOOD CHECK-INS
+
+Mood check-ins should be included naturally in the reflection whenever enough mood data is available.
+
+Do not list moods or counts.
+
+Do not write things like:
+- Calm: 5 times
+- Anxious: 3 times
+
+Instead, identify emotional patterns across the period.
+
+Examples:
+- You often checked in as calm during the first half of the week.
+- Tired and overstimulated appeared more frequently on busy days.
+- Your mood gradually shifted from anxious to more grounded.
+- Several check-ins suggested a need for rest and quiet.
+- Calm moments appeared more often towards the end of the week.
+
+Use mood check-ins to provide emotional context for the user's thoughts rather than describing them separately.
+
+Whenever relevant, connect mood patterns with thoughts, voice memo transcripts and anchors.
+
+Never invent mood patterns that are not supported by the data.
+
   OPEN THOUGHTS RULE
   
   Open thoughts are not advice.
