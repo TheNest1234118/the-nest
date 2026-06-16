@@ -7,6 +7,40 @@ import { motion, AnimatePresence } from "framer-motion";
 const GUIDE_STEPS = [
 
   {
+    title: "Welcome to The Nest",
+    text: "A quiet place for your mind.\n\nNothing here is public.",
+    button: "Continue",
+  },
+
+  {
+    title: "How do you feel?",
+    text: "Just for today.",
+    button: "Continue",
+    moods: ["😊 Calm","😌 Okay","😔 Sad","😰 Anxious","😴 Tired","🤍 Mixed"],
+  },
+
+  {
+    title: "Leave it here.",
+    text: "\"I can't stop thinking about today.\"\n\n—or—\n\n🎙️ \"I don't want to forget this moment.\"",
+    button: "Continue",
+  },
+
+  {
+    title: "Look back.",
+    text: "Weekly Reflection\n\nYou returned to quiet moments more than once this week.",
+    button: "Continue",
+  },
+
+  {
+    title: "You're ready.",
+    text: "Your Nest begins here.",
+    button: "Enter The Nest",
+  },
+
+/* OLD
+
+
+  {
 
     title: "Welcome to The Nest",
 
@@ -56,6 +90,7 @@ const GUIDE_STEPS = [
 
   },
 
+OLD */
 ];
 
 export function Onboarding() {
@@ -63,6 +98,7 @@ export function Onboarding() {
   const [, navigate] = useLocation();
 
   const [index, setIndex] = useState(0);
+  const [selectedMood, setSelectedMood] = useState("");
 
   const step = GUIDE_STEPS[index];
 
@@ -299,6 +335,21 @@ export function Onboarding() {
 
               {step.text}
 </p>
+
+{(step as any).moods && (
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:24}}>
+{(step as any).moods.map((mood:string)=>(
+<button key={mood} onClick={()=>setSelectedMood(mood)} style={{
+padding:"12px",borderRadius:14,cursor:"pointer",
+border:selectedMood===mood?"1px solid rgba(205,170,100,0.35)":"1px solid rgba(255,255,255,0.06)",
+background:selectedMood===mood?"rgba(205,170,100,0.08)":"rgba(255,255,255,0.02)",
+color:"rgba(225,210,188,0.82)"}}>
+{mood}
+</button>
+))}
+</div>
+)}
+
 <button
 
               onClick={next}

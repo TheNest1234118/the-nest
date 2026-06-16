@@ -346,3 +346,83 @@ function SettingRow({
     
   );
 }
+
+
+
+/* =========================
+   LEGAL MODAL (ADD)
+========================= */
+
+type LegalPage =
+  | "privacy"
+  | "terms"
+  | "ai"
+  | "delete"
+  | "contact"
+  | "imprint";
+
+const LEGAL_TEXT: Record<LegalPage,{title:string,body:string}> = {
+privacy:{
+title:"Privacy Policy",
+body:`The Nest stores your account email, thoughts, voice capsules, mood check-ins,
+anchors and reflections so the app can work.
+
+Voice recordings are stored securely.
+
+Only the text required to generate reflections may be processed by OpenAI.
+Audio recordings themselves are never sent to OpenAI.
+
+Push notifications are provided through OneSignal.
+Anonymous usage statistics may be collected through Vercel Analytics.
+
+You can delete your account or your data at any time from within the app.`
+},
+terms:{
+title:"Terms of Service",
+body:`You must be at least 13 years old.
+Use The Nest only for lawful purposes.
+You remain the owner of your content.
+The service is provided without guarantee of uninterrupted availability.`
+},
+ai:{
+title:"AI & Your Data",
+body:`Weekly and monthly reflections are generated using OpenAI.
+
+Only text required for creating reflections may be processed.
+
+This can include thoughts, mood check-ins, anchors and voice memo transcripts.
+
+Audio recordings themselves are never sent to OpenAI.`
+},
+delete:{
+title:"Delete Account",
+body:`You can permanently delete your account and all associated data.
+
+You can also remove individual thoughts, voice capsules, anchors and other content from inside the app.
+
+Deleted data cannot be recovered.`
+},
+contact:{
+title:"Contact",
+body:`The Nest
+
+thenestapp.contact@gmail.com
+
+https://thenestapp.space`
+},
+imprint:{
+title:"Imprint",
+body:`The Nest
+
+Responsible:
+The Nest
+
+Elisabethenanlage 9
+4051 Basel
+Switzerland
+
+thenestapp.contact@gmail.com
+
+https://thenestapp.space`
+}
+};
