@@ -675,15 +675,36 @@ function LegalModal({
         </div>
 
         <div
-          style={{
-            maxHeight: "calc(82svh - 86px)",
-            overflowY: "auto",
+  className="nest-legal-scroll"
+  style={{
+    maxHeight: "calc(82svh - 86px)",
+    overflowY: "auto",
+    scrollbarWidth: "thin",
+    scrollbarColor: "rgba(205,170,100,0.28) transparent",
             padding: "20px 18px 24px",
             color: "rgba(240,232,218,0.78)",
             fontSize: 13,
             lineHeight: 1.72,
           }}
         >
+          <style>{`
+  .nest-legal-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .nest-legal-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .nest-legal-scroll::-webkit-scrollbar-thumb {
+    background: rgba(205, 170, 100, 0.22);
+    border-radius: 999px;
+  }
+
+  .nest-legal-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(205, 170, 100, 0.36);
+  }
+`}</style>
           {content.body}
         </div>
       </motion.div>
