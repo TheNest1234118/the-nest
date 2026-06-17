@@ -214,7 +214,12 @@ recorder.onstop = async () => {
       }
   
       try {
-        const audioUrl = await getMemoAudioUrl(memo.storage_path);
+        const audioUrl = memo.storage_path
+        ? await getMemoAudioUrl(memo.storage_path)
+        : memo.audio_url;
+        if (!audioUrl) {
+          throw new Error("Missing audio URL");
+        }
   
         const audio = new Audio();
         audio.preload = "auto";

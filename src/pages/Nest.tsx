@@ -966,8 +966,7 @@ function MemoryCard({ label, title, text, action }: { label: string; title: stri
   }}
 />
 
-<p style={memoryQuote}>“{text}”</p>
-      {action && (
+<p style={memoryQuote}>“{text}”</p>      {action && (
         <Link href="/thoughts">
           <button style={tinyButton}>{action}</button>
         </Link>
