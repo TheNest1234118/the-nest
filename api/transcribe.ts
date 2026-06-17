@@ -1,102 +1,126 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
-import OpenAI from "openai";
+import OpenAI, { toFile } from "openai";
+
+export const config = {
+  maxDuration: 300,
+};
+
+type SupabaseWebhookPayload = {
+  type: "INSERT" | "UPDATE" | "DELETE";
+  table: string;
+  schema: string;
+  record?: {
+    id?: string;
+  };
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  const webhookSecret = req.headers["x-webhook-secret"];
+
+  if (webhookSecret !== process.env.TRANSCRIBE_WEBHOOK_SECRET) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const payload = req.body as SupabaseWebhookPayload;
+  const memoId = payload.record?.id;
+
+  if (!memoId) {
+    return res.status(400).json({ error: "Missing memo id" });
+  }
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
+
+  if (!supabaseUrl || !supabaseKey || !openaiKey) {
+    return res.status(500).json({ error: "Missing env vars" });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  const openai = new OpenAI({ apiKey: openaiKey });
+
   try {
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
+    await supabase
+      .from("memos")
+      .update({
+        status: "processing",
+        processing_started_at: new Date().toISOString(),
+        transcript_error: null,
+      })
+      .eq("id", memoId);
 
-    const { memoId } = req.body;
-
-    if (!memoId) {
-      return res.status(400).json({ error: "Missing memoId" });
-    }
-
-    // --- Supabase (Service Role nötig!)
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error("Missing Supabase env vars");
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    // --- User aus Token holen
-    const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ error: "Missing auth token" });
-    }
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
-      return res.status(401).json({ error: "Invalid user" });
-    }
-
-    // --- Memo holen
     const { data: memo, error: memoError } = await supabase
       .from("memos")
       .select("*")
       .eq("id", memoId)
-      .eq("user_id", user.id)
       .single();
 
     if (memoError || !memo) {
-      return res.status(404).json({ error: "Memo not found" });
+      throw new Error("Memo not found");
     }
 
-    const audioResponse = await fetch(memo.audio_url);
-
-    if (!audioResponse.ok) {
-      throw new Error(`Failed to download audio: ${audioResponse.status}`);
+    if (!memo.storage_path) {
+      throw new Error("Missing storage_path");
     }
-    
-    const arrayBuffer = await audioResponse.arrayBuffer();
-    console.log("mime_type:", memo.mime_type);
-console.log("audio_url:", memo.audio_url);
-console.log("buffer size:", arrayBuffer.byteLength);
-    // 🔥 IMPORTANT: Node File korrekt bauen
 
+    const { data: audioBlob, error: downloadError } = await supabase.storage
+      .from("memos")
+      .download(memo.storage_path);
+
+    if (downloadError || !audioBlob) {
+      throw downloadError || new Error("Could not download audio");
+    }
+
+    const arrayBuffer = await audioBlob.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const file = await OpenAI.toFile(buffer, "audio.webm", {
+    const filename =
+      memo.mime_type?.includes("mp4") || memo.mime_type?.includes("aac")
+        ? "audio.m4a"
+        : memo.mime_type?.includes("ogg")
+        ? "audio.ogg"
+        : "audio.webm";
+
+    const file = await toFile(buffer, filename, {
       type: memo.mime_type || "audio/webm",
     });
-    // OpenAI
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY!,
-    });
-    
+
     const transcription = await openai.audio.transcriptions.create({
       model: "gpt-4o-mini-transcribe",
       file,
     });
-    const text = transcription.text;
 
-    // --- In Supabase speichern
-    const { error: updateError } = await supabase
+    await supabase
       .from("memos")
       .update({
-        transcript_text: text,
+        transcript_text: transcription.text,
+        status: "ready",
+        processing_finished_at: new Date().toISOString(),
+        transcript_error: null,
       })
       .eq("id", memoId);
-
-    if (updateError) {
-      throw updateError;
-    }
 
     return res.status(200).json({
       ok: true,
       memoId,
-      transcript: text,
     });
   } catch (error: any) {
     console.error("TRANSCRIBE ERROR:", error);
+
+    await supabase
+      .from("memos")
+      .update({
+        status: "failed",
+        transcript_error: error.message || "Unknown error",
+        processing_finished_at: new Date().toISOString(),
+      })
+      .eq("id", memoId);
+
     return res.status(500).json({
       ok: false,
       error: error.message || "Unknown error",

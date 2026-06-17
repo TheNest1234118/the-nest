@@ -5,7 +5,7 @@ import {
   loadMemos,
   saveMemo,
   deleteMemoFromSupabase,
-  transcribeMemo,
+  getMemoAudioUrl,
   type SupabaseMemo,
 } from "@/lib/memos";
 import { ChevronLeft, Mic, Square, Play, Pause, Trash2 } from "lucide-react";
@@ -143,13 +143,7 @@ recorder.onstop = async () => {
       recorder.mimeType || "audio/webm",
       finalTitle
     );
-    if (saved?.id) {
-      try {
-        await transcribeMemo(saved.id);
-      } catch (err) {
-        console.error("Transcription failed", err);
-      }
-    }
+  
     // 4. UI updaten
     if (saved) {
       setMemos((prev) => [saved, ...prev]);
@@ -207,36 +201,40 @@ recorder.onstop = async () => {
   }, []);
 
   const togglePlay = useCallback(
-    (memo: Memo) => {
+    async (memo: Memo) => {
       if (playingId === memo.id) {
         audioRef.current?.pause();
         setPlayingId(null);
         return;
       }
-
+  
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = "";
       }
-
-      const audio = new Audio();
-      audio.preload = "auto";
-      audio.src = memo.audio_url;
-      audioRef.current = audio;
-
-      audio.onended = () => setPlayingId(null);
-      audio.onerror = () => {
-        setPlayingId(null);
-        setError("Could not play this memo.");
-      };
-
-      audio
-        .play()
-        .then(() => setPlayingId(memo.id))
-        .catch(() => {
+  
+      try {
+        const audioUrl = await getMemoAudioUrl(memo.storage_path);
+  
+        const audio = new Audio();
+        audio.preload = "auto";
+        audio.src = audioUrl;
+        audioRef.current = audio;
+  
+        audio.onended = () => setPlayingId(null);
+  
+        audio.onerror = () => {
           setPlayingId(null);
-          setError("Playback failed. Tap play again.");
-        });
+          setError("Could not play this memo.");
+        };
+  
+        await audio.play();
+        setPlayingId(memo.id);
+      } catch (err) {
+        console.error("Playback failed", err);
+        setPlayingId(null);
+        setError("Playback failed. Tap play again.");
+      }
     },
     [playingId]
   );
@@ -553,7 +551,23 @@ recorder.onstop = async () => {
                     >
                       {formatTime(memo.duration)}
                     </span>
+                    {memo.status === "processing" && (
+  <span style={{ fontSize: 10, color: "rgba(205,170,100,0.45)" }}>
+    Transcribing...
+  </span>
+)}
 
+{memo.status === "ready" && memo.transcript_text && (
+  <span style={{ fontSize: 10, color: "rgba(175,158,132,0.38)" }}>
+    Transcript ready
+  </span>
+)}
+
+{memo.status === "failed" && (
+  <span style={{ fontSize: 10, color: "rgba(248,113,113,0.55)" }}>
+    Transcription failed
+  </span>
+)}
                     <span
                       style={{
                         fontSize: 10,
