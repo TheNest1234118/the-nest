@@ -170,6 +170,22 @@ export function Onboarding() {
             >
               {step.button}
             </button>
+            <button
+  onClick={finishGuide}
+  style={{
+    width: "100%",
+    marginTop: 12,
+    background: "none",
+    border: "none",
+    color: "rgba(185,162,128,0.42)",
+    fontSize: 11,
+    letterSpacing: "0.14em",
+    textTransform: "uppercase",
+    cursor: "pointer",
+  }}
+>
+  Skip
+</button>
           </motion.div>
         </AnimatePresence>
       </div>

@@ -221,6 +221,8 @@ const sectionDescription: React.CSSProperties = {
 };
 
 export function Dashboard() {
+  const [selectedDailyMood, setSelectedDailyMood] =
+  useState<DashboardMoodKey | null>(null);
   const [, navigate] = useLocation();
   const [authOpen, setAuthOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -1083,23 +1085,10 @@ export function Dashboard() {
             {MOODS.map((mood) => (
               <button
                 key={mood.key}
-                onClick={async () => {
-                  await saveDailyMood(mood.key as MoodKey);
-
-                  const today = new Date().toISOString().slice(0, 10);
-
-                  if (user?.id) {
-                    await supabase.from("nest_daily_activity").upsert({
-                      user_id: user.id,
-                      activity_date: today,
-                    });
-                  }
-
-                  setTodayMood(mood.key);
-                }}
+                onClick={() => setSelectedDailyMood(mood.key)}
                 style={{
                   background:
-                    todayMood === mood.key
+                  selectedDailyMood === mood.key
                       ? "rgba(205,170,100,0.12)"
                       : "rgba(255,255,255,0.035)",
                   border: "1px solid rgba(255,255,255,0.065)",
@@ -1114,6 +1103,46 @@ export function Dashboard() {
               </button>
             ))}
           </div>
+          <button
+  disabled={!selectedDailyMood}
+  onClick={async () => {
+    if (!selectedDailyMood) return;
+
+    await saveDailyMood(selectedDailyMood as MoodKey);
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    if (user?.id) {
+      await supabase.from("nest_daily_activity").upsert({
+        user_id: user.id,
+        activity_date: today,
+      });
+    }
+
+    setTodayMood(selectedDailyMood);
+  }}
+  style={{
+    width: "100%",
+    marginTop: 14,
+    background: selectedDailyMood
+      ? "rgba(205,170,100,0.10)"
+      : "rgba(255,255,255,0.025)",
+    border: selectedDailyMood
+      ? "1px solid rgba(205,170,100,0.18)"
+      : "1px solid rgba(255,255,255,0.05)",
+    borderRadius: 14,
+    padding: "14px 16px",
+    color: selectedDailyMood
+      ? "rgba(225,205,176,0.82)"
+      : "rgba(175,158,132,0.36)",
+    fontSize: 11,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    cursor: selectedDailyMood ? "pointer" : "default",
+  }}
+>
+  Continue
+</button>
 {/*
          <p style={{ ...modalText, marginTop: 18 }}>
             One quiet invitation for today:
