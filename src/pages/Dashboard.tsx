@@ -1107,11 +1107,10 @@ export function Dashboard() {
   disabled={!selectedDailyMood}
   onClick={async () => {
     if (!selectedDailyMood) return;
-
     await saveDailyMood(selectedDailyMood as MoodKey);
 
     const today = new Date().toISOString().slice(0, 10);
-
+    
     if (user?.id) {
       await supabase.from("nest_daily_activity").upsert({
         user_id: user.id,
@@ -1120,6 +1119,9 @@ export function Dashboard() {
     }
 
     setTodayMood(selectedDailyMood);
+localStorage.setItem("nest_daily_checkin_date", today);
+setSelectedDailyMood(null);
+setDailyOpen(false);
   }}
   style={{
     width: "100%",
