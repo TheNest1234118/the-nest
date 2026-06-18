@@ -4,9 +4,13 @@ export type MoodKey =
   | "calm"
   | "good"
   | "neutral"
+  | "tired"
   | "overstimulated"
   | "anxious"
-  | "sad";
+  | "sad"
+  | "frustrated"
+  | "foggy"
+  | "motivated";
 
 export async function saveDailyMood(mood: MoodKey) {
   const today = new Date().toISOString().slice(0, 10);
