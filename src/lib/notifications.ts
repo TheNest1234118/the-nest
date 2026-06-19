@@ -8,7 +8,11 @@ async function getOneSignalSubscriptionId(): Promise<string | null> {
   let subscriptionId: string | null = null;
 
   await window.OneSignalDeferred.push(async (OneSignal: any) => {
-    subscriptionId = OneSignal.User?.PushSubscription?.id || null;
+    console.log("PushSubscription", OneSignal.User?.PushSubscription);
+    subscriptionId =
+      OneSignal.User?.PushSubscription?.token ||
+      OneSignal.User?.PushSubscription?.id ||
+      null;
   });
 
   return subscriptionId;
