@@ -102,9 +102,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     },
     body: JSON.stringify({
       app_id: appId,
-      include_subscription_ids: dueUsers.map(
-        (u) => u.onesignal_subscription_id
-      ),
+      include_aliases: {
+        onesignal_id: dueUsers.map((u) => u.onesignal_subscription_id),
+      },
+      target_channel: "push",
       headings: { en: "The Nest" },
       contents: { en: message },
       url: "https://www.thenestapp.space/home?notification=onesignal&category=reminder",
