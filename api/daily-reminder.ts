@@ -103,7 +103,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     body: JSON.stringify({
       app_id: appId,
       include_aliases: {
-        onesignal_id: dueUsers.map((u) => u.onesignal_subscription_id),
+        external_id: dueUsers.map((u) => u.onesignal_subscription_id),
       },
       target_channel: "push",
       headings: { en: "The Nest" },

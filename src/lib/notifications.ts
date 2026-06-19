@@ -3,20 +3,15 @@ import { supabase } from "@/lib/supabase";
 export type ReminderPreset = "before_bed" | "evening" | "morning" | "custom";
 export type ReminderFrequency = "daily" | "selected_days" | "weekly";
 async function getOneSignalSubscriptionId(): Promise<string | null> {
-  if (!window.OneSignalDeferred) return null;
+  const externalId =
+    localStorage.getItem("nest_onesignal_external_id") ||
+    crypto.randomUUID();
 
-  let subscriptionId: string | null = null;
+  localStorage.setItem("nest_onesignal_external_id", externalId);
 
-  await window.OneSignalDeferred.push(async (OneSignal: any) => {
-    subscriptionId =
-      OneSignal.User?.onesignalId ||
-      OneSignal.User?.id ||
-      null;
+  console.log("Saving OneSignal external id", externalId);
 
-    console.log("Saving OneSignal user id", subscriptionId);
-  });
-
-  return subscriptionId;
+  return externalId;
 }
 export interface NestNotificationPreferences {
   enabled: boolean;
@@ -103,10 +98,17 @@ export async function requestNestNotifications() {
         console.log("OneSignal optIn start");
 
         await OneSignal.User.PushSubscription.optIn();
-        const externalId = OneSignal.User.onesignalId;
-        if (externalId) {
-          await OneSignal.login(externalId);
-        }
+
+        const externalId =
+          localStorage.getItem("nest_onesignal_external_id") ||
+          crypto.randomUUID();
+        
+        localStorage.setItem("nest_onesignal_external_id", externalId);
+        
+        await OneSignal.login(externalId);
+        console.log("OneSignal external id", externalId);
+console.log("OneSignal user id", OneSignal.User.onesignalId);
+console.log("Push subscription id", OneSignal.User.PushSubscription.id);
 
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
