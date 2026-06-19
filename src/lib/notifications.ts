@@ -3,15 +3,17 @@ import { supabase } from "@/lib/supabase";
 export type ReminderPreset = "before_bed" | "evening" | "morning" | "custom";
 export type ReminderFrequency = "daily" | "selected_days" | "weekly";
 async function getOneSignalSubscriptionId(): Promise<string | null> {
-  const externalId =
-    localStorage.getItem("nest_onesignal_external_id") ||
-    crypto.randomUUID();
+  if (!window.OneSignalDeferred) return null;
 
-  localStorage.setItem("nest_onesignal_external_id", externalId);
+  let onesignalId: string | null = null;
 
-  console.log("Saving OneSignal external id", externalId);
+  await window.OneSignalDeferred.push(async (OneSignal: any) => {
+    onesignalId = OneSignal.User?.onesignalId || null;
 
-  return externalId;
+    console.log("Saving OneSignal user id", onesignalId);
+  });
+
+  return onesignalId;
 }
 export interface NestNotificationPreferences {
   enabled: boolean;
