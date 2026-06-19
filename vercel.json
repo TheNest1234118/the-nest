@@ -11,10 +11,10 @@
       "destination": "/"
     }
   ],
-"crons": [
-  {
-    "path": "/api/daily-reminder",
-    "schedule": "*/15 * * * *"
-  }
-]
+  "crons": [
+    {
+      "path": "/api/daily-reminder",
+      "schedule": "0 20 * * *"
+    }
+  ]
 }
