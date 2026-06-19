@@ -8,11 +8,12 @@ async function getOneSignalSubscriptionId(): Promise<string | null> {
   let subscriptionId: string | null = null;
 
   await window.OneSignalDeferred.push(async (OneSignal: any) => {
-    console.log("PushSubscription", OneSignal.User?.PushSubscription);
     subscriptionId =
-      OneSignal.User?.PushSubscription?.token ||
       OneSignal.User?.PushSubscription?.id ||
+      OneSignal.User?.PushSubscription?.fe ||
       null;
+
+    console.log("Saving OneSignal subscription id", subscriptionId);
   });
 
   return subscriptionId;
@@ -102,6 +103,10 @@ export async function requestNestNotifications() {
         console.log("OneSignal optIn start");
 
         await OneSignal.User.PushSubscription.optIn();
+        const externalId = OneSignal.User.onesignalId;
+if (externalId) {
+  await OneSignal.login(externalId);
+}
 
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
