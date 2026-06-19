@@ -78,30 +78,33 @@ export async function writeNotificationPreferences(
   });
 }
 export async function requestNestNotifications() {
-  if (!window.OneSignalDeferred) return false;
+  if (!window.OneSignalDeferred) {
+    console.log("OneSignalDeferred missing");
+    return false;
+  }
 
   let granted = false;
 
   await window.OneSignalDeferred.push(async (OneSignal: any) => {
+    console.log("before permission", Notification.permission);
+
     await OneSignal.Notifications.requestPermission();
 
     if (Notification.permission === "granted") {
       await OneSignal.User.PushSubscription.optIn();
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    granted =
-      Notification.permission === "granted" &&
-      OneSignal.User.PushSubscription.optedIn === true;
+    console.log("after permission", Notification.permission);
+    console.log("optedIn", OneSignal.User.PushSubscription.optedIn);
+    console.log("subscription id", OneSignal.User.PushSubscription.id);
+
+    granted = Notification.permission === "granted";
 
     if (granted) {
       track("Notification enabled");
     }
-
-    console.log("permission", Notification.permission);
-    console.log("optedIn", OneSignal.User.PushSubscription.optedIn);
-    console.log("id", OneSignal.User.PushSubscription.id);
   });
 
   return granted;
