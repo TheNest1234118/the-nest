@@ -1,8 +1,18 @@
 import { track } from "@vercel/analytics";
-
+import { supabase } from "@/lib/supabase";
 export type ReminderPreset = "before_bed" | "evening" | "morning" | "custom";
 export type ReminderFrequency = "daily" | "selected_days" | "weekly";
+async function getOneSignalSubscriptionId(): Promise<string | null> {
+  if (!window.OneSignalDeferred) return null;
 
+  let subscriptionId: string | null = null;
+
+  await window.OneSignalDeferred.push(async (OneSignal: any) => {
+    subscriptionId = OneSignal.User?.PushSubscription?.id || null;
+  });
+
+  return subscriptionId;
+}
 export interface NestNotificationPreferences {
   enabled: boolean;
   reminder_time: string;
@@ -51,6 +61,21 @@ export async function writeNotificationPreferences(
 ) {
   localStorage.setItem(NOTIFICATION_PREFS_KEY, JSON.stringify(prefs));
   await syncOneSignalNotificationTags(prefs);
+
+  const onesignalSubscriptionId = await getOneSignalSubscriptionId();
+
+  if (!onesignalSubscriptionId) return;
+
+  await supabase.from("notification_preferences").upsert({
+    onesignal_subscription_id: onesignalSubscriptionId,
+    enabled: prefs.enabled,
+    reminder_time: prefs.reminder_time,
+    reminder_timezone: prefs.reminder_timezone,
+    reminder_days: prefs.reminder_days,
+    reminder_frequency: prefs.reminder_frequency,
+    preset: prefs.preset,
+    updated_at: new Date().toISOString(),
+  });
 }
 
 export async function requestNestNotifications() {
