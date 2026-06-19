@@ -184,7 +184,7 @@ export function Settings() {
 
         {/* NOTIFICATIONS */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <SectionLabel>Notifications</SectionLabel>
+        <SectionLabel>Reminders</SectionLabel>
           <NotificationPreferences flash={flash} />
         </motion.div>
 

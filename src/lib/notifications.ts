@@ -1,17 +1,15 @@
 import { track } from "@vercel/analytics";
 
-export type NotificationCategory =
-  | "evening_reflection"
-  | "sleep_unwind"
-  | "thought_reminders"
-  | "weekly_reflection";
+export type ReminderPreset = "before_bed" | "evening" | "morning" | "custom";
+export type ReminderFrequency = "daily" | "selected_days" | "weekly";
 
 export interface NestNotificationPreferences {
   enabled: boolean;
-  evening_reflection: boolean;
-  sleep_unwind: boolean;
-  thought_reminders: boolean;
-  weekly_reflection: boolean;
+  reminder_time: string;
+  reminder_timezone: string;
+  reminder_days: number[];
+  reminder_frequency: ReminderFrequency;
+  preset: ReminderPreset;
 }
 
 export const NOTIFICATION_PREFS_KEY = "nest_notification_preferences";
@@ -20,10 +18,12 @@ export const LAST_RETURN_AFTER_NOTIFICATION_KEY =
 
 export const DEFAULT_NOTIFICATION_PREFS: NestNotificationPreferences = {
   enabled: false,
-  evening_reflection: true,
-  sleep_unwind: true,
-  thought_reminders: true,
-  weekly_reflection: true,
+  reminder_time: "21:00",
+  reminder_timezone:
+    Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Zurich",
+  reminder_days: [1, 2, 3, 4, 5, 6, 0],
+  reminder_frequency: "daily",
+  preset: "before_bed",
 };
 
 declare global {
@@ -36,6 +36,7 @@ export function readNotificationPreferences(): NestNotificationPreferences {
   try {
     const raw = localStorage.getItem(NOTIFICATION_PREFS_KEY);
     if (!raw) return DEFAULT_NOTIFICATION_PREFS;
+
     return {
       ...DEFAULT_NOTIFICATION_PREFS,
       ...(JSON.parse(raw) as Partial<NestNotificationPreferences>),
@@ -77,27 +78,25 @@ export async function syncOneSignalNotificationTags(
   await window.OneSignalDeferred.push(async (OneSignal: any) => {
     await OneSignal.User.addTags({
       nest_notifications_enabled: prefs.enabled ? "true" : "false",
-      nest_cat_evening_reflection:
-        prefs.enabled && prefs.evening_reflection ? "true" : "false",
-      nest_cat_sleep_unwind:
-        prefs.enabled && prefs.sleep_unwind ? "true" : "false",
-      nest_cat_thought_reminders:
-        prefs.enabled && prefs.thought_reminders ? "true" : "false",
-      nest_cat_weekly_reflection:
-        prefs.enabled && prefs.weekly_reflection ? "true" : "false",
-      nest_timezone:
-        Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown",
+      nest_reminder_time: prefs.reminder_time,
+      nest_reminder_timezone: prefs.reminder_timezone,
+      nest_reminder_days: prefs.reminder_days.join(","),
+      nest_reminder_frequency: prefs.reminder_frequency,
+      nest_reminder_preset: prefs.preset,
     });
   });
 }
 
-export function trackNotificationCategorySelected(
-  category: NotificationCategory,
-  enabled: boolean
+export function trackReminderPreferenceChanged(
+  prefs: NestNotificationPreferences
 ) {
-  track("Notification category selected", {
-    category,
-    enabled,
+  track("Reminder preference changed", {
+    enabled: prefs.enabled,
+    reminder_time: prefs.reminder_time,
+    reminder_timezone: prefs.reminder_timezone,
+    reminder_frequency: prefs.reminder_frequency,
+    preset: prefs.preset,
+    reminder_days: prefs.reminder_days.join(","),
   });
 }
 
@@ -125,11 +124,11 @@ export function trackNotificationOpenFromUrl() {
     localStorage.setItem(LAST_RETURN_AFTER_NOTIFICATION_KEY, String(Date.now()));
 
     track("Notification opened", {
-      category: category || "unknown",
+      category: category || "reminder",
     });
 
     track("Return session after notification", {
-      category: category || "unknown",
+      category: category || "reminder",
     });
   }
 }

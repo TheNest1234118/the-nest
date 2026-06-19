@@ -2,30 +2,33 @@ import React, { useEffect, useState } from "react";
 import {
   readNotificationPreferences,
   requestNestNotifications,
-  trackNotificationCategorySelected,
+  trackReminderPreferenceChanged,
   writeNotificationPreferences,
   type NestNotificationPreferences,
-  type NotificationCategory,
+  type ReminderFrequency,
+  type ReminderPreset,
 } from "@/lib/notifications";
 
-const LABELS: Record<NotificationCategory, { title: string; desc: string }> = {
-  evening_reflection: {
-    title: "Evening Reflection",
-    desc: "A quiet check-in around the end of the day.",
-  },
-  sleep_unwind: {
-    title: "Sleep & Unwind",
-    desc: "A gentle invitation to slow down before sleep.",
-  },
-  thought_reminders: {
-    title: "Thought Reminders",
-    desc: "Return to saved thoughts when they may still matter.",
-  },
-  weekly_reflection: {
-    title: "Weekly Reflection",
-    desc: "A calm moment to look back without pressure.",
-  },
-};
+const PRESETS: {
+  key: ReminderPreset;
+  label: string;
+  time: string;
+}[] = [
+  { key: "before_bed", label: "Before bed", time: "21:00" },
+  { key: "evening", label: "Evening", time: "19:30" },
+  { key: "morning", label: "Morning", time: "08:30" },
+  { key: "custom", label: "Custom", time: "" },
+];
+
+const DAYS = [
+  { label: "Sun", value: 0 },
+  { label: "Mon", value: 1 },
+  { label: "Tue", value: 2 },
+  { label: "Wed", value: 3 },
+  { label: "Thu", value: 4 },
+  { label: "Fri", value: 5 },
+  { label: "Sat", value: 6 },
+];
 
 export function NotificationPreferences({
   flash,
@@ -42,10 +45,11 @@ export function NotificationPreferences({
 
   const update = async (next: NestNotificationPreferences) => {
     setPrefs(next);
+    trackReminderPreferenceChanged(next);
     await writeNotificationPreferences(next);
   };
 
-  const enableAll = async () => {
+  const enableReminders = async () => {
     const granted = await requestNestNotifications();
 
     if (!granted) {
@@ -56,28 +60,53 @@ export function NotificationPreferences({
     await update({
       ...prefs,
       enabled: true,
+      reminder_timezone:
+        Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Zurich",
     });
 
     flash?.("Gentle reminders enabled");
   };
 
-  const disableAll = async () => {
+  const disableReminders = async () => {
     await update({
       ...prefs,
       enabled: false,
     });
 
-    flash?.("Notifications paused");
+    flash?.("Reminders paused");
   };
 
-  const toggleCategory = async (category: NotificationCategory) => {
-    const next = {
+  const choosePreset = async (preset: ReminderPreset, time: string) => {
+    await update({
       ...prefs,
-      [category]: !prefs[category],
-    };
+      preset,
+      reminder_time: preset === "custom" ? prefs.reminder_time : time,
+    });
+  };
 
-    trackNotificationCategorySelected(category, Boolean(next[category]));
-    await update(next);
+  const chooseFrequency = async (frequency: ReminderFrequency) => {
+    await update({
+      ...prefs,
+      reminder_frequency: frequency,
+      reminder_days:
+        frequency === "daily"
+          ? [1, 2, 3, 4, 5, 6, 0]
+          : frequency === "weekly"
+          ? [0]
+          : prefs.reminder_days,
+    });
+  };
+
+  const toggleDay = async (day: number) => {
+    const selected = prefs.reminder_days.includes(day);
+
+    await update({
+      ...prefs,
+      reminder_frequency: "selected_days",
+      reminder_days: selected
+        ? prefs.reminder_days.filter((d) => d !== day)
+        : [...prefs.reminder_days, day],
+    });
   };
 
   return (
@@ -89,41 +118,132 @@ export function NotificationPreferences({
         overflow: "hidden",
       }}
     >
-      <button style={rowStyle} onClick={prefs.enabled ? disableAll : enableAll}>
+      <button
+        style={rowStyle}
+        onClick={prefs.enabled ? disableReminders : enableReminders}
+      >
         <div>
           <div style={labelStyle}>
             {prefs.enabled ? "Gentle reminders on" : "Enable gentle reminders"}
           </div>
           <div style={descStyle}>
-            Calm invitations to reflect, unwind, or return to something you saved.
+            Choose when The Nest should remind you. Pick a time when you usually
+            have space to reflect.
           </div>
         </div>
         <span style={valueStyle}>{prefs.enabled ? "On" : "Off"}</span>
       </button>
 
-      {(["evening_reflection", "sleep_unwind", "thought_reminders", "weekly_reflection"] as NotificationCategory[]).map(
-        (category) => (
-          <button
-            key={category}
-            style={{
-              ...rowStyle,
-              opacity: prefs.enabled ? 1 : 0.42,
-            }}
-            disabled={!prefs.enabled}
-            onClick={() => toggleCategory(category)}
-          >
-            <div>
-              <div style={labelStyle}>{LABELS[category].title}</div>
-              <div style={descStyle}>{LABELS[category].desc}</div>
-            </div>
-            <span style={valueStyle}>{prefs[category] ? "On" : "Off"}</span>
-          </button>
-        )
-      )}
+      <div
+        style={{
+          opacity: prefs.enabled ? 1 : 0.42,
+          pointerEvents: prefs.enabled ? "auto" : "none",
+        }}
+      >
+        <div style={blockStyle}>
+          <div style={labelStyle}>Reminder time</div>
+          <input
+            type="time"
+            value={prefs.reminder_time}
+            onChange={(e) =>
+              update({
+                ...prefs,
+                reminder_time: e.target.value,
+                preset: "custom",
+                reminder_timezone:
+                  Intl.DateTimeFormat().resolvedOptions().timeZone ||
+                  "Europe/Zurich",
+              })
+            }
+            style={inputStyle}
+          />
+        </div>
 
-      <button style={{ ...rowStyle, borderBottom: "none" }} onClick={disableAll}>
+        <div style={blockStyle}>
+          <div style={labelStyle}>Quick presets</div>
+          <div style={pillWrapStyle}>
+            {PRESETS.map((preset) => (
+              <button
+                key={preset.key}
+                onClick={() => choosePreset(preset.key, preset.time)}
+                style={{
+                  ...pillStyle,
+                  border:
+                    prefs.preset === preset.key
+                      ? "1px solid rgba(205,170,100,0.42)"
+                      : pillStyle.border,
+                  color:
+                    prefs.preset === preset.key
+                      ? "rgba(230,200,145,0.92)"
+                      : pillStyle.color,
+                }}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={blockStyle}>
+          <div style={labelStyle}>Frequency</div>
+          <div style={pillWrapStyle}>
+            {[
+              { key: "daily", label: "Daily" },
+              { key: "selected_days", label: "Selected days" },
+              { key: "weekly", label: "Weekly" },
+            ].map((item) => (
+              <button
+                key={item.key}
+                onClick={() => chooseFrequency(item.key as ReminderFrequency)}
+                style={{
+                  ...pillStyle,
+                  border:
+                    prefs.reminder_frequency === item.key
+                      ? "1px solid rgba(205,170,100,0.42)"
+                      : pillStyle.border,
+                  color:
+                    prefs.reminder_frequency === item.key
+                      ? "rgba(230,200,145,0.92)"
+                      : pillStyle.color,
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ ...blockStyle, borderBottom: "none" }}>
+          <div style={labelStyle}>Reminder days</div>
+          <div style={pillWrapStyle}>
+            {DAYS.map((day) => {
+              const active = prefs.reminder_days.includes(day.value);
+
+              return (
+                <button
+                  key={day.value}
+                  onClick={() => toggleDay(day.value)}
+                  style={{
+                    ...dayStyle,
+                    border: active
+                      ? "1px solid rgba(205,170,100,0.42)"
+                      : dayStyle.border,
+                    color: active
+                      ? "rgba(230,200,145,0.92)"
+                      : dayStyle.color,
+                  }}
+                >
+                  {day.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <button style={{ ...rowStyle, borderBottom: "none" }} onClick={disableReminders}>
         <div>
-          <div style={labelStyle}>No Notifications</div>
+          <div style={labelStyle}>No reminders</div>
           <div style={descStyle}>Pause all reminders from The Nest.</div>
         </div>
       </button>
@@ -145,6 +265,11 @@ const rowStyle: React.CSSProperties = {
   textAlign: "left",
 };
 
+const blockStyle: React.CSSProperties = {
+  borderBottom: "1px solid rgba(255,255,255,0.044)",
+  padding: "15px 18px",
+};
+
 const labelStyle: React.CSSProperties = {
   fontSize: 13,
   color: "rgba(220,205,182,0.78)",
@@ -154,9 +279,43 @@ const descStyle: React.CSSProperties = {
   fontSize: 11,
   color: "rgba(155,140,118,0.36)",
   marginTop: 3,
+  lineHeight: 1.45,
 };
 
 const valueStyle: React.CSSProperties = {
   fontSize: 12,
   color: "rgba(205,170,100,0.52)",
+};
+
+const inputStyle: React.CSSProperties = {
+  marginTop: 10,
+  width: "100%",
+  background: "rgba(255,255,255,0.035)",
+  border: "1px solid rgba(255,255,255,0.07)",
+  borderRadius: 12,
+  padding: "11px 12px",
+  color: "rgba(240,232,218,0.88)",
+  fontSize: 13,
+};
+
+const pillWrapStyle: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+  marginTop: 10,
+};
+
+const pillStyle: React.CSSProperties = {
+  background: "rgba(255,255,255,0.026)",
+  border: "1px solid rgba(255,255,255,0.065)",
+  borderRadius: 999,
+  padding: "8px 11px",
+  color: "rgba(185,162,128,0.52)",
+  fontSize: 12,
+  cursor: "pointer",
+};
+
+const dayStyle: React.CSSProperties = {
+  ...pillStyle,
+  minWidth: 44,
 };
