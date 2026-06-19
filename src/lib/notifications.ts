@@ -131,6 +131,14 @@ export async function syncOneSignalNotificationTags(
   if (!window.OneSignalDeferred) return;
 
   await window.OneSignalDeferred.push(async (OneSignal: any) => {
+    const externalId =
+      localStorage.getItem("nest_onesignal_external_id") ||
+      crypto.randomUUID();
+
+    localStorage.setItem("nest_onesignal_external_id", externalId);
+
+    await OneSignal.login(externalId);
+
     await OneSignal.User.addTags({
       nest_notifications_enabled: prefs.enabled ? "true" : "false",
       nest_reminder_time: prefs.reminder_time,
