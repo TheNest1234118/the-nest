@@ -85,11 +85,15 @@ export async function requestNestNotifications() {
 
   await window.OneSignalDeferred.push(async (OneSignal: any) => {
     await OneSignal.Notifications.requestPermission();
+
     granted = Notification.permission === "granted";
 
     if (granted) {
       track("Notification enabled");
     }
+
+    console.log("permission", Notification.permission);
+    console.log("subscription id", OneSignal.User?.PushSubscription?.id);
   });
 
   return granted;
