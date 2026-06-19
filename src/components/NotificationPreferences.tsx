@@ -43,10 +43,23 @@ export function NotificationPreferences({
     writeNotificationPreferences(prefs);
   }, []);
 
-  const update = async (next: NestNotificationPreferences) => {
+  const update = (next: NestNotificationPreferences) => {
     setPrefs(next);
-    trackReminderPreferenceChanged(next);
-    await writeNotificationPreferences(next);
+  };
+  const saveSettings = async () => {
+    if (prefs.enabled) {
+      const granted = await requestNestNotifications();
+  
+      if (!granted) {
+        flash?.("Notifications were not enabled");
+        return;
+      }
+    }
+  
+    trackReminderPreferenceChanged(prefs);
+    await writeNotificationPreferences(prefs);
+  
+    flash?.("Reminder settings saved");
   };
 
   const enableReminders = async () => {
@@ -244,7 +257,15 @@ export function NotificationPreferences({
           </div>
         </div>
       </div>
-
+      <button style={rowStyle} onClick={saveSettings}>
+  <div>
+    <div style={labelStyle}>Save reminder settings</div>
+    <div style={descStyle}>
+      Your reminder will follow this time, timezone, and selected days.
+    </div>
+  </div>
+  <span style={valueStyle}>Save</span>
+</button>
       <button style={{ ...rowStyle, borderBottom: "none" }} onClick={disableReminders}>
         <div>
           <div style={labelStyle}>No reminders</div>
