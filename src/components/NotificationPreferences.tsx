@@ -50,20 +50,24 @@ export function NotificationPreferences({
   };
 
   const enableReminders = async () => {
+    console.log("ENABLE CLICKED");
+  
     const granted = await requestNestNotifications();
-
+  
+    console.log("GRANTED RESULT", granted);
+  
     if (!granted) {
       flash?.("Notifications were not enabled");
       return;
     }
-
+  
     await update({
       ...prefs,
       enabled: true,
       reminder_timezone:
         Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Zurich",
     });
-
+  
     flash?.("Gentle reminders enabled");
   };
 

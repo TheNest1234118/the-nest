@@ -78,6 +78,9 @@ export async function writeNotificationPreferences(
   });
 }
 export async function requestNestNotifications() {
+  console.log("REQUEST FUNCTION START");
+console.log("OneSignalDeferred", window.OneSignalDeferred);
+console.log("permission before", Notification.permission);
   if (!window.OneSignalDeferred) {
     console.log("OneSignalDeferred missing");
     return false;
