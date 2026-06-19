@@ -79,38 +79,34 @@ export async function writeNotificationPreferences(
 }
 export async function requestNestNotifications() {
   console.log("REQUEST FUNCTION START");
-console.log("OneSignalDeferred", window.OneSignalDeferred);
-console.log("permission before", Notification.permission);
-  if (!window.OneSignalDeferred) {
-    console.log("OneSignalDeferred missing");
-    return false;
+  console.log("OneSignalDeferred", window.OneSignalDeferred);
+  console.log("permission before", Notification.permission);
+
+  if (!window.OneSignalDeferred) return false;
+
+  let granted = Notification.permission === "granted";
+
+  if (!granted) {
+    const result = await Notification.requestPermission();
+    console.log("native permission result", result);
+    granted = result === "granted";
   }
 
-  let granted = false;
+  if (!granted) return false;
 
   await window.OneSignalDeferred.push(async (OneSignal: any) => {
-    console.log("before permission", Notification.permission);
-
-    await OneSignal.Notifications.requestPermission();
-
-    if (Notification.permission === "granted") {
-      await OneSignal.User.PushSubscription.optIn();
-    }
+    await OneSignal.User.PushSubscription.optIn();
 
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    console.log("after permission", Notification.permission);
+    console.log("after optIn permission", Notification.permission);
     console.log("optedIn", OneSignal.User.PushSubscription.optedIn);
     console.log("subscription id", OneSignal.User.PushSubscription.id);
 
-    granted = Notification.permission === "granted";
-
-    if (granted) {
-      track("Notification enabled");
-    }
+    track("Notification enabled");
   });
 
-  return granted;
+  return true;
 }
 
 export async function syncOneSignalNotificationTags(
