@@ -171,6 +171,14 @@ export function markThoughtSavedForNotifications() {
   if (!window.OneSignalDeferred) return;
 
   window.OneSignalDeferred.push(async (OneSignal: any) => {
+    const externalId =
+      localStorage.getItem("nest_onesignal_external_id") ||
+      crypto.randomUUID();
+
+    localStorage.setItem("nest_onesignal_external_id", externalId);
+
+    await OneSignal.login(externalId);
+
     await OneSignal.User.addTags({
       nest_has_saved_thoughts: "true",
       nest_last_thought_saved_at: String(Date.now()),
