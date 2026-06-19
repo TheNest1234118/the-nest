@@ -77,7 +77,6 @@ export async function writeNotificationPreferences(
     updated_at: new Date().toISOString(),
   });
 }
-
 export async function requestNestNotifications() {
   if (!window.OneSignalDeferred) return false;
 
