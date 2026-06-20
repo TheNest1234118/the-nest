@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await supabase
       .from("memos")
       .update({
-        status: "processing",
+        status: "pending",
         processing_started_at: new Date().toISOString(),
         transcript_error: null,
       })
@@ -70,7 +70,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (memoError || !memo) {
       throw new Error("Memo not found");
     }
-
+    if (memo.status === "ready" && memo.transcript_text) {
+      return res.status(200).json({
+        ok: true,
+        memoId,
+        skipped: "already transcribed",
+      });
+    }
     if (!memo.storage_path) {
       throw new Error("Missing storage_path");
     }
@@ -130,9 +136,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
       .eq("id", memoId);
 
-    return res.status(500).json({
-      ok: false,
-      error: error.message || "Unknown error",
-    });
+      return res.status(200).json({
+        ok: false,
+        error: error.message || "Unknown error",
+      }); 
   }
 }
