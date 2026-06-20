@@ -124,7 +124,7 @@ function OpenThoughts({ items }: { items: string[] }) {
 
   return (
     <div style={{ marginTop: 18 }}>
-      <TinyLabel>Open thoughts</TinyLabel>
+      <TinyLabel>One question</TinyLabel>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {items.map((item, i) => (
@@ -190,14 +190,14 @@ function ReflectionCard({ reflection }: { reflection: Reflection }) {
       <BadgeList items={reflection.themes || []} />
 
       <ShortList
-        title="Things you cared about"
-        items={reflection.cared_about || []}
-      />
+  title={reflection.type === "weekly" ? "Patterns you returned to" : "Things you cared about"}
+  items={reflection.cared_about || []}
+/>
 
-      <ShortList
-        title="Positive moments"
-        items={reflection.positive_moments || []}
-      />
+<ShortList
+  title={reflection.type === "weekly" ? "What changed" : "Positive moments"}
+  items={reflection.positive_moments || []}
+/>
 
       <OpenThoughts items={reflection.open_thoughts || []} />
 
@@ -704,16 +704,42 @@ export function Reflections() {
       </div>
 
       {loading && (
-        <p
-          style={{
-            fontSize: 13,
-            color: "rgba(205,170,100,0.62)",
-            marginBottom: 14,
-          }}
-        >
-          Creating your {loading} reflection...
-        </p>
-      )}
+  <motion.div
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    style={{
+      background: "rgba(255,255,255,0.026)",
+      border: "1px solid rgba(205,170,100,0.10)",
+      borderRadius: 18,
+      padding: 18,
+      marginBottom: 14,
+      textAlign: "center",
+    }}
+  >
+    <p
+      style={{
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: 18,
+        color: "rgba(235,215,180,0.88)",
+        marginBottom: 8,
+      }}
+    >
+      Creating your {loading} reflection
+    </p>
+
+    <p
+      style={{
+        fontSize: 12,
+        lineHeight: 1.6,
+        color: "rgba(175,158,132,0.54)",
+      }}
+    >
+      Looking back through your thoughts, moods and voice notes...
+      <br />
+      This can take a few moments.
+    </p>
+  </motion.div>
+)}
 
       {error && (
         <p

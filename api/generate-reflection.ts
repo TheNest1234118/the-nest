@@ -176,25 +176,16 @@ Mood: ${m.mood}`
       ),
    ];
   
-  const weeklyJson = `
-  
-  {
-  
-    "summary": "4-7 warm sentences describing the overall feeling of the week",
-  
-    "themes": ["theme"],
-  
-    "cared_about": ["things that seemed important"],
-  
-    "positive_moments": ["small meaningful moments"],
-  
-    "open_thoughts": ["gentle unanswered questions"],
-  
-    "closing_sentence": "a calm closing sentence"
-  
-  }
-  
-  `;
+   const weeklyJson = `
+   {
+     "summary": "One clear sentence describing what this week was mainly about.",
+     "themes": ["Most discussed topic, optionally with mention count"],
+     "cared_about": ["Recurring pattern or repeated thought"],
+     "positive_moments": ["What changed compared to the previous week"],
+     "open_thoughts": ["Exactly one gentle question"],
+     "closing_sentence": ""
+   }
+   `;
   
   const monthlyJson = `
   
@@ -268,17 +259,27 @@ Mood: ${m.mood}`
   
   WEEKLY REFLECTION
   
-  Focus on:
-  
-  - What appeared repeatedly this week
-  
-  - What seemed important
-  
-  - What received attention
-  
-  - Small positive moments
-  
-  - Questions that still remain open
+  Structure the weekly reflection like this:
+
+1. This week in one sentence
+Write exactly one sentence.
+
+2. What stayed with you
+List the most discussed topics.
+Use simple factual wording.
+Mention counts only when clearly supported by the entries.
+
+3. Patterns you returned to
+Describe repeated thoughts, repeated concerns, repeated ideas or repeated emotional patterns.
+
+4. What changed
+Compare with the previous week only if there is enough context.
+If there is not enough previous-week context, describe what shifted during this week.
+
+5. One question
+Return exactly one question.
+No advice.
+No action plan.
   
   Return this exact JSON shape:
   
