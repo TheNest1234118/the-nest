@@ -133,8 +133,8 @@ if (anchorsError) throw anchorsError;
      .order("created_at", { ascending: true });
    if (memosError) throw memosError;
    const { data: moods, error: moodsError } = await supabase
-  .from("mood_checkins")
-  .select("mood, note, created_at")
+   .from("user_daily_mood")
+   .select("mood, mood_date, created_at")
   .eq("user_id", user.id)
   .gte("created_at", period.startIso)
   .lte("created_at", period.endIso)
@@ -171,9 +171,8 @@ if (moodsError) throw moodsError;
     ),
     ...(moods ?? []).map(
         (m) =>
-          `[mood check-in | ${m.created_at}]
-      Mood: ${m.mood}
-      ${m.note || ""}`
+      `[mood check-in | ${m.created_at || m.mood_date}]
+Mood: ${m.mood}`
       ),
    ];
   

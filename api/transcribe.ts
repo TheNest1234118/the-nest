@@ -77,6 +77,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         skipped: "already transcribed",
       });
     }
+    
+    if (memo.processing_started_at && !memo.processing_finished_at) {
+      const started = new Date(memo.processing_started_at).getTime();
+      const ageMinutes = (Date.now() - started) / 60000;
+    
+      if (ageMinutes < 10) {
+        return res.status(200).json({
+          ok: true,
+          memoId,
+          skipped: "already processing",
+        });
+      }
+    }
     if (!memo.storage_path) {
       throw new Error("Missing storage_path");
     }
