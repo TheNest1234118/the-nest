@@ -19,7 +19,6 @@ const PRESETS: {
   { key: "morning", label: "Morning", time: "08:30" },
   { key: "custom", label: "Custom", time: "" },
 ];
-const [saved, setSaved] = useState(false);
 const DAYS = [
   { label: "Sun", value: 0 },
   { label: "Mon", value: 1 },
@@ -57,7 +56,6 @@ export function NotificationPreferences({
     }
   
     trackReminderPreferenceChanged(prefs);
-    setSaved(true);
     writeNotificationPreferences(prefs).catch(console.error);
   
     flash?.("Reminder settings saved");
