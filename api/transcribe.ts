@@ -26,10 +26,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const payload = req.body as SupabaseWebhookPayload;
-  const memoId = payload.record?.id;
+  const payload = req.body as any;
 
+  const memoId =
+    payload.record?.id ||
+    payload.new?.id ||
+    payload.old_record?.id ||
+    payload.old?.id ||
+    payload.id;
+  
   if (!memoId) {
+    console.log("TRANSCRIBE PAYLOAD:", JSON.stringify(payload));
     return res.status(400).json({ error: "Missing memo id" });
   }
 
