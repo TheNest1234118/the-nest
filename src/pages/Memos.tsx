@@ -46,7 +46,7 @@ export function Memos() {
   const [isSaving, setIsSaving] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const MAX_RECORDING_SECONDS = 3 * 60 * 60;
+  const MAX_RECORDING_SECONDS = 15 * 60;
   const CHUNK_SECONDS = 15 * 60;
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -159,6 +159,7 @@ recorder.onstop = async () => {
     console.error("Could not save memo", err);
     setError("Could not save memo.");
     setIsRecording(false);
+    setIsSaving(false);
   }
 };
       recorder.start(1000);
