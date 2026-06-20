@@ -8,7 +8,13 @@ async function getOneSignalSubscriptionId(): Promise<string | null> {
   let subscriptionId: string | null = null;
 
   await window.OneSignalDeferred.push(async (OneSignal: any) => {
+    await OneSignal.User.PushSubscription.optIn();
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    
     subscriptionId = OneSignal.User.PushSubscription.id;
+    
+    console.log("Saving OneSignal subscription id", subscriptionId);
+    console.log("OptedIn:", OneSignal.User.PushSubscription.optedIn);
 
     console.log("Saving OneSignal subscription id", subscriptionId);
   });
