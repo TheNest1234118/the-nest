@@ -19,7 +19,7 @@ const PRESETS: {
   { key: "morning", label: "Morning", time: "08:30" },
   { key: "custom", label: "Custom", time: "" },
 ];
-
+const [saved, setSaved] = useState(false);
 const DAYS = [
   { label: "Sun", value: 0 },
   { label: "Mon", value: 1 },
@@ -176,7 +176,28 @@ export function NotificationPreferences({
             style={inputStyle}
           />
         </div>
-
+        <div style={blockStyle}>
+  <div style={labelStyle}>Reminder message</div>
+  <div style={descStyle}>
+    This is the message you’ll receive in your reminder.
+  </div>
+  <textarea
+    value={prefs.reminder_message}
+    onChange={(e) =>
+      update({
+        ...prefs,
+        reminder_message: e.target.value,
+      })
+    }
+    placeholder="Write your reminder message..."
+    style={{
+      ...inputStyle,
+      minHeight: 80,
+      resize: "vertical",
+      fontFamily: "inherit",
+    }}
+  />
+</div>
         <div style={blockStyle}>
           <div style={labelStyle}>Quick presets</div>
           <div style={pillWrapStyle}>
