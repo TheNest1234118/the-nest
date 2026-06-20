@@ -62,7 +62,7 @@ export async function writeNotificationPreferences(
   prefs: NestNotificationPreferences
 ) {
   localStorage.setItem(NOTIFICATION_PREFS_KEY, JSON.stringify(prefs));
-  await syncOneSignalNotificationTags(prefs);
+ // await syncOneSignalNotificationTags(prefs);
 
   const onesignalSubscriptionId = await getOneSignalSubscriptionId();
 
@@ -101,16 +101,10 @@ export async function requestNestNotifications() {
 
         await OneSignal.User.PushSubscription.optIn();
 
-        const externalId =
-          localStorage.getItem("nest_onesignal_external_id") ||
-          crypto.randomUUID();
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         
-        localStorage.setItem("nest_onesignal_external_id", externalId);
-        
-        await OneSignal.login(externalId);
-        console.log("OneSignal external id", externalId);
-console.log("OneSignal user id", OneSignal.User.onesignalId);
-console.log("Push subscription id", OneSignal.User.PushSubscription.id);
+        console.log("OneSignal optedIn", OneSignal.User.PushSubscription.optedIn);
+        console.log("Push subscription id", OneSignal.User.PushSubscription.id);
 
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
