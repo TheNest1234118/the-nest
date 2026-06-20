@@ -95,21 +95,18 @@ export async function requestNestNotifications() {
   if (!granted) return false;
 
   if (window.OneSignalDeferred) {
-    window.OneSignalDeferred.push(async (OneSignal: any) => {
+    await window.OneSignalDeferred.push(async (OneSignal: any) => {
       try {
         console.log("OneSignal optIn start");
 
+        await OneSignal.Notifications.requestPermission();
         await OneSignal.User.PushSubscription.optIn();
 
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+
+        console.log("OneSignal user id", OneSignal.User.onesignalId);
         console.log("OneSignal optedIn", OneSignal.User.PushSubscription.optedIn);
         console.log("Push subscription id", OneSignal.User.PushSubscription.id);
-
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        console.log("OneSignal optedIn", OneSignal.User.PushSubscription.optedIn);
-        console.log("OneSignal id", OneSignal.User.PushSubscription.id);
       } catch (error) {
         console.log("OneSignal optIn failed", error);
       }
@@ -117,7 +114,6 @@ export async function requestNestNotifications() {
   }
 
   track("Notification enabled");
-
   return true;
 }
 
