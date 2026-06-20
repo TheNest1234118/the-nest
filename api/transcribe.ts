@@ -67,9 +67,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!memo.storage_path) {
       throw new Error("Missing storage_path");
     }
-    if (memo.duration > 900) {
-      throw new Error("Voice capsule is longer than 15 minutes. Audio was saved, but transcription is skipped for now.");
-    }
+    //if (memo.duration > 900) {
+      //throw new Error("Voice capsule is longer than 15 minutes. Audio was saved, but transcription is skipped for now.");
+    //}
     const { data: audioBlob, error: downloadError } = await supabase.storage
       .from("memos")
       .download(memo.storage_path);
