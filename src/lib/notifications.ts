@@ -23,6 +23,7 @@ async function getOneSignalSubscriptionId(): Promise<string | null> {
 }
 export interface NestNotificationPreferences {
   enabled: boolean;
+  reminder_message: string;
   reminder_time: string;
   reminder_timezone: string;
   reminder_days: number[];
@@ -34,16 +35,16 @@ export const NOTIFICATION_PREFS_KEY = "nest_notification_preferences";
 export const LAST_RETURN_AFTER_NOTIFICATION_KEY =
   "nest_last_return_after_notification";
 
-export const DEFAULT_NOTIFICATION_PREFS: NestNotificationPreferences = {
-  enabled: false,
-  reminder_time: "21:00",
-  reminder_timezone:
-    Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Zurich",
-  reminder_days: [1, 2, 3, 4, 5, 6, 0],
-  reminder_frequency: "daily",
-  preset: "before_bed",
-};
-
+  export const DEFAULT_NOTIFICATION_PREFS: NestNotificationPreferences = {
+    enabled: false,
+    reminder_message: "A gentle check-in, only if it feels right.",
+    reminder_time: "21:00",
+    reminder_timezone:
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Zurich",
+    reminder_days: [1, 2, 3, 4, 5, 6, 0],
+    reminder_frequency: "daily",
+    preset: "before_bed",
+  };
 declare global {
   interface Window {
     OneSignalDeferred?: any[];
@@ -77,6 +78,7 @@ export async function writeNotificationPreferences(
   await supabase.from("notification_preferences").upsert({
     onesignal_subscription_id: onesignalSubscriptionId,
     enabled: prefs.enabled,
+    reminder_message: prefs.reminder_message,
     reminder_time: prefs.reminder_time,
     reminder_timezone: prefs.reminder_timezone,
     reminder_days: prefs.reminder_days,

@@ -57,7 +57,8 @@ export function NotificationPreferences({
     }
   
     trackReminderPreferenceChanged(prefs);
-    await writeNotificationPreferences(prefs);
+    setSaved(true);
+    writeNotificationPreferences(prefs).catch(console.error);
   
     flash?.("Reminder settings saved");
   };

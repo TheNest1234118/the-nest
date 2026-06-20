@@ -92,7 +92,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }),
     });
   }
-  const message = messages[Math.floor(Math.random() * messages.length)];
+  const message =
+  dueUsers[0]?.reminder_message ||
+  messages[Math.floor(Math.random() * messages.length)];
 
   const payload = {
     app_id: appId,
@@ -117,6 +119,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     onesignalJson = JSON.parse(onesignalText);
   } catch {}
+  
+  if (response.ok && onesignalJson?.id) {
+    for (const user of dueUsers) {
+      const local = getLocalNow(user.reminder_timezone || "Europe/Zurich");
+  
+      await supabase
+        .from("notification_preferences")
+        .update({ last_reminder_sent_key: local.sentKey })
+        .eq("onesignal_subscription_id", user.onesignal_subscription_id);
+    }
+  }
 
   // TEMPORÄR: nicht als gesendet markieren, damit du mehrfach testen kannst
   /*
