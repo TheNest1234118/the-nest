@@ -241,7 +241,20 @@ Mood: ${m.mood}`
   
   - Write with warmth, simplicity and emotional intelligence.
   
-  - The user should feel understood, not analyzed.
+ The reflection should feel concrete, grounded and specific.
+The user should feel:
+“Oh, this actually noticed what I kept talking about.”
+Prefer:
+specific repeated topics
+mention counts when possible
+concrete examples from entries
+changes across the week
+things the user returned to multiple times
+Avoid:
+vague emotional summaries
+broad statements that could apply to anyone
+therapy language
+generic phrases like “personal challenges”, “social connections”, “emotional journey”, “growth”, “self-reflection”
   
   The reflection should feel like:
   
