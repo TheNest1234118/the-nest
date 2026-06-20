@@ -5,15 +5,15 @@ export type ReminderFrequency = "daily" | "selected_days" | "weekly";
 async function getOneSignalSubscriptionId(): Promise<string | null> {
   if (!window.OneSignalDeferred) return null;
 
-  let onesignalId: string | null = null;
+  let subscriptionId: string | null = null;
 
   await window.OneSignalDeferred.push(async (OneSignal: any) => {
-    onesignalId = OneSignal.User?.onesignalId || null;
+    subscriptionId = OneSignal.User.PushSubscription.id;
 
-    console.log("Saving OneSignal user id", onesignalId);
+    console.log("Saving OneSignal subscription id", subscriptionId);
   });
 
-  return onesignalId;
+  return subscriptionId;
 }
 export interface NestNotificationPreferences {
   enabled: boolean;
