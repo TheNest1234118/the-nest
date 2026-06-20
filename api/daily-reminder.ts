@@ -94,21 +94,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const message = messages[Math.floor(Math.random() * messages.length)];
 
+  const payload = {
+    app_id: appId,
+    include_subscription_ids: dueUsers.map((u) => u.onesignal_subscription_id),
+    headings: { en: "The Nest" },
+    contents: { en: message },
+    url: "https://www.thenestapp.space/home?notification=onesignal&category=reminder",
+  };
+
   const response = await fetch("https://api.onesignal.com/notifications", {
     method: "POST",
     headers: {
       Authorization: `Key ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      app_id: appId,
-      include_subscription_ids: dueUsers.map((u) => u.onesignal_subscription_id),
-      headings: { en: "The Nest" },
-      contents: { en: message },
-      url: "https://www.thenestapp.space/home?notification=onesignal&category=reminder",
-    }),
+    body: JSON.stringify(payload),
   });
 
+  const onesignalText = await response.text();
+
+  let onesignalJson: any = null;
+  try {
+    onesignalJson = JSON.parse(onesignalText);
+  } catch {}
+
+  // TEMPORÄR: nicht als gesendet markieren, damit du mehrfach testen kannst
+  /*
   for (const user of dueUsers) {
     const local = getLocalNow(user.reminder_timezone || "Europe/Zurich");
 
@@ -117,10 +128,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .update({ last_reminder_sent_key: local.sentKey })
       .eq("onesignal_subscription_id", user.onesignal_subscription_id);
   }
+  */
 
   return res.status(response.status).json({
     ok: response.ok,
     sent: dueUsers.length,
-    onesignal: await response.text(),
+    payload,
+    dueUsers: dueUsers.map((u) => ({
+      id: u.onesignal_subscription_id,
+      reminder_time: u.reminder_time,
+      timezone: u.reminder_timezone,
+    })),
+    onesignal: onesignalJson || onesignalText,
   });
 }
