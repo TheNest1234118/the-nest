@@ -409,7 +409,7 @@ recorder.onstop = async () => {
 </p>
           <button
             data-testid="button-record-toggle"
-            onClick={isRecording ? stopRecording : startRecording}
+            onClick={isSaving ? undefined : isRecording ? stopRecording : startRecording}
             style={{
               width: 82,
               height: 82,
@@ -426,7 +426,8 @@ recorder.onstop = async () => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              cursor: "pointer",
+              cursor: isSaving ? "default" : "pointer",
+opacity: isSaving ? 0.45 : 1,
               transition: "all 700ms ease",
             }}
           >
@@ -488,6 +489,58 @@ recorder.onstop = async () => {
               {error}
             </p>
           )}
+          {isSaving && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      zIndex: 999,
+      background: "rgba(6,5,8,0.88)",
+      backdropFilter: "blur(10px)",
+      WebkitBackdropFilter: "blur(10px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+    }}
+  >
+    <div
+      style={{
+        width: "100%",
+        maxWidth: 340,
+        background: "rgba(18,15,12,0.96)",
+        border: "1px solid rgba(205,170,100,0.12)",
+        borderRadius: 24,
+        padding: 24,
+        textAlign: "center",
+        boxShadow: "0 20px 80px rgba(0,0,0,0.45)",
+      }}
+    >
+      <p
+        style={{
+          fontFamily: "Georgia, 'Times New Roman', serif",
+          fontSize: 22,
+          color: "rgba(235,215,180,0.92)",
+          marginBottom: 10,
+        }}
+      >
+        Saving your voice capsule
+      </p>
+
+      <p
+        style={{
+          fontSize: 13,
+          lineHeight: 1.65,
+          color: "rgba(198,178,150,0.62)",
+        }}
+      >
+        Please wait until it appears in your list before leaving The Nest.
+        <br />
+        This may take a few moments.
+      </p>
+    </div>
+  </div>
+)}
         </motion.div>
 
         {visibleMemos.length > 0 ? (
