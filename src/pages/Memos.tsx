@@ -50,7 +50,7 @@ export function Memos() {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const MAX_RECORDING_SECONDS = 15 * 60;
-  const CHUNK_SECONDS = 15 * 60;
+  const CHUNK_SECONDS = 5 * 60;
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
