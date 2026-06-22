@@ -30,9 +30,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const openaiKey = process.env.OPENAI_API_KEY;
 
-    if (!supabaseUrl || !anonKey || !serviceKey || !openaiKey) {
-      return res.status(500).json({ error: "Missing env vars" });
-    }
+    if (!supabaseUrl) {
+        return res.status(500).json({ error: "SUPABASE_URL missing" });
+      }
+      
+      if (!anonKey) {
+        return res.status(500).json({ error: "SUPABASE_ANON_KEY missing" });
+      }
+      
+      if (!serviceKey) {
+        return res.status(500).json({ error: "SUPABASE_SERVICE_ROLE_KEY missing" });
+      }
+      
+      if (!openaiKey) {
+        return res.status(500).json({ error: "OPENAI_API_KEY missing" });
+      }
 
     const authClient = createClient(supabaseUrl, anonKey, {
       global: {
