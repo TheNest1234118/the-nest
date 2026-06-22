@@ -45,6 +45,7 @@ export function Memos() {
   const [selectedTranscript, setSelectedTranscript] = useState<Memo | null>(null);
   const [memoTitle, setMemoTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [createTranscript, setCreateTranscript] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const MAX_RECORDING_SECONDS = 15 * 60;
@@ -158,7 +159,8 @@ recorder.onstop = async () => {
       blob,
       duration,
       recorder.mimeType || "audio/webm",
-      finalTitle
+      finalTitle,
+      createTranscript
     );
   
     // 4. UI updaten
@@ -176,7 +178,9 @@ if (saved) {
 // 5. cleanup
 audioChunksRef.current = [];
 setMemoTitle("");
+setCreateTranscript(true);
 setRecordingTime(0);
+
 setIsRecording(false);
   } catch (err) {
     console.error("Could not save memo", err);
@@ -417,6 +421,25 @@ setIsRecording(false);
     fontSize: 13,
   }}
 />
+<label
+  style={{
+    width: "100%",
+    marginBottom: 14,
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    fontSize: 12,
+    color: "rgba(198,178,150,0.62)",
+    cursor: "pointer",
+  }}
+>
+  <input
+    type="checkbox"
+    checked={createTranscript}
+    onChange={(e) => setCreateTranscript(e.target.checked)}
+  />
+  Create transcript
+</label>
 <p
   style={{
     fontSize: 11,

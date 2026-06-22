@@ -60,7 +60,8 @@ export async function saveMemo(
   blob: Blob,
   duration: number,
   mimeType: string,
-  title?: string
+  title?: string,
+  createTranscript = true
 ) {
   const {
     data: { user },
@@ -109,7 +110,8 @@ export async function saveMemo(
       storage_path: storagePath,
       mime_type: mimeType,
       duration,
-      status: "processing",
+      status: createTranscript ? "processing" : "ready",
+transcript_error: createTranscript ? null : "Transcription disabled by user.",
     })
     .select()
     .single();

@@ -71,6 +71,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (memoError || !memo) {
       throw new Error("Memo not found");
     }
+    if (memo.status === "ready" && memo.transcript_error === "Transcription disabled by user.") {
+      return res.status(200).json({
+        ok: true,
+        memoId,
+        skipped: "transcription disabled by user",
+      });
+    }
     const currentMonth = new Date().toISOString().slice(0, 7);
 
 const { data: profile } = await supabase
