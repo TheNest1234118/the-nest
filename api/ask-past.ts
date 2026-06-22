@@ -69,7 +69,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const supabase = createClient(supabaseUrl, serviceKey);
     const openai = new OpenAI({ apiKey: openaiKey });
-
+    const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  
+  if (profile?.plan !== "supporter") {
+    return res.status(403).json({
+      error:
+        "Ask Your Past uses AI processing and is included in the Supporter Plan.",
+    });
+  }
     const embeddingResponse = await openai.embeddings.create({
       model: "text-embedding-3-small",
       input: question,

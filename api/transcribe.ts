@@ -71,6 +71,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (memoError || !memo) {
       throw new Error("Memo not found");
     }
+    const currentMonth = new Date().toISOString().slice(0, 7);
+
+const { data: profile } = await supabase
+  .from("profiles")
+  .select("plan, transcriptions_this_month, transcription_month")
+  .eq("user_id", memo.user_id)
+  .maybeSingle();
+
+let plan = profile?.plan || "free";
+let count = profile?.transcriptions_this_month || 0;
+let month = profile?.transcription_month || currentMonth;
+
+if (month !== currentMonth) {
+  count = 0;
+  month = currentMonth;
+
+  await supabase.from("profiles").upsert({
+    user_id: memo.user_id,
+    plan,
+    transcriptions_this_month: 0,
+    transcription_month: currentMonth,
+    updated_at: new Date().toISOString(),
+  });
+}
+
+if (plan !== "supporter" && count >= 30) {
+  await supabase
+    .from("memos")
+    .update({
+      status: "ready",
+      transcript_text: null,
+      transcript_error:
+        "Free monthly transcription limit reached. Audio was saved.",
+      processing_finished_at: new Date().toISOString(),
+    })
+    .eq("id", memoId);
+
+  return res.status(200).json({
+    ok: false,
+    limitReached: true,
+    error:
+      "You've reached the free monthly transcription limit. Your voice capsule is safely stored. Upgrade to Supporter for unlimited transcriptions.",
+  });
+}
     if (memo.status === "ready" && memo.transcript_text) {
       return res.status(200).json({
         ok: true,
@@ -140,6 +184,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         content: transcription.text,
         contentCreatedAt: memo.created_at,
       });
+      if (plan !== "supporter") {
+        await supabase.from("profiles").upsert({
+          user_id: memo.user_id,
+          plan,
+          transcriptions_this_month: count + 1,
+          transcription_month: currentMonth,
+          updated_at: new Date().toISOString(),
+        });
+      }
 
     return res.status(200).json({
       ok: true,

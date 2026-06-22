@@ -672,6 +672,11 @@ opacity: isSaving ? 0.45 : 1,
     Transcription failed
   </span>
 )}
+{memo.transcript_error?.includes("Free monthly transcription limit") && (
+  <span style={{ fontSize: 10, color: "rgba(205,170,100,0.52)" }}>
+    Audio saved · transcription limit reached
+  </span>
+)}
                     <span
                       style={{
                         fontSize: 10,

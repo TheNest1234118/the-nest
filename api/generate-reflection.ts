@@ -77,6 +77,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
    if (type !== "weekly" && type !== "monthly") {
      return res.status(400).json({ ok: false, error: "Invalid reflection type" });
    }
+   const { data: profile } = await supabase
+  .from("profiles")
+  .select("plan")
+  .eq("user_id", user.id)
+  .maybeSingle();
+
+const plan = profile?.plan || "free";
+
+if (type === "monthly" && plan !== "supporter") {
+  return res.status(403).json({
+    ok: false,
+    error:
+      "Monthly Reflections use AI processing and are included in the Supporter Plan.",
+  });
+}
    const { data: settings } = await supabase
      .from("user_settings")
      .select("allow_ai_reflections")

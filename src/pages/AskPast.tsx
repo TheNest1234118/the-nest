@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
+import { getProfile } from "@/lib/subscription";
+import { UpgradeScreen } from "@/components/UpgradeScreen";
 import { ChevronLeft, Search } from "lucide-react";
 import { askPast, type AskPastEntry } from "@/lib/askPast";
 
@@ -13,6 +15,16 @@ const EXAMPLES = [
 
 export function AskPast() {
   const [question, setQuestion] = useState("");
+  const [plan, setPlan] = useState<"free" | "supporter">("free");
+const [checkingPlan, setCheckingPlan] = useState(true);
+
+React.useEffect(() => {
+  getProfile()
+    .then((profile) => {
+      setPlan(profile?.plan || "free");
+    })
+    .finally(() => setCheckingPlan(false));
+}, []);
   const [answer, setAnswer] = useState<string | null>(null);
   const [entries, setEntries] = useState<AskPastEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -38,7 +50,57 @@ export function AskPast() {
       setLoading(false);
     }
   };
-
+  if (!checkingPlan && plan !== "supporter") {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{
+          minHeight: "100svh",
+          background: "#09090d",
+          maxWidth: 480,
+          margin: "0 auto",
+          padding: "calc(env(safe-area-inset-top, 0px) + 52px) 20px 42px",
+          color: "white",
+        }}
+      >
+        <header style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
+          <Link href="/home">
+            <button
+              style={{
+                background: "none",
+                border: "none",
+                color: "rgba(185,162,128,0.42)",
+                cursor: "pointer",
+                padding: 2,
+              }}
+            >
+              <ChevronLeft size={24} strokeWidth={1.3} />
+            </button>
+          </Link>
+  
+          <div>
+            <h1
+              style={{
+                fontFamily: "Georgia, 'Times New Roman', serif",
+                fontSize: 25,
+                fontWeight: 400,
+                color: "rgba(235,215,180,0.92)",
+                margin: 0,
+              }}
+            >
+              Ask Your Past
+            </h1>
+          </div>
+        </header>
+  
+        <UpgradeScreen
+          title="Ask Your Past"
+          feature="Ask Your Past searches your memories with AI"
+        />
+      </motion.div>
+    );
+  }
   return (
     <motion.div
       initial={{ opacity: 0 }}

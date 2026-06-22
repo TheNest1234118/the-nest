@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { ChevronLeft, Sparkles } from "lucide-react";
 import { AuthModal } from "@/components/AuthModal";
 import { supabase } from "@/lib/supabase";
+import { getProfile } from "@/lib/subscription";
+import { UpgradeScreen } from "@/components/UpgradeScreen";
 import type { User } from "@supabase/supabase-js";
 import {
   generateReflection,
@@ -422,7 +424,7 @@ export function Reflections() {
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [authOpen, setAuthOpen] = useState(false);
-
+  const [plan, setPlan] = useState<"free" | "supporter">("free");
   const [allowAi, setAllowAi] = useState(false);
   const [reflections, setReflections] = useState<Reflection[]>([]);
   const [loading, setLoading] = useState<ReflectionType | null>(null);
@@ -443,6 +445,9 @@ export function Reflections() {
 
   useEffect(() => {
     async function checkUser() {
+      getProfile()
+  .then((profile) => setPlan(profile?.plan || "free"))
+  .catch(console.error);
       const { data } = await supabase.auth.getUser();
 
       setUser(data.user ?? null);
@@ -500,7 +505,11 @@ export function Reflections() {
   async function handleGenerate(type: ReflectionType) {
     setError(null);
     setLoading(type);
-
+    if (type === "monthly" && plan !== "supporter") {
+      setLoading(null);
+      setError("Monthly Reflections use AI processing and are included in the Supporter Plan.");
+      return;
+    }
     try {
       const result = await generateReflection(type);
 
@@ -694,13 +703,51 @@ export function Reflections() {
           onGenerate={handleGenerate}
         />
 
-        <GenerateButton
-          type="monthly"
-          allowAi={allowAi}
-          loading={loading}
-          lock={monthlyLock}
-          onGenerate={handleGenerate}
-        />
+{plan === "supporter" ? (
+  <GenerateButton
+    type="monthly"
+    allowAi={allowAi}
+    loading={loading}
+    lock={monthlyLock}
+    onGenerate={handleGenerate}
+  />
+) : (
+  <div>
+    <button
+      onClick={() =>
+        setError(
+          "Monthly Reflections use AI processing and are included in the Supporter Plan."
+        )
+      }
+      style={{
+        width: "100%",
+        minHeight: 98,
+        border: "1px solid rgba(205,170,100,0.12)",
+        background: "rgba(205,170,100,0.045)",
+        borderRadius: 16,
+        padding: 15,
+        color: "rgba(225,210,188,0.72)",
+        cursor: "pointer",
+        textAlign: "left",
+      }}
+    >
+      <Sparkles size={16} />
+      <div style={{ marginTop: 9, fontSize: 13 }}>
+        Monthly Reflection
+      </div>
+      <div
+        style={{
+          marginTop: 5,
+          fontSize: 11,
+          color: "rgba(175,158,132,0.42)",
+          lineHeight: 1.4,
+        }}
+      >
+        Included in Supporter
+      </div>
+    </button>
+  </div>
+)}
       </div>
 
       {loading && (
