@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { isStandalonePwa } from "@/lib/pwa";
 import {
   readNotificationPreferences,
   requestNestNotifications,
@@ -37,11 +38,32 @@ export function NotificationPreferences({
   const [prefs, setPrefs] = useState<NestNotificationPreferences>(
     readNotificationPreferences
   );
-
+  const isStandalone =
+  typeof window !== "undefined" ? isStandalonePwa() : false;
   useEffect(() => {
     writeNotificationPreferences(prefs);
   }, []);
-
+  if (!isStandalone) {
+    return (
+      <div
+        style={{
+          background: "rgba(255,255,255,0.024)",
+          border: "1px solid rgba(255,255,255,0.062)",
+          borderRadius: 16,
+          padding: "15px 18px",
+        }}
+      >
+        <div style={labelStyle}>Reminders unavailable</div>
+        <div style={descStyle}>
+          To use reminders, add The Nest to your Home Screen first.
+          <br />
+          iPhone: Share → Add to Home Screen
+          <br />
+          Android: Menu → Install app
+        </div>
+      </div>
+    );
+  }
   const update = (next: NestNotificationPreferences) => {
     setPrefs(next);
   };

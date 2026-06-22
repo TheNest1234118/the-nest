@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { embedMemoryFromClient } from "@/lib/askPast";
 
 export async function getCurrentUser() {
   const { data, error } = await supabase.auth.getUser();
@@ -26,6 +27,7 @@ export async function deleteThought(id: string) {
 
   if (error) throw error;
 }
+
 export async function saveThought(text: string) {
   const user = await getCurrentUser();
   if (!user) return null;
@@ -37,9 +39,16 @@ export async function saveThought(text: string) {
     .single();
 
   if (error) throw error;
+
+  embedMemoryFromClient({
+    sourceType: "thought",
+    sourceId: data.id,
+    content: text,
+    contentCreatedAt: data.created_at,
+  }).catch(console.error);
+
   return data;
 }
-
 export async function loadAnchors() {
   const user = await getCurrentUser();
   if (!user) return [];
@@ -64,6 +73,16 @@ export async function saveAnchor(type: "text" | "image", content: string) {
     .single();
 
   if (error) throw error;
+
+  if (type === "text") {
+    embedMemoryFromClient({
+      sourceType: "anchor",
+      sourceId: data.id,
+      content,
+      contentCreatedAt: data.created_at,
+    }).catch(console.error);
+  }
+
   return data;
 }
 

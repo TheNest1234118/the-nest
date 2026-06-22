@@ -831,6 +831,50 @@ export function Dashboard() {
               </div>
             </Link>
           </div>
+          <Link href="/ask-past">
+  <div
+    style={{
+      marginTop: 12,
+      background: "rgba(205,170,100,0.035)",
+      border: "1px solid rgba(205,170,100,0.10)",
+      borderRadius: 16,
+      padding: "16px 16px",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 14,
+    }}
+  >
+    <div>
+      <div
+        style={{
+          fontSize: 14,
+          color: "rgba(230,215,190,0.82)",
+          marginBottom: 5,
+        }}
+      >
+        Ask your past
+      </div>
+
+      <div
+        style={{
+          fontSize: 11,
+          color: "rgba(175,158,132,0.40)",
+          lineHeight: 1.45,
+        }}
+      >
+        Search your thoughts, voice capsules and anchors with AI.
+      </div>
+    </div>
+
+    <ChevronRight
+      size={16}
+      strokeWidth={1.3}
+      color="rgba(205,170,100,0.42)"
+    />
+  </div>
+</Link>
         </motion.div>
 
         <motion.div

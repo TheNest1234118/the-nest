@@ -162,16 +162,22 @@ recorder.onstop = async () => {
     );
   
     // 4. UI updaten
-    if (saved) {
-      setMemos((prev) => [saved, ...prev]);
-    }
+    // 4. UI updaten
+if (saved) {
+  setMemos((prev) => [saved, ...prev]);
 
-    // 5. cleanup
-    audioChunksRef.current = [];
-    setMemoTitle("");
-    setRecordingTime(0);
-    setIsRecording(false);
+  setTimeout(() => {
     setIsSaving(false);
+  }, 3000);
+} else {
+  setIsSaving(false);
+}
+
+// 5. cleanup
+audioChunksRef.current = [];
+setMemoTitle("");
+setRecordingTime(0);
+setIsRecording(false);
   } catch (err) {
     console.error("Could not save memo", err);
     setError("Could not save memo.");
@@ -632,7 +638,11 @@ opacity: isSaving ? 0.45 : 1,
     Transcribing...
   </span>
 )}
-
+{memo.status === "local" && (
+  <span style={{ fontSize: 10, color: "rgba(175,158,132,0.38)" }}>
+    Saved locally · no transcript
+  </span>
+)}
 {memo.status === "ready" && memo.transcript_text && (
   <span style={{ fontSize: 10, color: "rgba(175,158,132,0.38)" }}>
     Transcript ready

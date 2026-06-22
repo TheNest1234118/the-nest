@@ -2,6 +2,7 @@ import React from "react";
 import { Rituals } from "@/pages/Rituals";
 import { RitualPlayer } from "@/pages/RitualPlayer";
 import { Analytics } from "@vercel/analytics/react";
+import { AskPast } from "@/pages/AskPast";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/rituals/:id" component={RitualPlayer} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/home" component={Dashboard} />
+      <Route path="/ask-past" component={AskPast} />
       <Route path="/mood-log" component={MoodLog} />
       <Route path="/nest" component={Nest} />
       <Route path="/reflections" component={Reflections} />

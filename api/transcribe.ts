@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI, { toFile } from "openai";
+import { embedMemory } from "./embed-memory";
 
 export const config = {
   maxDuration: 300,
@@ -132,6 +133,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         transcript_error: null,
       })
       .eq("id", memoId);
+      await embedMemory({
+        userId: memo.user_id,
+        sourceType: "memo",
+        sourceId: memo.id,
+        content: transcription.text,
+        contentCreatedAt: memo.created_at,
+      });
 
     return res.status(200).json({
       ok: true,
