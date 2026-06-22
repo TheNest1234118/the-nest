@@ -7,7 +7,13 @@ const INSTALLED_KEY = "nest_pwa_installed_seen";
 const ENGAGED_KEY = "nest_pwa_engaged";
 const VISITS_KEY = "nest_visit_count";
 
+export function isWindows() {
+  return /windows/i.test(navigator.userAgent);
+}
+
 export function isStandalonePwa() {
+  if (isWindows()) return true;
+
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
     (window.navigator as any).standalone === true
