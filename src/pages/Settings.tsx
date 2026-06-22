@@ -799,8 +799,8 @@ const LEGAL_CONTENT: Record<
             </LegalLink>
             <br />
             Contact:{" "}
-            <LegalLink href="mailto:thenestapp.contact@gmail.com">
-              thenestapp.contact@gmail.com
+            <LegalLink href="mailto:thenestsupport@gmail.com">
+              thenestsupport@gmail.com
             </LegalLink>
           </LegalP>
         </LegalSection>
@@ -1007,8 +1007,8 @@ const LEGAL_CONTENT: Record<
           </LegalP>
           <LegalP>
             E-Mail:{" "}
-            <LegalLink href="mailto:thenestapp.contact@gmail.com">
-              thenestapp.contact@gmail.com
+            <LegalLink href="mailto:thenestsupport@gmail.com">
+              thenestsupport@gmail.com
             </LegalLink>
             <br />
             Website:{" "}
@@ -1045,8 +1045,8 @@ const LEGAL_CONTENT: Record<
 
         <LegalSection title="Contact">
           <LegalP>
-            <LegalLink href="mailto:thenestapp.contact@gmail.com">
-              thenestapp.contact@gmail.com
+            <LegalLink href="mailto:thenestsupport@gmail.com">
+              thenestsupport@gmail.com
             </LegalLink>
             <br />
             <LegalLink href="https://thenestapp.space">
