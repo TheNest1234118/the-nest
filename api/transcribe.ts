@@ -50,6 +50,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const supabase = createClient(supabaseUrl, supabaseKey);
+  console.log("TRANSCRIBE START", {
+    memoId,
+    forceRetry: req.body?.forceRetry === true,
+  });
   const openai = new OpenAI({ apiKey: openaiKey });
 
   try {
@@ -71,6 +75,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (memoError || !memo) {
       throw new Error("Memo not found");
     }
+    console.log("TRANSCRIBE MEMO", {
+      id: memo.id,
+      status: memo.status,
+      storage_path: memo.storage_path,
+      mime_type: memo.mime_type,
+      transcript_error: memo.transcript_error,
+      processing_started_at: memo.processing_started_at,
+      processing_finished_at: memo.processing_finished_at,
+    });
     if (memo.status === "ready" && memo.transcript_error === "Transcription disabled by user.") {
       return res.status(200).json({
         ok: true,
@@ -181,12 +194,20 @@ if (plan !== "supporter" && count >= 30) {
     const file = await toFile(buffer, filename, {
       type: memo.mime_type || "audio/webm",
     });
-
+    console.log("TRANSCRIBE OPENAI START", {
+      memoId,
+      filename,
+      bufferSize: buffer.length,
+      mimeType: memo.mime_type,
+    });
     const transcription = await openai.audio.transcriptions.create({
       model: "gpt-4o-mini-transcribe",
       file,
     });
-
+    console.log("TRANSCRIBE OPENAI DONE", {
+      memoId,
+      textLength: transcription.text?.length || 0,
+    });
     await supabase
       .from("memos")
       .update({
