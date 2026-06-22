@@ -6,6 +6,7 @@ import {
   saveMemo,
   deleteMemoFromSupabase,
   getMemoAudioUrl,
+  retryMemoTranscription,
   type SupabaseMemo,
 } from "@/lib/memos";
 import { ChevronLeft, Mic, Square, Play, Pause, Trash2 } from "lucide-react";
@@ -286,7 +287,28 @@ setIsRecording(false);
       setError("Could not delete this memo.");
     }
   };
-
+  const retryTranscription = async (id: string) => {
+    try {
+      setError(null);
+  
+      await retryMemoTranscription(id);
+  
+      setMemos((prev) =>
+        prev.map((memo) =>
+          memo.id === id
+            ? {
+                ...memo,
+                status: "processing",
+                transcript_error: null,
+              }
+            : memo
+        )
+      );
+    } catch (err: any) {
+      console.error("Could not retry transcription", err);
+      setError(err.message || "Could not retry transcription.");
+    }
+  };
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     return `${m}:${(s % 60).toString().padStart(2, "0")}`;
@@ -657,9 +679,29 @@ opacity: isSaving ? 0.45 : 1,
                       {formatTime(memo.duration)}
                     </span>
                     {memo.status === "processing" && (
-  <span style={{ fontSize: 10, color: "rgba(205,170,100,0.45)" }}>
-    Transcribing...
-  </span>
+  <>
+    <span style={{ fontSize: 10, color: "rgba(205,170,100,0.45)" }}>
+      Transcribing...
+    </span>
+
+    <button
+      onClick={() => retryTranscription(memo.id)}
+      style={{
+        marginTop: 4,
+        background: "none",
+        border: "none",
+        padding: 0,
+        color: "rgba(205,170,100,0.58)",
+        fontSize: 10,
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        cursor: "pointer",
+        textAlign: "left",
+      }}
+    >
+      Retry transcription
+    </button>
+  </>
 )}
 {memo.status === "local" && (
   <span style={{ fontSize: 10, color: "rgba(175,158,132,0.38)" }}>

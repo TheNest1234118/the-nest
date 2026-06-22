@@ -131,3 +131,29 @@ export async function deleteMemoFromSupabase(id: string) {
   const { error } = await supabase.from("memos").delete().eq("id", id);
   if (error) throw error;
 }
+export async function retryMemoTranscription(id: string) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error("Please log in first.");
+  }
+
+  const res = await fetch("/api/retry-transcribe", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ memoId: id }),
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    throw new Error(json.error || "Could not retry transcription.");
+  }
+
+  return json;
+}
