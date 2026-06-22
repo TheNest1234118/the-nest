@@ -66,7 +66,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const supabase = createClient(supabaseUrl, serviceKey);
     const openai = new OpenAI({ apiKey: openaiKey });
 
-    // 1. Frage als Embedding
     const embeddingResponse = await openai.embeddings.create({
       model: "text-embedding-3-small",
       input: question,
