@@ -96,16 +96,70 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const entries = matches || [];
 
-    if (entries.length === 0) {
+    let finalEntries = entries;
+
+    if (finalEntries.length === 0) {
+      const { data: thoughts } = await supabase
+        .from("thoughts")
+        .select("id, text, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+    
+      const { data: anchors } = await supabase
+        .from("anchors")
+        .select("id, type, content, created_at")
+        .eq("user_id", user.id)
+        .eq("type", "text")
+        .order("created_at", { ascending: false })
+        .limit(10);
+    
+      const { data: memos } = await supabase
+        .from("memos")
+        .select("id, transcript_text, created_at")
+        .eq("user_id", user.id)
+        .not("transcript_text", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(10);
+    
+      finalEntries = [
+        ...(thoughts || []).map((t: any) => ({
+          id: t.id,
+          source_type: "thought",
+          source_id: t.id,
+          content: t.text,
+          content_created_at: t.created_at,
+          similarity: 0,
+        })),
+        ...(anchors || []).map((a: any) => ({
+          id: a.id,
+          source_type: "anchor",
+          source_id: a.id,
+          content: a.content,
+          content_created_at: a.created_at,
+          similarity: 0,
+        })),
+        ...(memos || []).map((m: any) => ({
+          id: m.id,
+          source_type: "memo",
+          source_id: m.id,
+          content: m.transcript_text,
+          content_created_at: m.created_at,
+          similarity: 0,
+        })),
+      ].filter((entry) => entry.content && entry.content.trim().length > 0);
+    }
+    
+    if (finalEntries.length === 0) {
       return res.status(200).json({
         answer:
-          "I couldn’t find anything close enough in your saved thoughts, anchors, or voice transcripts yet.",
+          "I couldn’t find any saved thoughts, text anchors, or voice transcripts yet.",
         entries: [],
       });
     }
 
     // 3. Nur diese Einträge an GPT schicken
-    const context = entries
+    const context = finalEntries
       .map((entry: any, index: number) => {
         return [
           `Entry ${index + 1}`,
@@ -139,7 +193,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       answer,
-      entries,
+      entries: finalEntries,
     });
   } catch (error: any) {
     console.error("ASK PAST ERROR:", error);
