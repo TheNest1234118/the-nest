@@ -60,21 +60,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const webhookUrl = `${process.env.PUBLIC_APP_URL || "https://www.thenestapp.space"}/api/transcribe`;
 
-    await fetch(webhookUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-webhook-secret": process.env.TRANSCRIBE_WEBHOOK_SECRET || "",
-      },
-      body: JSON.stringify({
-        record: {
-          id: memoId,
+    const transcribeRes = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-webhook-secret": process.env.TRANSCRIBE_WEBHOOK_SECRET || "",
         },
-        forceRetry: true,
-      }),
-    });
-
-    return res.status(200).json({ ok: true });
+        body: JSON.stringify({
+          record: {
+            id: memoId,
+          },
+          forceRetry: true,
+        }),
+      });
+      
+      const transcribeText = await transcribeRes.text();
+      
+      return res.status(200).json({
+        ok: transcribeRes.ok,
+        transcribeStatus: transcribeRes.status,
+        transcribeResponse: transcribeText,
+      });
   } catch (error: any) {
     console.error("RETRY TRANSCRIBE ERROR:", error);
     return res.status(500).json({
