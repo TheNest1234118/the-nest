@@ -70,6 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         record: {
           id: memoId,
         },
+        forceRetry: true,
       }),
     });
 

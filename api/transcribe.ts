@@ -130,7 +130,9 @@ if (plan !== "supporter" && count >= 30) {
       });
     }
     
-    if (memo.processing_started_at && !memo.processing_finished_at) {
+    const forceRetry = req.body?.forceRetry === true;
+
+    if (!forceRetry && memo.processing_started_at && !memo.processing_finished_at) {
       const started = new Date(memo.processing_started_at).getTime();
       const ageMinutes = (Date.now() - started) / 60000;
     
@@ -142,6 +144,16 @@ if (plan !== "supporter" && count >= 30) {
         });
       }
     }
+    
+    await supabase
+      .from("memos")
+      .update({
+        status: "processing",
+        processing_started_at: new Date().toISOString(),
+        processing_finished_at: null,
+        transcript_error: null,
+      })
+      .eq("id", memoId);
     if (!memo.storage_path) {
       throw new Error("Missing storage_path");
     }
