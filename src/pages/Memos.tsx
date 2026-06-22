@@ -443,25 +443,77 @@ setIsRecording(false);
     fontSize: 13,
   }}
 />
-<label
+<button
+  type="button"
+  onClick={() => setCreateTranscript(!createTranscript)}
   style={{
     width: "100%",
-    marginBottom: 14,
+    marginTop: 18,
+    background: "rgba(255,255,255,0.026)",
+    border: createTranscript
+      ? "1px solid rgba(205,170,100,0.20)"
+      : "1px solid rgba(255,255,255,0.06)",
+    borderRadius: 18,
+    padding: "14px 16px",
     display: "flex",
     alignItems: "center",
-    gap: 10,
-    fontSize: 12,
-    color: "rgba(198,178,150,0.62)",
+    justifyContent: "space-between",
     cursor: "pointer",
+    transition: "all .25s ease",
   }}
 >
-  <input
-    type="checkbox"
-    checked={createTranscript}
-    onChange={(e) => setCreateTranscript(e.target.checked)}
-  />
-  Create transcript
-</label>
+  <div style={{ textAlign: "left" }}>
+    <div
+      style={{
+        color: "rgba(230,215,190,0.88)",
+        fontSize: 13,
+      }}
+    >
+      Create searchable transcript
+    </div>
+
+    <div
+      style={{
+        marginTop: 4,
+        fontSize: 11,
+        lineHeight: 1.5,
+        color: "rgba(175,158,132,0.42)",
+      }}
+    >
+      Makes this voice capsule searchable with AI.
+    </div>
+  </div>
+
+  <div
+    style={{
+      width: 22,
+      height: 22,
+      borderRadius: 999,
+      border: createTranscript
+        ? "1px solid rgba(205,170,100,.55)"
+        : "1px solid rgba(255,255,255,.12)",
+      background: createTranscript
+        ? "rgba(205,170,100,.18)"
+        : "transparent",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      transition: "all .25s ease",
+      flexShrink: 0,
+    }}
+  >
+    {createTranscript && (
+      <div
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: 999,
+          background: "rgba(225,205,170,.95)",
+        }}
+      />
+    )}
+  </div>
+</button>
 <p
   style={{
     fontSize: 11,
