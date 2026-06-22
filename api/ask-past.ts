@@ -19,6 +19,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ error: "Please sign in first." });
     }
 
+    const question = String(req.body?.question || "").trim();
+
+    if (!question) {
+      return res.status(400).json({ error: "Missing question" });
+    }
+
     const supabaseUrl = process.env.SUPABASE_URL;
     const anonKey = process.env.SUPABASE_ANON_KEY;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -45,15 +51,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const question = String(req.body?.question || "").trim();
-
-    if (!question) {
-      return res.status(400).json({ error: "Missing question" });
-    }
-
     const supabase = createClient(supabaseUrl, serviceKey);
     const openai = new OpenAI({ apiKey: openaiKey });
 
+    // 1. Frage als Embedding
     const embeddingResponse = await openai.embeddings.create({
       model: "text-embedding-3-small",
       input: question,
@@ -62,15 +63,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const queryEmbedding = embeddingResponse.data[0]?.embedding;
 
     if (!queryEmbedding) {
-      throw new Error("Could not create query embedding");
+      throw new Error("Could not create question embedding");
     }
 
+    // 2. Supabase Vector Search: nur relevante Einträge holen
     const { data: matches, error: matchError } = await supabase.rpc(
       "match_memory_embeddings",
       {
         query_embedding: queryEmbedding,
         match_user_id: user.id,
-        match_count: 8,
+        match_count: 12,
         match_threshold: 0.2,
       }
     );
@@ -87,6 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // 3. Nur diese Einträge an GPT schicken
     const context = entries
       .map((entry: any, index: number) => {
         return [
@@ -98,25 +101,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
       .join("\n\n---\n\n");
 
+    // 4. GPT formuliert Antwort
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.4,
+      temperature: 0.35,
       messages: [
         {
           role: "system",
           content:
-            "You answer questions using only the user's retrieved personal entries. Be gentle, clear, and honest. If the entries do not support an answer, say that.",
+            "You are The Nest's memory assistant. Answer only from the provided entries. Do not invent facts. If the answer is uncertain, say so gently. Keep the answer warm, clear, and concise.",
         },
         {
           role: "user",
-          content: `Question:\n${question}\n\nRelevant entries:\n${context}`,
+          content: `Question:\n${question}\n\nRelevant saved entries:\n${context}`,
         },
       ],
     });
 
     const answer =
       completion.choices[0]?.message?.content ||
-      "I found some related entries, but couldn’t form an answer.";
+      "I found related entries, but couldn’t form a clear answer.";
 
     return res.status(200).json({
       answer,
@@ -124,8 +128,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error: any) {
     console.error("ASK PAST ERROR:", error);
+
     return res.status(500).json({
-      error: error.message || "Could not ask the past",
+      error: error.message || "Could not ask your past.",
     });
   }
 }
