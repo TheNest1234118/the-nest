@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI, { toFile } from "openai";
-import { embedMemory } from "./embed-memory";
+import { embedMemory } from "./embed-memory.js";
 
 export const config = {
   maxDuration: 300,
