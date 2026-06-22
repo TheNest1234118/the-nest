@@ -53,14 +53,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const openai = new OpenAI({ apiKey: openaiKey });
 
   try {
-    await supabase
-      .from("memos")
-      .update({
-        status: "pending",
-        processing_started_at: new Date().toISOString(),
-        transcript_error: null,
-      })
-      .eq("id", memoId);
+    //await supabase
+      //.from("memos")
+      //.update({
+       // status: "pending",
+       // processing_started_at: new Date().toISOString(),
+        //transcript_error: null,
+      //})
+      //.eq("id", memoId);
 
     const { data: memo, error: memoError } = await supabase
       .from("memos")
