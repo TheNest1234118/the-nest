@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { embedMemoryFromClient } from "@/lib/askPast";
-
+import { encryptText, decryptText } from "@/lib/crypto";
 export async function getCurrentUser() {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return null;
@@ -17,7 +17,14 @@ export async function loadThoughts() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  return data || [];
+  return Promise.all(
+    (data || []).map(async (thought: any) => ({
+      ...thought,
+      text: thought.text_encrypted
+        ? await decryptText(thought.text_encrypted)
+        : thought.text,
+    }))
+  );
 }
 export async function deleteThought(id: string) {
   const { error } = await supabase
@@ -27,27 +34,28 @@ export async function deleteThought(id: string) {
 
   if (error) throw error;
 }
-
 export async function saveThought(text: string) {
   const user = await getCurrentUser();
   if (!user) return null;
 
+  const encrypted = await encryptText(text);
+
   const { data, error } = await supabase
     .from("thoughts")
-    .insert({ user_id: user.id, text })
+    .insert({
+      user_id: user.id,
+      text: "[encrypted]",
+      text_encrypted: encrypted,
+    })
     .select()
     .single();
 
   if (error) throw error;
 
-  embedMemoryFromClient({
-    sourceType: "thought",
-    sourceId: data.id,
-    content: text,
-    contentCreatedAt: data.created_at,
-  }).catch(console.error);
-
-  return data;
+  return {
+    ...data,
+    text,
+  };
 }
 export async function loadAnchors() {
   const user = await getCurrentUser();
@@ -59,31 +67,40 @@ export async function loadAnchors() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  return data || [];
+  return Promise.all(
+    (data || []).map(async (anchor: any) => ({
+      ...anchor,
+      content:
+        anchor.type === "text" && anchor.content_encrypted
+          ? await decryptText(anchor.content_encrypted)
+          : anchor.content,
+    }))
+  );
 }
-
 export async function saveAnchor(type: "text" | "image", content: string) {
   const user = await getCurrentUser();
   if (!user) return null;
 
+  const encrypted =
+    type === "text" ? await encryptText(content) : null;
+
   const { data, error } = await supabase
     .from("anchors")
-    .insert({ user_id: user.id, type, content })
+    .insert({
+      user_id: user.id,
+      type,
+      content: type === "text" ? "[encrypted]" : content,
+      content_encrypted: encrypted,
+    })
     .select()
     .single();
 
   if (error) throw error;
 
-  if (type === "text") {
-    embedMemoryFromClient({
-      sourceType: "anchor",
-      sourceId: data.id,
-      content,
-      contentCreatedAt: data.created_at,
-    }).catch(console.error);
-  }
-
-  return data;
+  return {
+    ...data,
+    content,
+  };
 }
 
 export async function uploadMemo(file: Blob, duration: number, mimeType: string) {

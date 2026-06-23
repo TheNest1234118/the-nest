@@ -199,9 +199,7 @@ setIsRecording(false);
         setRecordingTime((t) => {
           const next = t + 1;
       
-          if (next >= MAX_RECORDING_SECONDS) {
-            stopRecording();
-            setError("Recording stopped after 3 hours.");          }
+
       
           return next;
         });
