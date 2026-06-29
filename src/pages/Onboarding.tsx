@@ -100,7 +100,12 @@ export function Onboarding() {
 
     setIndex((current) => current + 1);
   };
-
+  const descStyle: React.CSSProperties = {
+    fontSize: 11,
+    color: "rgba(155,140,118,0.36)",
+    marginTop: 3,
+    lineHeight: 1.45,
+  };
   const toggleReason = (reason: string) => {
     setReasons((current) => {
       const nextReasons = current.includes(reason)
@@ -289,58 +294,107 @@ export function Onboarding() {
                 </Step>
               )}
 
-              {index === 3 && (
-                <Step>
-                  <TinyLabel>Step 3 / 4</TinyLabel>
-                  <Title>When should The Nest remind you?</Title>
-                  <Subtitle>You can change this later in Settings.</Subtitle>
+{index === 3 && (
+  <Step>
+    <TinyLabel>Step 3 / 4</TinyLabel>
+    <Title>When should The Nest remind you?</Title>
+    <Subtitle>
+      Allow reminders now so The Nest can gently check in with you.
+      You can change this later in Settings.
+    </Subtitle>
 
-                  <div style={blockStyle}>
-                    <div style={labelStyle}>Reminder time</div>
+    <div
+      style={{
+        background: "rgba(255,255,255,0.024)",
+        border: "1px solid rgba(255,255,255,0.062)",
+        borderRadius: 16,
+        overflow: "hidden",
+        marginTop: 18,
+      }}
+    >
+      <div style={blockStyle}>
+        <div style={labelStyle}>Reminder time</div>
+        <input
+          type="time"
+          value={reminderTime}
+          onChange={(e) => {
+            setReminderTime(e.target.value);
+            savePartial({ reminder_time: e.target.value });
+          }}
+          style={inputStyle}
+        />
+      </div>
 
-                    <input
-                      type="time"
-                      value={reminderTime}
-                      onChange={(e) => {
-                        setReminderTime(e.target.value);
-                        savePartial({ reminder_time: e.target.value });
-                      }}
-                      style={inputStyle}
-                    />
-                  </div>
+      <div style={blockStyle}>
+        <div style={labelStyle}>Reminder message</div>
+        <div style={descStyle}>
+          This is the message you’ll receive in your reminder.
+        </div>
 
-                  <div style={{ ...blockStyle, borderBottom: "none" }}>
-                    <div style={labelStyle}>Reminder days</div>
+        <textarea
+          value="A quiet moment, if you want one."
+          readOnly
+          style={{
+            ...inputStyle,
+            minHeight: 74,
+            resize: "none",
+            fontFamily: "inherit",
+            opacity: 0.7,
+          }}
+        />
+      </div>
 
-                    <div style={pillWrapStyle}>
-                      {DAYS.map((day) => {
-                        const active = reminderDays.includes(day.value);
+      <div style={{ ...blockStyle, borderBottom: "none" }}>
+        <div style={labelStyle}>Reminder days</div>
 
-                        return (
-                          <button
-                            key={day.value}
-                            onClick={() => toggleDay(day.value)}
-                            style={{
-                              ...dayStyle,
-                              border: active
-                                ? "1px solid rgba(205,170,100,0.42)"
-                                : dayStyle.border,
-                              color: active
-                                ? "rgba(230,200,145,0.92)"
-                                : dayStyle.color,
-                            }}
-                          >
-                            {day.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+        <div style={pillWrapStyle}>
+          {DAYS.map((day) => {
+            const active = reminderDays.includes(day.value);
 
-                  <PrimaryButton onClick={next}>Continue</PrimaryButton>
-                </Step>
-              )}
+            return (
+              <button
+                key={day.value}
+                onClick={() => toggleDay(day.value)}
+                style={{
+                  ...dayStyle,
+                  border: active
+                    ? "1px solid rgba(205,170,100,0.42)"
+                    : dayStyle.border,
+                  color: active
+                    ? "rgba(230,200,145,0.92)"
+                    : dayStyle.color,
+                }}
+              >
+                {day.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
 
+    <PrimaryButton onClick={continueWithReminderPermission}>
+      Allow reminders & continue
+    </PrimaryButton>
+
+    <button
+      onClick={next}
+      style={{
+        width: "100%",
+        marginTop: 12,
+        background: "none",
+        border: "none",
+        color: "rgba(185,162,128,0.42)",
+        fontSize: 11,
+        letterSpacing: "0.14em",
+        textTransform: "uppercase",
+        cursor: "pointer",
+      }}
+    >
+      Continue without reminders
+    </button>
+  </Step>
+)}
               {index === 4 && (
                 <Step center>
                   <motion.div
