@@ -438,22 +438,6 @@ export function Onboarding() {
   <span style={valueStyle}>Save</span>
 </button>
 
-<button
-  onClick={next}
-  style={{
-    width: "100%",
-    marginTop: 12,
-    background: "none",
-    border: "none",
-    color: "rgba(185,162,128,0.42)",
-    fontSize: 11,
-    letterSpacing: "0.14em",
-    textTransform: "uppercase",
-    cursor: "pointer",
-  }}
->
-  Continue without reminders
-</button>
 
     <button
       onClick={next}
