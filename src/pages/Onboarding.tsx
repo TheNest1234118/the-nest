@@ -1,15 +1,18 @@
 import React, { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-
+import {
+  requestNestNotifications,
+  writeNotificationPreferences,
+} from "@/lib/notifications";
 type Experience = "never" | "sometimes" | "regularly";
 
 const REASONS = [
-  { emoji: "🧠", label: "Mein Kopf ist ständig voll" },
-  { emoji: "🎯", label: "Meine Ziele verfolgen" },
-  { emoji: "📝", label: "Gedanken festhalten" },
-  { emoji: "😌", label: "Stress abbauen" },
-  { emoji: "❤️", label: "Meine mentale Gesundheit verbessern" },
+  { emoji: "🧠", label: "My mind feels constantly busy" },
+  { emoji: "🎯", label: "Work toward my goals" },
+  { emoji: "📝", label: "Capture my thoughts" },
+  { emoji: "😌", label: "Reduce stress" },
+  { emoji: "❤️", label: "Support my mental well-being" },
 ];
 
 const DAYS = [
@@ -26,6 +29,32 @@ const STORAGE_KEY = "nest_onboarding_preferences";
 const DONE_KEY = "nest_guide_completed";
 
 export function Onboarding() {
+  const continueWithReminderPermission = async () => {
+    savePartial({
+      reminder_enabled: true,
+      reminder_time: reminderTime,
+      reminder_days: reminderDays,
+      reminder_timezone:
+        Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Zurich",
+    });
+  
+    const granted = await requestNestNotifications();
+  
+    if (granted) {
+      await writeNotificationPreferences({
+        enabled: true,
+        preset: "custom",
+        reminder_time: reminderTime,
+        reminder_timezone:
+          Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Zurich",
+        reminder_frequency: "selected_days",
+        reminder_days: reminderDays,
+        reminder_message: "A quiet moment, if you want one.",
+      } as any);
+    }
+  
+    next();
+  };
   const [, navigate] = useLocation();
 
   const [index, setIndex] = useState(0);
@@ -236,21 +265,21 @@ export function Onboarding() {
                       active={experience === "never"}
                       onClick={() => chooseExperience("never")}
                     >
-                      Noch nie
+                      Never
                     </OptionCard>
 
                     <OptionCard
                       active={experience === "sometimes"}
                       onClick={() => chooseExperience("sometimes")}
                     >
-                      Manchmal
+                      Sometimes
                     </OptionCard>
 
                     <OptionCard
                       active={experience === "regularly"}
                       onClick={() => chooseExperience("regularly")}
                     >
-                      Regelmäßig
+                      Regularly
                     </OptionCard>
                   </div>
 
@@ -338,12 +367,12 @@ export function Onboarding() {
                   <TinyLabel>All set</TinyLabel>
                   <Title>Alles bereit.</Title>
                   <Subtitle>
-                    Deine persönlichen Einstellungen wurden gespeichert.
-                  </Subtitle>
+                  Your Nest is ready whenever you are.
+</Subtitle>
 
-                  <PrimaryButton onClick={finishGuide}>
-                    Erstes Journal starten
-                  </PrimaryButton>
+<PrimaryButton onClick={finishGuide}>
+  Start journaling
+</PrimaryButton>
                 </Step>
               )}
             </motion.div>
