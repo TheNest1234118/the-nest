@@ -3,23 +3,23 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Experience = "never" | "sometimes" | "regularly";
-type ReminderPeriod = "morning" | "afternoon" | "evening" | "custom";
 
 const REASONS = [
-  "Mein Kopf ist ständig voll",
-  "Stress abbauen",
-  "Meine Gedanken ordnen",
-  "Meine Ziele verfolgen",
-  "Erinnerungen festhalten",
-  "Meine mentale Gesundheit verbessern",
-  "Dankbarkeit üben",
-  "Emotionen besser verstehen",
+  { emoji: "🧠", label: "Mein Kopf ist ständig voll" },
+  { emoji: "🎯", label: "Meine Ziele verfolgen" },
+  { emoji: "📝", label: "Gedanken festhalten" },
+  { emoji: "😌", label: "Stress abbauen" },
+  { emoji: "❤️", label: "Meine mentale Gesundheit verbessern" },
 ];
 
-const REMINDERS: { key: ReminderPeriod; label: string; time: string }[] = [
-  { key: "morning", label: "Morgens", time: "09:00" },
-  { key: "afternoon", label: "Nachmittags", time: "14:00" },
-  { key: "evening", label: "Abends", time: "21:00" },
+const DAYS = [
+  { label: "Sun", value: 0 },
+  { label: "Mon", value: 1 },
+  { label: "Tue", value: 2 },
+  { label: "Wed", value: 3 },
+  { label: "Thu", value: 4 },
+  { label: "Fri", value: 5 },
+  { label: "Sat", value: 6 },
 ];
 
 const STORAGE_KEY = "nest_onboarding_preferences";
@@ -31,9 +31,8 @@ export function Onboarding() {
   const [index, setIndex] = useState(0);
   const [reasons, setReasons] = useState<string[]>([]);
   const [experience, setExperience] = useState<Experience | "">("");
-  const [reminderPeriod, setReminderPeriod] =
-    useState<ReminderPeriod>("evening");
   const [reminderTime, setReminderTime] = useState("21:00");
+  const [reminderDays, setReminderDays] = useState<number[]>([1, 2, 3, 4, 5, 6, 0]);
 
   const progress = useMemo(() => ((index + 1) / 5) * 100, [index]);
 
@@ -42,8 +41,10 @@ export function Onboarding() {
       journal_reasons: reasons,
       journaling_experience: experience,
       reminder_enabled: true,
-      reminder_period: reminderPeriod,
       reminder_time: reminderTime,
+      reminder_days: reminderDays,
+      reminder_timezone:
+        Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Zurich",
       ...next,
     };
 
@@ -57,7 +58,6 @@ export function Onboarding() {
     });
 
     localStorage.setItem(DONE_KEY, "true");
-
     navigate("/thoughts");
   };
 
@@ -79,7 +79,6 @@ export function Onboarding() {
         : [...current, reason];
 
       savePartial({ journal_reasons: nextReasons });
-
       return nextReasons;
     });
   };
@@ -89,14 +88,14 @@ export function Onboarding() {
     savePartial({ journaling_experience: value });
   };
 
-  const chooseReminder = (period: ReminderPeriod, time: string) => {
-    setReminderPeriod(period);
-    setReminderTime(time);
+  const toggleDay = (day: number) => {
+    setReminderDays((current) => {
+      const nextDays = current.includes(day)
+        ? current.filter((d) => d !== day)
+        : [...current, day];
 
-    savePartial({
-      reminder_enabled: true,
-      reminder_period: period,
-      reminder_time: time,
+      savePartial({ reminder_days: nextDays });
+      return nextDays;
     });
   };
 
@@ -104,39 +103,69 @@ export function Onboarding() {
     <div
       style={{
         minHeight: "100svh",
-        background: "#ffffff",
-        color: "#0b0b0d",
+        background: "#09080c",
         display: "flex",
         justifyContent: "center",
         padding: "22px 18px",
         boxSizing: "border-box",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
       <div
         style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "radial-gradient(ellipse 60% 45% at 50% 52%, rgba(190, 125, 38, 0.09) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }}
+      />
+
+      <motion.div
+        animate={{ opacity: [0.35, 0.52, 0.35], scale: [1, 1.06, 1] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          position: "absolute",
+          width: 210,
+          height: 210,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle, rgba(200, 135, 42, 0.11) 0%, transparent 70%)",
+          top: "48%",
+          left: "50%",
+          transform: "translate(-50%, -52%)",
+          pointerEvents: "none",
+        }}
+      />
+
+      <div
+        style={{
           width: "100%",
-          maxWidth: 520,
+          maxWidth: 430,
           minHeight: "calc(100svh - 44px)",
           display: "flex",
           flexDirection: "column",
+          position: "relative",
+          zIndex: 2,
         }}
       >
         <div
           style={{
-            height: 5,
+            height: 3,
             width: "100%",
-            background: "#eeeeee",
+            background: "rgba(255,255,255,0.07)",
             borderRadius: 999,
             overflow: "hidden",
-            marginBottom: 52,
+            marginBottom: 44,
           }}
         >
           <motion.div
             animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             style={{
               height: "100%",
-              background: "#0b0b0d",
+              background: "rgba(205,170,100,0.72)",
               borderRadius: 999,
             }}
           />
@@ -146,56 +175,63 @@ export function Onboarding() {
           <AnimatePresence mode="wait">
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-              style={{ width: "100%" }}
+              initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -8, filter: "blur(6px)" }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                width: "100%",
+                background: "rgba(18,15,12,0.72)",
+                border: "1px solid rgba(255,255,255,0.07)",
+                borderRadius: 26,
+                padding: "30px 26px 24px",
+                boxShadow: "0 24px 90px rgba(0,0,0,0.42)",
+                backdropFilter: "blur(12px)",
+              }}
             >
               {index === 0 && (
-                <Step>
-                  <Title>Willkommen.</Title>
-                  <Subtitle>Lass uns deinen Kopf ordnen.</Subtitle>
+                <Step center>
+                  <TinyLabel>Recovery space</TinyLabel>
+                  <Title>The Nest</Title>
+                  <Subtitle>
+                    For when your brain won't slow down after the internet.
+                  </Subtitle>
 
-                  <PrimaryButton onClick={next}>Los geht’s</PrimaryButton>
+                  <PrimaryButton onClick={next}>Enter</PrimaryButton>
                 </Step>
               )}
 
               {index === 1 && (
                 <Step>
-                  <Title>Warum möchtest du journalen?</Title>
-                  <Subtitle>Mehrfachauswahl möglich.</Subtitle>
+                  <TinyLabel>Step 1 / 4</TinyLabel>
+                  <Title>Why are you here?</Title>
+                  <Subtitle>Choose everything that feels right.</Subtitle>
 
-                  <div style={{ display: "grid", gap: 10, marginTop: 26 }}>
-                    {REASONS.map((reason) => {
-                      const active = reasons.includes(reason);
-
-                      return (
-                        <OptionCard
-                          key={reason}
-                          active={active}
-                          onClick={() => toggleReason(reason)}
-                        >
-                          {reason}
-                        </OptionCard>
-                      );
-                    })}
+                  <div style={{ display: "grid", gap: 10, marginTop: 24 }}>
+                    {REASONS.map((reason) => (
+                      <OptionCard
+                        key={reason.label}
+                        active={reasons.includes(reason.label)}
+                        onClick={() => toggleReason(reason.label)}
+                      >
+                        <span style={{ fontSize: 18 }}>{reason.emoji}</span>
+                        <span>{reason.label}</span>
+                      </OptionCard>
+                    ))}
                   </div>
 
-                  <PrimaryButton
-                    onClick={next}
-                    disabled={reasons.length === 0}
-                  >
-                    Weiter
+                  <PrimaryButton onClick={next} disabled={reasons.length === 0}>
+                    Continue
                   </PrimaryButton>
                 </Step>
               )}
 
               {index === 2 && (
                 <Step>
-                  <Title>Hast du schon einmal gejournalt?</Title>
+                  <TinyLabel>Step 2 / 4</TinyLabel>
+                  <Title>Have you journaled before?</Title>
 
-                  <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
+                  <div style={{ display: "grid", gap: 12, marginTop: 26 }}>
                     <OptionCard
                       active={experience === "never"}
                       onClick={() => chooseExperience("never")}
@@ -219,89 +255,60 @@ export function Onboarding() {
                   </div>
 
                   <PrimaryButton onClick={next} disabled={!experience}>
-                    Weiter
+                    Continue
                   </PrimaryButton>
                 </Step>
               )}
 
               {index === 3 && (
                 <Step>
-                  <Title>Wann möchtest du erinnert werden?</Title>
-                  <Subtitle>Du kannst die Zeit später ändern.</Subtitle>
+                  <TinyLabel>Step 3 / 4</TinyLabel>
+                  <Title>When should The Nest remind you?</Title>
+                  <Subtitle>You can change this later in Settings.</Subtitle>
 
-                  <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
-                    {REMINDERS.map((item) => (
-                      <OptionCard
-                        key={item.key}
-                        active={reminderPeriod === item.key}
-                        onClick={() => chooseReminder(item.key, item.time)}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: 12,
-                          }}
-                        >
-                          <span>{item.label}</span>
-                          <span style={{ color: "#8a8a8f" }}>{item.time}</span>
-                        </div>
-                      </OptionCard>
-                    ))}
+                  <div style={blockStyle}>
+                    <div style={labelStyle}>Reminder time</div>
 
-                    <div
-                      style={{
-                        border:
-                          reminderPeriod === "custom"
-                            ? "1px solid #0b0b0d"
-                            : "1px solid #e8e8e8",
-                        borderRadius: 22,
-                        padding: 16,
-                        background:
-                          reminderPeriod === "custom" ? "#f7f7f7" : "#fff",
+                    <input
+                      type="time"
+                      value={reminderTime}
+                      onChange={(e) => {
+                        setReminderTime(e.target.value);
+                        savePartial({ reminder_time: e.target.value });
                       }}
-                    >
-                      <button
-                        onClick={() => chooseReminder("custom", reminderTime)}
-                        style={{
-                          width: "100%",
-                          background: "none",
-                          border: "none",
-                          padding: 0,
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          fontSize: 15,
-                          color: "#111",
-                          cursor: "pointer",
-                          textAlign: "left",
-                        }}
-                      >
-                        <span>Eigene Zeit</span>
-                        <input
-                          type="time"
-                          value={reminderTime}
-                          onChange={(e) => {
-                            setReminderTime(e.target.value);
-                            setReminderPeriod("custom");
-                            savePartial({
-                              reminder_enabled: true,
-                              reminder_period: "custom",
-                              reminder_time: e.target.value,
-                            });
-                          }}
-                          style={{
-                            border: "none",
-                            background: "transparent",
-                            fontSize: 15,
-                            color: "#111",
-                          }}
-                        />
-                      </button>
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div style={{ ...blockStyle, borderBottom: "none" }}>
+                    <div style={labelStyle}>Reminder days</div>
+
+                    <div style={pillWrapStyle}>
+                      {DAYS.map((day) => {
+                        const active = reminderDays.includes(day.value);
+
+                        return (
+                          <button
+                            key={day.value}
+                            onClick={() => toggleDay(day.value)}
+                            style={{
+                              ...dayStyle,
+                              border: active
+                                ? "1px solid rgba(205,170,100,0.42)"
+                                : dayStyle.border,
+                              color: active
+                                ? "rgba(230,200,145,0.92)"
+                                : dayStyle.color,
+                            }}
+                          >
+                            {day.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <PrimaryButton onClick={next}>Weiter</PrimaryButton>
+                  <PrimaryButton onClick={next}>Continue</PrimaryButton>
                 </Step>
               )}
 
@@ -315,8 +322,9 @@ export function Onboarding() {
                       width: 72,
                       height: 72,
                       borderRadius: 999,
-                      background: "#0b0b0d",
-                      color: "#fff",
+                      background: "rgba(205,170,100,0.12)",
+                      border: "1px solid rgba(205,170,100,0.24)",
+                      color: "rgba(225,205,176,0.88)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -327,6 +335,7 @@ export function Onboarding() {
                     ✓
                   </motion.div>
 
+                  <TinyLabel>All set</TinyLabel>
                   <Title>Alles bereit.</Title>
                   <Subtitle>
                     Deine persönlichen Einstellungen wurden gespeichert.
@@ -345,15 +354,17 @@ export function Onboarding() {
           <button
             onClick={() => setIndex((current) => Math.max(0, current - 1))}
             style={{
-              marginTop: 20,
+              marginTop: 18,
               background: "none",
               border: "none",
-              color: "#9a9a9f",
-              fontSize: 13,
+              color: "rgba(185,162,128,0.42)",
+              fontSize: 11,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
               cursor: "pointer",
             }}
           >
-            Zurück
+            Back
           </button>
         )}
       </div>
@@ -368,14 +379,23 @@ function Step({
   children: React.ReactNode;
   center?: boolean;
 }) {
+  return <div style={{ textAlign: center ? "center" : "left" }}>{children}</div>;
+}
+
+function TinyLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div
+    <p
       style={{
-        textAlign: center ? "center" : "left",
+        color: "rgba(205,170,100,0.45)",
+        fontSize: 10,
+        letterSpacing: "0.30em",
+        textTransform: "uppercase",
+        marginBottom: 16,
+        fontWeight: 500,
       }}
     >
       {children}
-    </div>
+    </p>
   );
 }
 
@@ -383,12 +403,13 @@ function Title({ children }: { children: React.ReactNode }) {
   return (
     <h1
       style={{
-        fontSize: 42,
-        lineHeight: 1.05,
-        letterSpacing: "-0.045em",
-        fontWeight: 650,
-        color: "#050505",
-        marginBottom: 14,
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: 34,
+        fontWeight: 400,
+        color: "rgba(235,218,192,0.92)",
+        letterSpacing: "0.03em",
+        lineHeight: 1.13,
+        marginBottom: 16,
       }}
     >
       {children}
@@ -400,11 +421,14 @@ function Subtitle({ children }: { children: React.ReactNode }) {
   return (
     <p
       style={{
-        fontSize: 17,
-        lineHeight: 1.55,
-        color: "#77777d",
-        maxWidth: 390,
-        marginBottom: 26,
+        whiteSpace: "pre-line",
+        color: "rgba(175,158,132,0.48)",
+        fontSize: 14,
+        fontWeight: 300,
+        lineHeight: 1.65,
+        maxWidth: 300,
+        margin: "0 auto 26px",
+        letterSpacing: "0.01em",
       }}
     >
       {children}
@@ -423,18 +447,20 @@ function PrimaryButton({
 }) {
   return (
     <motion.button
-      whileTap={{ scale: disabled ? 1 : 0.985 }}
+      whileHover={{ opacity: disabled ? 0.35 : 1 }}
+      whileTap={{ scale: disabled ? 1 : 0.97 }}
       onClick={disabled ? undefined : onClick}
       style={{
         width: "100%",
-        marginTop: 30,
-        border: "none",
-        background: "#0b0b0d",
-        color: "#fff",
-        borderRadius: 20,
-        padding: "17px 20px",
-        fontSize: 15,
-        fontWeight: 600,
+        marginTop: 26,
+        background: "rgba(205,170,100,0.09)",
+        border: "1px solid rgba(205,170,100,0.18)",
+        borderRadius: 15,
+        padding: "15px 16px",
+        color: "rgba(225,205,176,0.82)",
+        fontSize: 11,
+        letterSpacing: "0.18em",
+        textTransform: "uppercase",
         cursor: disabled ? "default" : "pointer",
         opacity: disabled ? 0.35 : 1,
       }}
@@ -459,20 +485,73 @@ function OptionCard({
       onClick={onClick}
       style={{
         width: "100%",
-        border: active ? "1px solid #0b0b0d" : "1px solid #e8e8e8",
-        background: active ? "#f5f5f5" : "#ffffff",
-        borderRadius: 22,
-        padding: "17px 18px",
-        color: "#111",
-        fontSize: 15,
-        textAlign: "left",
+        background: active ? "rgba(205,170,100,0.09)" : "rgba(255,255,255,0.026)",
+        border: active
+          ? "1px solid rgba(205,170,100,0.38)"
+          : "1px solid rgba(255,255,255,0.065)",
+        borderRadius: 16,
+        padding: "15px 16px",
+        color: active ? "rgba(230,200,145,0.92)" : "rgba(225,210,188,0.72)",
+        fontSize: 13,
         cursor: "pointer",
-        boxShadow: active
-          ? "0 12px 32px rgba(0,0,0,0.06)"
-          : "0 8px 24px rgba(0,0,0,0.03)",
+        textAlign: "left",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
       }}
     >
       {children}
+
+      {active && (
+        <span
+          style={{
+            marginLeft: "auto",
+            color: "rgba(205,170,100,0.7)",
+            fontSize: 13,
+          }}
+        >
+          ✓
+        </span>
+      )}
     </motion.button>
   );
 }
+
+const blockStyle: React.CSSProperties = {
+  borderBottom: "1px solid rgba(255,255,255,0.044)",
+  padding: "15px 0",
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: 13,
+  color: "rgba(220,205,182,0.78)",
+};
+
+const inputStyle: React.CSSProperties = {
+  marginTop: 10,
+  width: "100%",
+  background: "rgba(255,255,255,0.035)",
+  border: "1px solid rgba(255,255,255,0.07)",
+  borderRadius: 12,
+  padding: "11px 12px",
+  color: "rgba(240,232,218,0.88)",
+  fontSize: 13,
+};
+
+const pillWrapStyle: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+  marginTop: 10,
+};
+
+const dayStyle: React.CSSProperties = {
+  background: "rgba(255,255,255,0.026)",
+  border: "1px solid rgba(255,255,255,0.065)",
+  borderRadius: 999,
+  padding: "8px 11px",
+  color: "rgba(185,162,128,0.52)",
+  fontSize: 12,
+  cursor: "pointer",
+  minWidth: 44,
+};
