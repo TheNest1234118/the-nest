@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -6,7 +7,25 @@ import {
   writeNotificationPreferences,
 } from "@/lib/notifications";
 type Experience = "never" | "sometimes" | "regularly";
+const rowStyle: React.CSSProperties = {
+  width: "100%",
+  background: "none",
+  border: "none",
+  borderTop: "1px solid rgba(255,255,255,0.044)",
+  padding: "15px 18px",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+  textAlign: "left",
+  marginTop: 14,
+};
 
+const valueStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: "rgba(205,170,100,0.52)",
+};
 const REASONS = [
   { emoji: "🧠", label: "My mind feels constantly busy" },
   { emoji: "🎯", label: "Work toward my goals" },
@@ -27,7 +46,18 @@ const DAYS = [
 
 const STORAGE_KEY = "nest_onboarding_preferences";
 const DONE_KEY = "nest_guide_completed";
+const DEVICE_ID_KEY = "nest_device_id";
 
+function getOrCreateDeviceId() {
+  let deviceId = localStorage.getItem(DEVICE_ID_KEY);
+
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem(DEVICE_ID_KEY, deviceId);
+  }
+
+  return deviceId;
+}
 export function Onboarding() {
   const continueWithReminderPermission = async () => {
     savePartial({
@@ -80,13 +110,35 @@ export function Onboarding() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   };
 
-  const finishGuide = () => {
+  const finishGuide = async () => {
+    const deviceId = getOrCreateDeviceId();
+  
     savePartial({
       onboarding_completed: true,
       onboarding_completed_at: new Date().toISOString(),
+      device_id: deviceId,
     });
-
+  
     localStorage.setItem(DONE_KEY, "true");
+  
+    await supabase.from("onboarding_devices").upsert({
+      device_id: deviceId,
+      completed_at: new Date().toISOString(),
+    });
+  
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+  
+    if (user) {
+      await supabase.from("profiles").upsert({
+        user_id: user.id,
+        onboarding_completed: true,
+        onboarding_completed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    }
+  
     navigate("/thoughts");
   };
 
@@ -94,7 +146,7 @@ export function Onboarding() {
     savePartial();
 
     if (index >= 4) {
-      finishGuide();
+      finishGuide().catch(console.error);
       return;
     }
 
@@ -373,9 +425,35 @@ export function Onboarding() {
       </div>
     </div>
 
-    <PrimaryButton onClick={continueWithReminderPermission}>
-      Allow reminders & continue
-    </PrimaryButton>
+    <button
+  style={rowStyle}
+  onClick={continueWithReminderPermission}
+>
+  <div>
+    <div style={labelStyle}>Save reminder settings</div>
+    <div style={descStyle}>
+      Your reminder will follow this time, timezone, and selected days.
+    </div>
+  </div>
+  <span style={valueStyle}>Save</span>
+</button>
+
+<button
+  onClick={next}
+  style={{
+    width: "100%",
+    marginTop: 12,
+    background: "none",
+    border: "none",
+    color: "rgba(185,162,128,0.42)",
+    fontSize: 11,
+    letterSpacing: "0.14em",
+    textTransform: "uppercase",
+    cursor: "pointer",
+  }}
+>
+  Continue without reminders
+</button>
 
     <button
       onClick={next}
@@ -424,7 +502,7 @@ export function Onboarding() {
                   Your Nest is ready whenever you are.
 </Subtitle>
 
-<PrimaryButton onClick={finishGuide}>
+<PrimaryButton onClick={() => finishGuide().catch(console.error)}>
   Start journaling
 </PrimaryButton>
                 </Step>
