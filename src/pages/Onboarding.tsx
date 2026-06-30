@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
+
 import {
   requestNestNotifications,
   writeNotificationPreferences,
@@ -59,6 +60,7 @@ function getOrCreateDeviceId() {
   return deviceId;
 }
 export function Onboarding() {
+  
   const continueWithReminderPermission = async () => {
     savePartial({
       reminder_enabled: true,
@@ -92,7 +94,13 @@ export function Onboarding() {
   const [experience, setExperience] = useState<Experience | "">("");
   const [reminderTime, setReminderTime] = useState("21:00");
   const [reminderDays, setReminderDays] = useState<number[]>([1, 2, 3, 4, 5, 6, 0]);
-
+  useEffect(() => {
+    const completed = localStorage.getItem(DONE_KEY) === "true";
+  
+    if (completed) {
+      navigate("/home");
+    }
+  }, [navigate]);
   const progress = useMemo(() => ((index + 1) / 5) * 100, [index]);
 
   const savePartial = (next?: Record<string, unknown>) => {
@@ -481,7 +489,7 @@ export function Onboarding() {
                   </motion.div>
 
                   <TinyLabel>All set</TinyLabel>
-                  <Title>Alles bereit.</Title>
+                  <Title>You're all set.</Title>
                   <Subtitle>
                   Your Nest is ready whenever you are.
 </Subtitle>

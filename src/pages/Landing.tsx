@@ -1,10 +1,19 @@
-import React from "react";
+
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
+import React, { useEffect } from "react";
 
 
 export function Landing() {
   const [, navigate] = useLocation();
+  useEffect(() => {
+    const completed =
+      localStorage.getItem("nest_guide_completed") === "true";
+  
+    if (completed) {
+      navigate("/home");
+    }
+  }, [navigate]);
 
   return (
     <div
