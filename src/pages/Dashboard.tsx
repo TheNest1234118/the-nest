@@ -558,14 +558,51 @@ function PageIntro({ eyebrow, title, description }: { eyebrow: string; title: st
     </motion.section>
   );
 }
-
-function HistoryPage({ search, setSearch, filter, setFilter, navigate }: { search: string; setSearch: (value: string) => void; filter: string; setFilter: (value: string) => void; navigate: (path: string) => void }) {
+type HistoryItem = {
+  id: string;
+  type: "voice" | "thought" | "memory";
+  title: string;
+  text?: string;
+  mood?: string;
+  date?: string;
+  path: string;
+};
+function HistoryPage({
+  search,
+  setSearch,
+  filter,
+  setFilter,
+  navigate,
+  items,
+}: {
+  search: string;
+  setSearch: (value: string) => void;
+  filter: string;
+  setFilter: (value: string) => void;
+  navigate: (path: string) => void;
+  items: HistoryItem[];
+}) {
   const filters = ["Voice", "Thoughts", "Mood", "Date"];
-  const sections = [
-    { title: "Voice Capsules", meta: "Everything you recorded", icon: <Mic size={18} /> , path: "/memos"},
-    { title: "Thoughts", meta: "Every written thought", icon: <Feather size={18} />, path: "/thoughts" },
-    { title: "Memories", meta: "Moments worth returning to", icon: <BookOpen size={18} />, path: "/nest" },
-  ];
+  const query = search.trim().toLowerCase();
+
+const filteredItems = items.filter((item) => {
+  const matchesSearch =
+    !query ||
+    item.title.toLowerCase().includes(query) ||
+    item.text?.toLowerCase().includes(query) ||
+    item.mood?.toLowerCase().includes(query) ||
+    item.date?.toLowerCase().includes(query);
+
+  const matchesFilter =
+    !filter ||
+    (filter === "Voice" && item.type === "voice") ||
+    (filter === "Thoughts" && item.type === "thought") ||
+    (filter === "Mood" && item.mood) ||
+    (filter === "Date" && item.date);
+
+  return matchesSearch && matchesFilter;
+});
+
 
   return (
     <>
@@ -598,18 +635,39 @@ function HistoryPage({ search, setSearch, filter, setFilter, navigate }: { searc
         ))}
       </div>
       <div style={{ display: "grid", gap: 11 }}>
-        {sections.map((section) => (
-          <SoftCard key={section.title} onClick={() => navigate(section.path)}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-                <div style={{ width: 42, height: 42, borderRadius: 999, display: "flex", alignItems: "center", justifyContent: "center", color: colors.gold, background: "rgba(205,170,100,0.07)", border: "1px solid rgba(205,170,100,0.12)" }}>{section.icon}</div>
-                <div><div style={{ color: colors.text, fontSize: 15, marginBottom: 4 }}>{section.title}</div><div style={{ color: colors.textSoft, fontSize: 12 }}>{section.meta}</div></div>
-              </div>
-              <ChevronRight size={18} color={colors.goldSoft} />
+  {filteredItems.length > 0 ? (
+    filteredItems.map((item) => (
+      <SoftCard key={item.id} onClick={() => navigate(item.path)}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 999, display: "flex", alignItems: "center", justifyContent: "center", color: colors.gold, background: "rgba(205,170,100,0.07)", border: "1px solid rgba(205,170,100,0.12)" }}>
+              {item.type === "voice" ? <Mic size={18} /> : item.type === "thought" ? <Feather size={18} /> : <BookOpen size={18} />}
             </div>
-          </SoftCard>
-        ))}
+
+            <div>
+              <div style={{ color: colors.text, fontSize: 15, marginBottom: 4 }}>
+                {item.title}
+              </div>
+              <div style={{ color: colors.textSoft, fontSize: 12 }}>
+                {item.type === "voice" ? "Voice" : item.type === "thought" ? "Thought" : "Memory"}
+                {item.mood ? ` • ${item.mood}` : ""}
+                {item.date ? ` • ${item.date}` : ""}
+              </div>
+            </div>
+          </div>
+
+          <ChevronRight size={18} color={colors.goldSoft} />
+        </div>
+      </SoftCard>
+    ))
+  ) : (
+    <SoftCard>
+      <div style={{ color: colors.textSoft, fontSize: 13 }}>
+        No matching items found.
       </div>
+    </SoftCard>
+  )}
+</div>
     </>
   );
 }
@@ -689,7 +747,30 @@ export function Dashboard() {
   const [captureOpen, setCaptureOpen] = useState(false);
   const [historySearch, setHistorySearch] = useState("");
   const [historyFilter, setHistoryFilter] = useState("");
-
+  const historyItems: HistoryItem[] = [
+    {
+      id: "voice-latest",
+      type: "voice",
+      title: user ? "Late night thoughts" : "Voice Capsules",
+      text: user ? "0:42" : "",
+      date: user ? "Today" : "",
+      path: "/memos",
+    },
+    {
+      id: "thoughts",
+      type: "thought",
+      title: "Thoughts",
+      text: "Every written thought",
+      path: "/thoughts",
+    },
+    {
+      id: "memories",
+      type: "memory",
+      title: "Memories",
+      text: "Moments worth returning to",
+      path: "/nest",
+    },
+  ];
   const dailyCheckin = useMemo(
     () => getDailyCheckin(todayMood, yesterdayMood),
     [todayMood, yesterdayMood]
@@ -1242,13 +1323,14 @@ export function Dashboard() {
         )}
 
         {activeTab === "history" && (
-          <HistoryPage
-            search={historySearch}
-            setSearch={setHistorySearch}
-            filter={historyFilter}
-            setFilter={setHistoryFilter}
-            navigate={navigate}
-          />
+    <HistoryPage
+    search={historySearch}
+    setSearch={setHistorySearch}
+    filter={historyFilter}
+    setFilter={setHistoryFilter}
+    navigate={navigate}
+    items={historyItems}
+  />
         )}
 
         {activeTab === "insights" && <InsightsPage navigate={navigate} />}
