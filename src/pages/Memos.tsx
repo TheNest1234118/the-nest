@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "wouter";
+import { getProfile } from "@/lib/subscription";
 import { motion } from "framer-motion";
 import {
   loadMemos,
@@ -41,6 +42,8 @@ function isIOS(): boolean {
 
 export function Memos() {
   const [memos, setMemos] = useState<Memo[]>([]);
+  const [plan, setPlan] = useState<"free" | "supporter">("free");
+const [transcriptionCount, setTranscriptionCount] = useState(0);
     const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [selectedTranscript, setSelectedTranscript] = useState<Memo | null>(null);
@@ -79,6 +82,20 @@ const [search, setSearch] = useState("");
     }
   
     init();
+  }, []);
+  useEffect(() => {
+    async function loadUsage() {
+      try {
+        const profile = await getProfile();
+  
+        setPlan(profile?.plan || "free");
+        setTranscriptionCount(profile?.transcriptions_this_month || 0);
+      } catch (err) {
+        console.error("Could not load transcription usage", err);
+      }
+    }
+  
+    loadUsage();
   }, []);
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -168,6 +185,13 @@ recorder.onstop = async () => {
     // 4. UI updaten
 if (saved) {
   setMemos((prev) => [saved, ...prev]);
+  if (createTranscript && plan !== "supporter") {
+    setTranscriptionCount((current) => Math.min(current + 1, 30));
+  }
+
+  if (createTranscript && plan === "supporter") {
+    setTranscriptionCount((current) => current + 1);
+  }
 
   setTimeout(() => {
     setIsSaving(false);
@@ -316,6 +340,13 @@ setIsRecording(false);
       .toLowerCase()
       .includes(search.toLowerCase())
   );
+  const transcriptionLimitLabel =
+  plan === "supporter"
+    ? `${transcriptionCount} / ∞`
+    : `${transcriptionCount} / 30`;
+
+const transcriptionLimitReached =
+  plan !== "supporter" && transcriptionCount >= 30;
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -408,7 +439,53 @@ setIsRecording(false);
             </p>
           </div>
         </motion.header>
+        <div
+  style={{
+    marginBottom: 16,
+    background: "rgba(255,255,255,0.024)",
+    border: "1px solid rgba(255,255,255,0.055)",
+    borderRadius: 16,
+    padding: "14px 16px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+  }}
+>
+  <div>
+    <div
+      style={{
+        fontSize: 13,
+        color: "rgba(220,205,182,0.78)",
+      }}
+    >
+      Searchable transcripts
+    </div>
 
+    <div
+      style={{
+        fontSize: 11,
+        color: "rgba(155,140,118,0.42)",
+        marginTop: 3,
+        lineHeight: 1.45,
+      }}
+    >
+      Only voice capsules with transcript enabled count.
+    </div>
+  </div>
+
+  <span
+    style={{
+      fontSize: 13,
+      color: transcriptionLimitReached
+        ? "rgba(248,113,113,0.68)"
+        : "rgba(205,170,100,0.62)",
+      fontFamily: "monospace",
+    }}
+  >
+    {transcriptionLimitLabel}
+  </span>
+</div>
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -443,7 +520,10 @@ setIsRecording(false);
 />
 <button
   type="button"
-  onClick={() => setCreateTranscript(!createTranscript)}
+  onClick={() => {
+    if (transcriptionLimitReached && !createTranscript) return;
+    setCreateTranscript(!createTranscript);
+  }}
   style={{
     width: "100%",
     marginTop: 18,
@@ -478,7 +558,9 @@ setIsRecording(false);
         color: "rgba(175,158,132,0.42)",
       }}
     >
-      Makes this voice capsule searchable with AI.
+     {transcriptionLimitReached
+  ? "Free monthly transcription limit reached. Audio recording still works."
+  : "Makes this voice capsule searchable with AI."}
     </div>
   </div>
 
