@@ -487,6 +487,7 @@ type NestInsight = {
   monthlyMemos: number;
   monthlyResets: number;
 };
+
 type ReflectionLookback = {
   label: string;
   thought: ThoughtMemory | null;
@@ -508,6 +509,7 @@ function monthName(date: string) {
     year: "numeric",
   });
 }
+
 function nextMilestone(streak: number) {
   const milestones = [7, 30, 100, 365];
   return milestones.find((m) => m > streak) ?? 365;
@@ -538,6 +540,7 @@ function pickDailyPrompts() {
   ];
 
   const day = new Date().getDate();
+
   return [
     prompts[day % prompts.length],
     prompts[(day + 2) % prompts.length],
@@ -559,6 +562,7 @@ function findClosestThought(thoughts: ThoughtMemory[], days: number) {
       .sort((a, b) => a.distance - b.distance)[0]?.thought ?? null
   );
 }
+
 function buildInsights(thoughts: ThoughtMemory[]): NestInsight {
   const stopWords = new Set([
     "ich", "und", "der", "die", "das", "ist", "bin", "mit", "nicht", "mir",
@@ -577,19 +581,22 @@ function buildInsights(thoughts: ThoughtMemory[]): NestInsight {
 
   const topWords = [...counts.entries()]
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
+    .slice(0, 5)
     .map(([word]) => word);
 
   const monthCounts = new Map<string, number>();
+
   thoughts.forEach((t) => {
     const key = monthName(t.created_at);
     monthCounts.set(key, (monthCounts.get(key) ?? 0) + 1);
   });
 
   const activeMonth =
-    [...monthCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "still open";
+    [...monthCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ??
+    "still opening";
 
   const thirtyDaysAgo = Date.now() - 30 * 86400000;
+
   const thoughtsLast30 = thoughts.filter(
     (t) => new Date(t.created_at).getTime() >= thirtyDaysAgo
   ).length;
@@ -597,13 +604,13 @@ function buildInsights(thoughts: ThoughtMemory[]): NestInsight {
   const monthStart = new Date();
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
-  
+
   const monthlyThoughts = thoughts.filter(
     (t) => new Date(t.created_at).getTime() >= monthStart.getTime()
   ).length;
-  
+
   return {
-    topWords: topWords.length ? topWords : ["Calm", "Future", "Confidence"],
+    topWords: topWords.length ? topWords : ["Calm", "Memory", "Future"],
     activeMonth,
     thoughtsLast30,
     monthlyThoughts,
@@ -611,7 +618,119 @@ function buildInsights(thoughts: ThoughtMemory[]): NestInsight {
     monthlyResets: 0,
   };
 }
-/* ─── Nest Screen ─────────────────────────────────────────── */
+
+function CountUp({ value }: { value: number }) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    let frame = 0;
+    const total = 44;
+
+    const id = setInterval(() => {
+      frame++;
+      const progress = Math.min(frame / total, 1);
+      setDisplay(Math.round(value * progress));
+
+      if (progress >= 1) clearInterval(id);
+    }, 18);
+
+    return () => clearInterval(id);
+  }, [value]);
+
+  return <>{display}</>;
+}
+
+function MiniTrendLine({ values }: { values: number[] }) {
+  const safeValues = values.length ? values : [1, 2, 1, 3, 2, 4, 3];
+  const max = Math.max(...safeValues, 1);
+
+  const points = safeValues
+    .map((value, index) => {
+      const x = (index / Math.max(safeValues.length - 1, 1)) * 100;
+      const y = 36 - (value / max) * 28;
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  return (
+    <svg viewBox="0 0 100 40" style={{ width: "100%", height: 42 }}>
+      <motion.polyline
+        points={points}
+        fill="none"
+        stroke="rgba(205,170,100,0.55)"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={{ duration: 1.6, ease: "easeInOut" }}
+      />
+      <polyline
+        points={points}
+        fill="none"
+        stroke="rgba(205,170,100,0.12)"
+        strokeWidth="7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ActivityDots({ dates }: { dates: string[] }) {
+  const active = new Set(dates);
+
+  const days = Array.from({ length: 28 }, (_, index) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (27 - index));
+    return d.toISOString().slice(0, 10);
+  });
+
+  return (
+    <div style={activityGrid}>
+      {days.map((day, index) => (
+        <motion.span
+          key={day}
+          initial={{ opacity: 0, scale: 0.6 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: index * 0.018, duration: 0.5 }}
+          style={{
+            ...activityDot,
+            background: active.has(day)
+              ? "rgba(205,170,100,0.48)"
+              : "rgba(255,255,255,0.045)",
+            boxShadow: active.has(day)
+              ? "0 0 18px rgba(205,170,100,0.18)"
+              : "none",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function WordCloud({ words }: { words: string[] }) {
+  return (
+    <div style={wordCloud}>
+      {words.map((word, index) => (
+        <motion.span
+          key={word}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 * index, duration: 0.7 }}
+          style={{
+            ...cloudWord,
+            fontSize: index === 0 ? 18 : index === 1 ? 15 : 12,
+            opacity: index === 0 ? 0.92 : 0.68,
+          }}
+        >
+          {word}
+        </motion.span>
+      ))}
+    </div>
+  );
+}
+
 export function Nest() {
   const [stats, setStats] = useState({
     thoughts: 0,
@@ -626,9 +745,11 @@ export function Nest() {
     firstEntryDays: 1,
     memory: null as ThoughtMemory | null,
     deepMemory: null as ThoughtMemory | null,
+    activityDates: [] as string[],
+    trendValues: [1, 2, 1, 3, 2, 4, 3],
     insights: {
-      topWords: ["Calm", "Future", "Confidence"],
-      activeMonth: "still open",
+      topWords: ["Calm", "Memory", "Future"],
+      activeMonth: "still opening",
       thoughtsLast30: 0,
       monthlyThoughts: 0,
       monthlyMemos: 0,
@@ -638,7 +759,10 @@ export function Nest() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) return;
 
       await supabase.from("nest_visits").insert({ user_id: user.id });
@@ -649,12 +773,15 @@ export function Nest() {
 
       const today = new Date().toISOString().slice(0, 10);
 
-      await supabase
-        .from("nest_daily_activity")
-        .upsert(
-          { user_id: user.id, activity_date: today },
-          { onConflict: "user_id,activity_date" }
-        );
+      await supabase.from("nest_daily_activity").upsert(
+        {
+          user_id: user.id,
+          activity_date: today,
+        },
+        {
+          onConflict: "user_id,activity_date",
+        }
+      );
 
       const [
         thoughtsCount,
@@ -700,15 +827,22 @@ export function Nest() {
         }))
         .filter((item) => item.thought);
 
-      const streak = calculateStreak(
-        (activityData.data ?? []).map((d) => d.activity_date)
-      );
+      const activityDates = (activityData.data ?? []).map((d) => d.activity_date);
+      const streak = calculateStreak(activityDates);
 
       const insights = buildInsights(thoughts);
       insights.monthlyMemos = monthlyMemos.count ?? 0;
       insights.monthlyResets = monthlyResets.count ?? 0;
 
       const firstEntry = thoughts[0]?.created_at ?? user.created_at;
+
+      const weekly = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        const key = d.toISOString().slice(0, 10);
+
+        return thoughts.filter((t) => t.created_at.slice(0, 10) === key).length;
+      });
 
       setStats({
         thoughts: thoughtsCount.count ?? 0,
@@ -726,6 +860,8 @@ export function Nest() {
         streak,
         prompts: pickDailyPrompts(),
         rituals: ritualsData.data ?? [],
+        activityDates,
+        trendValues: weekly,
         insights,
       });
     }
@@ -733,30 +869,14 @@ export function Nest() {
     load().catch(console.error);
   }, []);
 
-  const memoryCards = [
-    stats.memory && {
-      label: "Memory",
-      title: `${daysAgo(stats.memory.created_at)} days ago`,
-      text: stats.memory.text,
-      action: "View then →",
-    },
-    stats.lookbacks.length > 0 && {
-      label: "Reflections",
-      title: `${stats.lookbacks.length} quiet lookback${stats.lookbacks.length > 1 ? "s" : ""}`,
-      text: stats.lookbacks.map((item) => `${item.label}: ${item.thought?.text}`).join("  •  "),
-    },
-    stats.deepMemory && {
-      label: "Then vs Now",
-      title: "Your first roots",
-      text: `${stats.deepMemory.text}\n\nNow: This thought is no longer alone. It has become part of your story.`,
-    },
-    stats.deepMemory && {
-      label: "From the Depths",
-      title: `${daysAgo(stats.deepMemory.created_at)} days deep`,
-      text: stats.deepMemory.text,
-      action: "Rediscover →",
-    },
-  ].filter(Boolean) as Array<{ label: string; title: string; text: string; action?: string }>;
+  const totalPieces = stats.thoughts + stats.memos + stats.resets;
+
+  const heroMemory =
+    stats.memory ||
+    stats.deepMemory || {
+      text: "Your first memory will appear here soon.",
+      created_at: new Date().toISOString(),
+    };
 
   return (
     <motion.div
@@ -775,21 +895,51 @@ export function Nest() {
         margin: "0 auto",
       }}
     >
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "46px 20px 0" }}>
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 20,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "46px 20px 0",
+        }}
+      >
         <Link href="/home">
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.36 }}
             transition={{ delay: 0.3, duration: 0.8 }}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(190,170,135,0.7)", padding: 4 }}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "rgba(190,170,135,0.7)",
+              padding: 4,
+            }}
           >
             <ChevronLeft size={19} strokeWidth={1.4} />
           </motion.button>
         </Link>
+
         <div style={{ width: 27 }} />
       </div>
 
-      <div style={{ position: "fixed", inset: 0, bottom: 92, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.20, pointerEvents: "none" }}>
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          bottom: 92,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: 0.18,
+          pointerEvents: "none",
+        }}
+      >
         <div style={{ width: "100%", height: "100%" }}>
           <TreeTrunk />
         </div>
@@ -805,105 +955,194 @@ export function Nest() {
           padding: "104px 20px 128px",
           display: "flex",
           flexDirection: "column",
-          gap: 30,
+          gap: 38,
         }}
       >
         <section style={heroCard}>
-          <p style={eyebrow}>🌙 Your Nest</p>
-          <h1 style={heroTitle}>Your Nest</h1>
-          <p style={heroText}>A quiet place for what you carried, noticed, survived, and slowly understood.</p>
-          <div style={statRow}>
-            <StatPill label="Thoughts" value={stats.thoughts} />
-            <StatPill label="Voice Memos" value={stats.memos} />
-            <StatPill label="Resets" value={stats.resets} />
+          <p style={eyebrow}>Your Nest</p>
+
+          <h1 style={heroTitle}>
+            You’ve left{" "}
+            <span style={{ color: "rgba(205,170,100,0.82)" }}>
+              <CountUp value={totalPieces} />
+            </span>{" "}
+            pieces of yourself here.
+          </h1>
+
+          <p style={heroText}>
+            A quieter version of your past. Still here. Still becoming visible.
+          </p>
+
+          <div style={heroVisual}>
+            <ActivityDots dates={stats.activityDates} />
           </div>
-          <p style={microText}>Part of your journey for {stats.memberDays} days.</p>
+
+          <div style={meaningRow}>
+            <MeaningPill value={stats.memos} label="Voice Capsules" />
+            <MeaningPill value={stats.firstEntryDays} label="Day Journey" />
+            <MeaningPill value={stats.insights.topWords.length} label="Themes" />
+          </div>
         </section>
 
         <section>
-          <SectionHeader eyebrow="Today" title="Small questions for right now" />
-          <div style={todayPanel}>
+          <SectionHeader eyebrow="Today" title="A small doorway back in" />
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            style={todayPanel}
+          >
             <div style={chipWrap}>
-              {stats.prompts.map((prompt) => (
-                <span key={prompt} style={promptChip}>{prompt}</span>
+              {stats.prompts.map((prompt, index) => (
+                <motion.span
+                  key={prompt}
+                  style={promptChip}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.08, duration: 0.6 }}
+                >
+                  {prompt}
+                </motion.span>
               ))}
             </div>
+
             <div style={buttonRow}>
               <Link href="/thoughts">
                 <button style={quietButton}>Open Thoughts</button>
               </Link>
+
               <Link href="/mood-log">
                 <button style={ghostButton}>Mood Log</button>
               </Link>
             </div>
-          </div>
+          </motion.div>
         </section>
 
         <section>
-          <SectionHeader eyebrow="Memories" title="Old thoughts, softer now" />
-          {memoryCards.length > 0 ? (
-       <div
-       style={memoryRail}
-       className="hide-scrollbar"
-     >
-       {memoryCards.map((card) => (
-                <MemoryCard key={`${card.label}-${card.title}`} {...card} />
+          <SectionHeader eyebrow="Memory" title="Old thoughts, softer now" />
+
+          <motion.article
+            initial={{ opacity: 0, y: 14, scale: 0.98 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.9 }}
+            style={heroMemoryCard}
+          >
+            <div style={memoryGlow} />
+
+            <p style={miniLabel}>{daysAgo(heroMemory.created_at)} days ago</p>
+
+            <p style={largeQuote}>“{heroMemory.text}”</p>
+
+            <Link href="/thoughts">
+              <button style={tinyButton}>View then →</button>
+            </Link>
+          </motion.article>
+
+          {stats.lookbacks.length > 0 && (
+            <div style={lookbackStrip}>
+              {stats.lookbacks.map((item) => (
+                <div key={item.label} style={lookbackChip}>
+                  <span>{item.label}</span>
+                </div>
               ))}
             </div>
-          ) : (
-            <NestPanel>
-              <p style={softText}>Your first older memories will appear here as your journey grows.</p>
-            </NestPanel>
           )}
         </section>
 
         <section>
-          <SectionHeader eyebrow="Insights" title="Patterns without the noise" />
-          <div style={insightPanel}>
-            <div>
-              <p style={miniLabel}>Top Words</p>
-              <div style={chipWrap}>
-                {stats.insights.topWords.map((word) => (
-                  <InsightBadge key={word}>{word}</InsightBadge>
-                ))}
+          <SectionHeader eyebrow="Patterns" title="What keeps returning" />
+
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            style={insightPanel}
+          >
+            <WordCloud words={stats.insights.topWords} />
+
+            <div style={{ marginTop: 16 }}>
+              <p style={miniLabel}>Emotional trace</p>
+              <MiniTrendLine values={stats.trendValues} />
+            </div>
+
+            <p style={{ ...softText, marginTop: 8 }}>
+              {stats.insights.topWords[0]} has been one of the words your Nest
+              noticed most often.
+            </p>
+          </motion.div>
+        </section>
+
+        <section>
+          <SectionHeader eyebrow="Ask Your Past" title="Search what you once said" />
+
+          <Link href="/ask-past">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              whileTap={{ scale: 0.985 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.85 }}
+              style={askPastCard}
+            >
+              <div>
+                <p style={miniLabel}>Memory search</p>
+                <h3 style={askTitle}>A question for your older self.</h3>
+                <p style={softText}>
+                  Ask about patterns, people, moments, fears, hopes, or anything
+                  you left behind in words.
+                </p>
               </div>
-              <p style={{ ...softText, marginTop: 12 }}>
-                The theme {stats.insights.topWords[0]} has been with you often lately.
-              </p>
-            </div>
-            <div style={insightGrid}>
-              <CompactMetric label="Active Month" value={stats.insights.activeMonth} />
-              <CompactMetric label="Last 30 Days" value={stats.insights.thoughtsLast30} suffix="thoughts" />
-            </div>
-          </div>
+
+              <span style={askArrow}>→</span>
+            </motion.div>
+          </Link>
         </section>
 
         <section>
           <SectionHeader eyebrow="Progress" title="Your quiet consistency" />
-          <ProgressGrid
-            items={[
-              { label: "Streak", value: stats.streak, suffix: "days" },
-              { label: "Visits", value: stats.visits, suffix: "returns" },
-              { label: "This Month", value: stats.insights.monthlyThoughts, suffix: "thoughts" },
-              { label: "Journey", value: stats.firstEntryDays, suffix: "days" },
-            ]}
-          />
-          <p style={{ ...softText, marginTop: 12 }}>
-            {Math.max(0, nextMilestone(stats.streak) - stats.streak)} days until your next milestone.
-          </p>
-          <div style={{ ...insightGrid, marginTop: 12 }}>
-            <CompactMetric label="Monthly Memos" value={stats.insights.monthlyMemos} />
-            <CompactMetric label="Monthly Resets" value={stats.insights.monthlyResets} />
+
+          <div style={progressHero}>
+            <div>
+              <p style={miniLabel}>Current rhythm</p>
+              <p style={progressBig}>
+                <CountUp value={stats.streak} /> days
+              </p>
+              <p style={softText}>
+                {Math.max(0, nextMilestone(stats.streak) - stats.streak)} days
+                until the next small milestone.
+              </p>
+            </div>
+
+            <div style={{ width: 96 }}>
+              <MiniTrendLine values={stats.trendValues} />
+            </div>
           </div>
+
+          <details style={moreStats}>
+            <summary style={moreStatsSummary}>More stats</summary>
+
+            <div style={moreStatsGrid}>
+              <CompactMetric label="Visits" value={stats.visits} />
+              <CompactMetric label="Thoughts this month" value={stats.insights.monthlyThoughts} />
+              <CompactMetric label="Memos this month" value={stats.insights.monthlyMemos} />
+              <CompactMetric label="Resets this month" value={stats.insights.monthlyResets} />
+            </div>
+          </details>
         </section>
 
         <section>
           <SectionHeader eyebrow="Rituals" title="Things that bring you back" />
+
           <NestPanel>
             {stats.rituals.length > 0 ? (
               <div style={chipWrap}>
                 {stats.rituals.map((ritual) => (
-                  <span key={`${ritual.name}-${ritual.created_at}`} style={ritualChip}>{ritual.name}</span>
+                  <span key={`${ritual.name}-${ritual.created_at}`} style={ritualChip}>
+                    {ritual.name}
+                  </span>
                 ))}
               </div>
             ) : (
@@ -912,79 +1151,41 @@ export function Nest() {
           </NestPanel>
         </section>
       </motion.main>
-
-      
     </motion.div>
   );
 }
 
 function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
-    <div style={{ marginBottom: 12 }}>
+    <div style={{ marginBottom: 14 }}>
       <p style={eyebrowStyle}>{eyebrow}</p>
       <h2 style={sectionTitle}>{title}</h2>
     </div>
   );
 }
 
-function StatPill({ label, value }: { label: string; value: number }) {
+function MeaningPill({ label, value }: { label: string; value: number }) {
   return (
-    <div style={statPill}>
-      <strong style={statValue}>{value}</strong>
-      <span style={statLabel}>{label}</span>
+    <div style={meaningPill}>
+      <strong style={meaningValue}>
+        <CountUp value={value} />
+      </strong>
+      <span style={meaningLabel}>{label}</span>
     </div>
   );
 }
 
-function InsightBadge({ children }: { children: React.ReactNode }) {
-  return <span style={insightBadge}>{children}</span>;
-}
-
-function CompactMetric({ label, value, suffix }: { label: string; value: string | number; suffix?: string }) {
+function CompactMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
   return (
     <div style={compactMetric}>
       <p style={miniLabel}>{label}</p>
       <p style={compactValue}>{value}</p>
-      {suffix && <p style={compactSuffix}>{suffix}</p>}
-    </div>
-  );
-}
-
-function MemoryCard({ label, title, text, action }: { label: string; title: string; text: string; action?: string }) {
-  return (
-    <article style={memoryCard}>
-     <p style={miniLabel}>{label}</p>
-
-<h3 style={memoryTitle}>{title}</h3>
-
-<div
-  style={{
-    width: 40,
-    height: 1,
-    background: "rgba(205,170,100,0.25)",
-    marginTop: 12,
-  }}
-/>
-
-<p style={memoryQuote}>“{text}”</p>      {action && (
-        <Link href="/thoughts">
-          <button style={tinyButton}>{action}</button>
-        </Link>
-      )}
-    </article>
-  );
-}
-
-function ProgressGrid({ items }: { items: Array<{ label: string; value: number; suffix: string }> }) {
-  return (
-    <div style={progressGrid}>
-      {items.map((item) => (
-        <div key={item.label} style={progressTile}>
-          <p style={miniLabel}>{item.label}</p>
-          <p style={progressValue}>{item.value}</p>
-          <p style={compactSuffix}>{item.suffix}</p>
-        </div>
-      ))}
     </div>
   );
 }
@@ -1008,17 +1209,17 @@ const eyebrowStyle: React.CSSProperties = {
 
 const heroTitle: React.CSSProperties = {
   fontFamily: "Georgia, serif",
-  fontSize: 38,
+  fontSize: 39,
   fontWeight: 400,
-  lineHeight: 1.04,
+  lineHeight: 1.05,
   color: "rgba(242,222,188,0.96)",
   margin: 0,
-  letterSpacing: "-0.03em",
+  letterSpacing: "-0.035em",
 };
 
 const sectionTitle: React.CSSProperties = {
   fontFamily: "Georgia, serif",
-  fontSize: 23,
+  fontSize: 24,
   fontWeight: 400,
   lineHeight: 1.18,
   color: "rgba(235,215,180,0.92)",
@@ -1027,9 +1228,9 @@ const sectionTitle: React.CSSProperties = {
 
 const heroText: React.CSSProperties = {
   fontSize: 14,
-  lineHeight: 1.65,
+  lineHeight: 1.7,
   color: "rgba(213,190,156,0.70)",
-  margin: "14px 0 0",
+  margin: "16px 0 0",
   maxWidth: 350,
 };
 
@@ -1038,13 +1239,6 @@ const softText: React.CSSProperties = {
   lineHeight: 1.65,
   color: "rgba(198,178,150,0.64)",
   margin: 0,
-};
-
-const microText: React.CSSProperties = {
-  fontSize: 11.5,
-  lineHeight: 1.5,
-  color: "rgba(198,178,150,0.50)",
-  margin: "14px 0 0",
 };
 
 const miniLabel: React.CSSProperties = {
@@ -1065,23 +1259,27 @@ const nestBase: React.CSSProperties = {
 };
 
 const heroCard: React.CSSProperties = {
-  background: "linear-gradient(145deg, rgba(22,15,9,0.78), rgba(8,6,5,0.50))",
+  background: "linear-gradient(145deg, rgba(22,15,9,0.82), rgba(8,6,5,0.54))",
   border: "1px solid rgba(220,195,140,0.10)",
   borderRadius: "34px 30px 36px 28px / 30px 34px 28px 36px",
-  padding: "26px 20px 20px",
+  padding: "28px 21px 21px",
   backdropFilter: "blur(16px)",
   WebkitBackdropFilter: "blur(16px)",
   boxShadow: "0 24px 80px rgba(0,0,0,0.42)",
 };
 
-const statRow: React.CSSProperties = {
+const heroVisual: React.CSSProperties = {
+  marginTop: 24,
+};
+
+const meaningRow: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(3, 1fr)",
   gap: 8,
-  marginTop: 20,
+  marginTop: 18,
 };
 
-const statPill: React.CSSProperties = {
+const meaningPill: React.CSSProperties = {
   minWidth: 0,
   background: "rgba(255,255,255,0.035)",
   border: "1px solid rgba(220,195,140,0.08)",
@@ -1090,7 +1288,7 @@ const statPill: React.CSSProperties = {
   textAlign: "center",
 };
 
-const statValue: React.CSSProperties = {
+const meaningValue: React.CSSProperties = {
   display: "block",
   fontFamily: "Georgia, serif",
   fontSize: 22,
@@ -1099,7 +1297,7 @@ const statValue: React.CSSProperties = {
   lineHeight: 1,
 };
 
-const statLabel: React.CSSProperties = {
+const meaningLabel: React.CSSProperties = {
   display: "block",
   fontSize: 9.5,
   lineHeight: 1.2,
@@ -1109,7 +1307,7 @@ const statLabel: React.CSSProperties = {
 
 const todayPanel: React.CSSProperties = {
   ...nestBase,
-  padding: 16,
+  padding: 17,
 };
 
 const chipWrap: React.CSSProperties = {
@@ -1132,7 +1330,7 @@ const buttonRow: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 14,
-  marginTop: 14,
+  marginTop: 15,
 };
 
 const quietButton: React.CSSProperties = {
@@ -1161,92 +1359,151 @@ const ghostButton: React.CSSProperties = {
 
 const tinyButton: React.CSSProperties = {
   ...ghostButton,
-  marginTop: 12,
+  marginTop: 18,
 };
 
-const memoryRail: React.CSSProperties = {
-  display: "flex",
-  msOverflowStyle: "none",
-scrollbarWidth: "none",
-  gap: 12,
-  overflowX: "auto",
-  padding: "2px 2px 12px",
-  scrollSnapType: "x mandatory",
-  WebkitOverflowScrolling: "touch",
-};
-
-const memoryCard: React.CSSProperties = {
-  flex: "0 0 92%",
-  scrollSnapAlign: "center",
-
-  background:
-    "linear-gradient(180deg, rgba(16,11,8,0.96), rgba(9,7,6,0.92))",
-
-  border: "1px solid rgba(205,170,100,0.06)",
-
-  borderRadius: 32,
-
-  padding: 24,
-
-  minHeight: 220,
-
-  boxShadow:
-    "0 25px 80px rgba(0,0,0,0.55)",
-
+const heroMemoryCard: React.CSSProperties = {
+  position: "relative",
+  overflow: "hidden",
+  background: "linear-gradient(180deg, rgba(16,11,8,0.96), rgba(9,7,6,0.92))",
+  border: "1px solid rgba(205,170,100,0.08)",
+  borderRadius: 34,
+  padding: 25,
+  minHeight: 260,
+  boxShadow: "0 25px 90px rgba(0,0,0,0.56)",
   backdropFilter: "blur(18px)",
   WebkitBackdropFilter: "blur(18px)",
 };
-const memoryTitle: React.CSSProperties = {
-  fontFamily: "Georgia, serif",
-  fontSize: 18,
-  fontWeight: 400,
-  color: "rgba(235,215,180,0.90)",
-  margin: "8px 0 0",
+
+const memoryGlow: React.CSSProperties = {
+  position: "absolute",
+  inset: "-30% -20%",
+  background:
+    "radial-gradient(circle at 50% 40%, rgba(205,170,100,0.13), transparent 58%)",
+  pointerEvents: "none",
 };
 
-const memoryQuote: React.CSSProperties = {
+const largeQuote: React.CSSProperties = {
+  position: "relative",
   fontFamily: "Georgia, serif",
-
-  fontSize: 18,
-
-  lineHeight: 1.8,
-
-  color: "rgba(240,225,205,0.84)",
-
-  margin: "18px 0 0",
-
+  fontSize: 24,
+  lineHeight: 1.58,
+  color: "rgba(240,225,205,0.86)",
+  margin: "24px 0 0",
   whiteSpace: "pre-line",
-
   display: "-webkit-box",
-
-  WebkitLineClamp: 7,
-
+  WebkitLineClamp: 6,
   WebkitBoxOrient: "vertical" as any,
-
   overflow: "hidden",
+};
+
+const lookbackStrip: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+  marginTop: 12,
+};
+
+const lookbackChip: React.CSSProperties = {
+  border: "1px solid rgba(205,170,100,0.10)",
+  background: "rgba(255,255,255,0.026)",
+  borderRadius: 999,
+  color: "rgba(198,178,150,0.58)",
+  fontSize: 11,
+  padding: "8px 10px",
 };
 
 const insightPanel: React.CSSProperties = {
   ...nestBase,
-  padding: 16,
+  padding: 18,
+};
+
+const wordCloud: React.CSSProperties = {
+  minHeight: 86,
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 11,
+  padding: "8px 0",
+};
+
+const cloudWord: React.CSSProperties = {
+  fontFamily: "Georgia, serif",
+  color: "rgba(230,205,166,0.78)",
+};
+
+const activityGrid: React.CSSProperties = {
   display: "grid",
-  gap: 14,
+  gridTemplateColumns: "repeat(14, 1fr)",
+  gap: 7,
 };
 
-const insightBadge: React.CSSProperties = {
-  background: "rgba(176,128,62,0.12)",
-  border: "1px solid rgba(220,170,100,0.13)",
+const activityDot: React.CSSProperties = {
+  width: "100%",
+  aspectRatio: "1 / 1",
   borderRadius: 999,
-  padding: "8px 10px",
-  color: "rgba(226,198,154,0.74)",
-  fontSize: 12,
-  lineHeight: 1,
 };
 
-const insightGrid: React.CSSProperties = {
+const askPastCard: React.CSSProperties = {
+  ...nestBase,
+  padding: 20,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 16,
+  cursor: "pointer",
+};
+
+const askTitle: React.CSSProperties = {
+  fontFamily: "Georgia, serif",
+  color: "rgba(235,215,180,0.90)",
+  fontSize: 21,
+  fontWeight: 400,
+  margin: "9px 0 8px",
+};
+
+const askArrow: React.CSSProperties = {
+  fontSize: 24,
+  color: "rgba(205,170,100,0.55)",
+};
+
+const progressHero: React.CSSProperties = {
+  ...nestBase,
+  padding: 18,
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 16,
+};
+
+const progressBig: React.CSSProperties = {
+  fontFamily: "Georgia, serif",
+  fontSize: 34,
+  fontWeight: 400,
+  color: "rgba(238,215,178,0.92)",
+  margin: "10px 0 6px",
+};
+
+const moreStats: React.CSSProperties = {
+  marginTop: 12,
+  ...nestBase,
+  padding: 16,
+};
+
+const moreStatsSummary: React.CSSProperties = {
+  cursor: "pointer",
+  color: "rgba(205,170,100,0.58)",
+  fontSize: 11,
+  letterSpacing: "0.16em",
+  textTransform: "uppercase",
+};
+
+const moreStatsGrid: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
   gap: 10,
+  marginTop: 14,
 };
 
 const compactMetric: React.CSSProperties = {
@@ -1265,37 +1522,6 @@ const compactValue: React.CSSProperties = {
   margin: "8px 0 0",
 };
 
-const compactSuffix: React.CSSProperties = {
-  fontSize: 11,
-  color: "rgba(198,178,150,0.46)",
-  margin: "5px 0 0",
-};
-
-const progressGrid: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
-  gap: 10,
-};
-
-const progressTile: React.CSSProperties = {
-  background: "linear-gradient(150deg, rgba(18,12,8,0.74), rgba(8,6,5,0.48))",
-  border: "1px solid rgba(220,195,140,0.08)",
-  borderRadius: 22,
-  padding: 15,
-  minHeight: 104,
-  backdropFilter: "blur(14px)",
-  WebkitBackdropFilter: "blur(14px)",
-};
-
-const progressValue: React.CSSProperties = {
-  fontFamily: "Georgia, serif",
-  fontSize: 28,
-  fontWeight: 400,
-  color: "rgba(238,215,178,0.92)",
-  margin: "12px 0 0",
-  lineHeight: 1,
-};
-
 const ritualChip: React.CSSProperties = {
   ...promptChip,
   background: "rgba(255,255,255,0.028)",
@@ -1305,4 +1531,3 @@ const nestPanel: React.CSSProperties = {
   ...nestBase,
   padding: 16,
 };
-
