@@ -353,6 +353,71 @@ export function Dashboard() {
     setUser(null);
   };
 
+  function NestEggPreview() {
+    return (
+      <div
+        style={{
+          position: "absolute",
+          right: 14,
+          top: 18,
+          width: 150,
+          height: 115,
+          pointerEvents: "none",
+        }}
+      >
+        <motion.div
+          animate={{ opacity: [0.65, 1, 0.65], scale: [1, 1.04, 1] }}
+          transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            position: "absolute",
+            right: 38,
+            top: 28,
+            width: 42,
+            height: 52,
+            borderRadius: "48% 48% 52% 52%",
+            background:
+              "radial-gradient(circle at 38% 28%, rgba(255,232,164,0.95), rgba(218,151,48,0.95) 48%, rgba(102,55,14,0.28) 100%)",
+            boxShadow:
+              "0 0 30px rgba(218,151,48,0.42), 0 16px 34px rgba(0,0,0,0.38)",
+            zIndex: 3,
+          }}
+        />
+  
+        <motion.div
+          animate={{ rotate: [0, 2, 0], opacity: [0.72, 0.9, 0.72] }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            position: "absolute",
+            right: 4,
+            top: 50,
+            width: 132,
+            height: 54,
+            borderRadius: "50%",
+            background:
+              "repeating-radial-gradient(ellipse at center, transparent 0 7px, rgba(176,112,34,0.34) 8px 9px, transparent 10px 14px)",
+            transform: "rotate(-7deg)",
+            filter: "blur(0.2px)",
+            zIndex: 2,
+          }}
+        />
+  
+        <div
+          style={{
+            position: "absolute",
+            right: 8,
+            top: 62,
+            width: 125,
+            height: 40,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(ellipse at center, rgba(205,130,38,0.24), transparent 68%)",
+            filter: "blur(8px)",
+            zIndex: 1,
+          }}
+        />
+      </div>
+    );
+  }
   const [anchors] = useLocalStorage<AnchorItem[]>("nest_anchors", []);
   const previewAnchors = useMemo(() => anchors.slice(0, 2), [anchors]);
 
@@ -441,6 +506,7 @@ export function Dashboard() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <NestEggPreview />
             <button
               onClick={user ? handleLogout : () => setAuthOpen(true)}
               style={{
@@ -488,14 +554,14 @@ export function Dashboard() {
                 overflow: "hidden",
                 cursor: "pointer",
                 position: "relative",
-                minHeight: 190,
+                minHeight: 132,
                 background:
                   "linear-gradient(165deg, #141009 0%, #191108 55%, #110d06 100%)",
                 border: "1px solid rgba(200, 155, 60, 0.11)",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "flex-end",
-                padding: "22px 22px",
+                padding: "18px 18px",
               }}
             >
               <motion.div
