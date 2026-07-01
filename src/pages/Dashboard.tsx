@@ -758,6 +758,11 @@ export function Dashboard() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setQuickThought("");
+    setQuickSaved(false);
+    setTodayMood(null);
+    setYesterdayMood(null);
+    setDailyIntention(null);
   };
 
   return (
@@ -1009,8 +1014,13 @@ export function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.23, duration: 0.65 }}
         >
-          <SectionHeader label="Last voice capsule" description="Continue your latest recording" />
-          <Link href="/memos">
+         <SectionHeader
+  label="Last voice capsule"
+  description={user ? "Continue your latest recording" : "Sign in to continue your recordings"}
+/>
+
+{user ? (
+  <Link href="/memos">
             <div
               style={{
                 background: "rgba(255,255,255,0.030)",
@@ -1069,6 +1079,23 @@ export function Dashboard() {
               </div>
             </div>
           </Link>
+          ) : (
+            <div
+              style={{
+                background: "rgba(255,255,255,0.030)",
+                border: `1px solid ${colors.border}`,
+                borderRadius: 18,
+                padding: "18px 18px",
+                minHeight: 72,
+                display: "flex",
+                alignItems: "center",
+                color: colors.textSoft,
+                fontSize: 13,
+              }}
+            >
+              No voice capsule loaded.
+            </div>
+          )}
         </motion.section>
 
         <motion.section
