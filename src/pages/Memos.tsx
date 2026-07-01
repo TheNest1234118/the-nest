@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "wouter";
 import { getProfile } from "@/lib/subscription";
 import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabase";
 import {
   loadMemos,
   saveMemo,
@@ -41,6 +42,7 @@ function isIOS(): boolean {
 }
 
 export function Memos() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [memos, setMemos] = useState<Memo[]>([]);
   const [plan, setPlan] = useState<"free" | "supporter">("free");
 const [transcriptionCount, setTranscriptionCount] = useState(0);
@@ -63,7 +65,12 @@ const lastChunkTimeRef = useRef(0);
 const [search, setSearch] = useState("");
   const streamRef = useRef<MediaStream | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setIsLoggedIn(Boolean(data.user));
+      if (!data.user) setCreateTranscript(false);
+    });
+  }, []);
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);

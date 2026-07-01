@@ -9,36 +9,25 @@ import type { User } from "@supabase/supabase-js";
 import {
   loadMoodContinuity,
   saveDailyMood,
-  saveDailyIntention,
   type MoodKey,
 } from "@/lib/dailyNest";
 import {
-  Feather,
-  Mic,
-  Anchor,
+  BarChart3,
   BookOpen,
-  Settings,
+  Check,
   ChevronRight,
-  Music2,
+  Clock3,
+  Feather,
+  Home,
+  Mic,
+  Play,
+  Plus,
+  Send,
+  Settings,
+  Sparkles,
+  UserRound,
 } from "lucide-react";
 import { AudioControls } from "@/components/AudioControls";
-import { useLocalStorage } from "@/hooks/use-local-storage";
-
-interface AnchorItem {
-  id: string;
-  type: "text" | "image";
-  content: string;
-  createdAt: number;
-}
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 5) return "Still up";
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  if (h < 21) return "Good evening";
-  return "Back again";
-}
 
 type DashboardMoodKey =
   | MoodKey
@@ -58,15 +47,6 @@ const MOODS: { key: DashboardMoodKey; label: string }[] = [
   { key: "frustrated", label: "🌑 Frustrated" },
   { key: "foggy", label: "🌫 Foggy" },
   { key: "motivated", label: "✨ Motivated" },
-];
-
-const INTENTIONS = [
-  "Record one voice note",
-  "Write one thought",
-  "Pause for one minute",
-  "Notice one real thing around you",
-  "Leave one thing behind",
-  "Capture something worth remembering",
 ];
 
 const DAILY_CHECKIN_VARIANTS: Record<
@@ -158,6 +138,15 @@ const DAILY_CHECKIN_VARIANTS: Record<
   },
 };
 
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 5) return "Still up";
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  if (h < 21) return "Good evening";
+  return "Back again";
+}
+
 function moodLabel(mood: string | null) {
   return MOODS.find((m) => m.key === mood)?.label.replace(/^.+?\s/, "") ?? mood;
 }
@@ -169,11 +158,9 @@ function cleanMoodLabel(mood: string | null) {
 function pickDailyItem(items: string[], mood: string | null) {
   const today = new Date().toISOString().slice(0, 10);
   const seed = `${today}-${mood || "neutral"}`;
-
   const total = seed
     .split("")
     .reduce((sum, char) => sum + char.charCodeAt(0), 0);
-
   return items[total % items.length];
 }
 
@@ -192,48 +179,260 @@ function getDailyCheckin(todayMood: string | null, yesterdayMood: string | null)
   };
 }
 
-const quietSmallButton: React.CSSProperties = {
-  marginTop: 12,
-  background: "none",
-  border: "none",
-  borderBottom: "1px solid rgba(205,170,100,0.22)",
-  color: "rgba(205,170,100,0.62)",
-  fontSize: 10,
-  letterSpacing: "0.16em",
-  textTransform: "uppercase",
-  padding: "8px 0",
-  cursor: "pointer",
+const colors = {
+  bg: "rgba(9, 9, 13, 0.94)",
+  card: "rgba(255,255,255,0.027)",
+  cardStrong: "rgba(205,170,100,0.055)",
+  border: "rgba(255,255,255,0.065)",
+  goldBorder: "rgba(205,170,100,0.20)",
+  gold: "rgba(205,170,100,0.78)",
+  goldSoft: "rgba(205,170,100,0.48)",
+  text: "rgba(240,232,218,0.90)",
+  textSoft: "rgba(198,178,150,0.58)",
+  textFaint: "rgba(185,162,128,0.40)",
 };
 
 const sectionLabel: React.CSSProperties = {
   fontSize: 11,
-  letterSpacing: "0.16em",
+  letterSpacing: "0.17em",
   textTransform: "uppercase",
-  color: "rgba(185, 158, 115, 0.38)",
-  marginBottom: 8,
-  fontWeight: 500,
+  color: colors.goldSoft,
+  marginBottom: 6,
+  fontWeight: 600,
 };
 
 const sectionDescription: React.CSSProperties = {
   fontSize: 12,
-  color: "rgba(185, 162, 128, 0.42)",
+  color: colors.textSoft,
   lineHeight: 1.5,
-  marginBottom: 12,
+  marginBottom: 13,
 };
 
+const serif: React.CSSProperties = {
+  fontFamily: "Georgia, 'Times New Roman', serif",
+  fontWeight: 400,
+};
+
+function CalmModal({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 300,
+        background: "rgba(6,5,8,0.86)",
+        backdropFilter: "blur(10px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 12, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        style={{
+          width: "100%",
+          maxWidth: 360,
+          background: "rgba(18,15,12,0.96)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 24,
+          padding: 24,
+          boxShadow: "0 20px 80px rgba(0,0,0,0.45)",
+        }}
+      >
+        {children}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+const modalEyebrow: React.CSSProperties = {
+  fontSize: 10,
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+  color: "rgba(205,170,100,0.42)",
+  marginBottom: 10,
+};
+
+const modalTitle: React.CSSProperties = {
+  ...serif,
+  fontSize: 24,
+  lineHeight: 1.25,
+  color: "rgba(235,215,180,0.92)",
+  marginBottom: 14,
+};
+
+const modalText: React.CSSProperties = {
+  fontSize: 13,
+  lineHeight: 1.65,
+  color: "rgba(198,178,150,0.62)",
+  marginBottom: 16,
+};
+
+const modalButton: React.CSSProperties = {
+  width: "100%",
+  background: "none",
+  border: "none",
+  borderTop: "1px solid rgba(255,255,255,0.06)",
+  padding: "14px 0",
+  color: "rgba(220,205,182,0.68)",
+  fontSize: 12,
+  letterSpacing: "0.08em",
+  cursor: "pointer",
+  textAlign: "left",
+};
+
+function RainLayer() {
+  return (
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
+      {Array.from({ length: 38 }).map((_, i) => (
+        <motion.span
+          key={i}
+          initial={{ y: -80, opacity: 0 }}
+          animate={{ y: "115svh", opacity: [0, 0.22, 0.08, 0] }}
+          transition={{
+            duration: 4.8 + (i % 7) * 0.5,
+            repeat: Infinity,
+            delay: (i % 13) * 0.35,
+            ease: "linear",
+          }}
+          style={{
+            position: "absolute",
+            left: `${(i * 37) % 100}%`,
+            top: -80,
+            width: 1,
+            height: 48 + (i % 5) * 14,
+            borderRadius: 999,
+            background: "linear-gradient(to bottom, transparent, rgba(255,255,255,0.22), transparent)",
+            transform: "rotate(12deg)",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function SectionHeader({ label, description }: { label: string; description?: string }) {
+  return (
+    <div style={{ marginBottom: 11 }}>
+      <p style={sectionLabel}>{label}</p>
+      {description && <p style={sectionDescription}>{description}</p>}
+    </div>
+  );
+}
+
+function BottomNav({ navigate }: { navigate: (path: string) => void }) {
+  const itemStyle: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 4,
+    minWidth: 50,
+    background: "none",
+    border: "none",
+    color: "rgba(215,205,190,0.50)",
+    fontSize: 10,
+    cursor: "pointer",
+  };
+
+  return (
+    <div
+      style={{
+        position: "sticky",
+        bottom: 0,
+        zIndex: 30,
+        margin: "8px -20px 0",
+        padding: "10px 18px calc(env(safe-area-inset-bottom, 0px) + 10px)",
+        background: "linear-gradient(to top, rgba(10,9,11,0.96), rgba(10,9,11,0.74))",
+        backdropFilter: "blur(18px)",
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: "26px 26px 0 0",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        boxShadow: "0 -20px 50px rgba(0,0,0,0.28)",
+      }}
+    >
+      <button onClick={() => navigate("/")} style={{ ...itemStyle, color: colors.gold }}>
+        <Home size={20} strokeWidth={1.55} />
+        <span>Home</span>
+      </button>
+
+      <button onClick={() => navigate("/nest")} style={itemStyle}>
+        <Clock3 size={20} strokeWidth={1.45} />
+        <span>History</span>
+      </button>
+
+      <button
+        onClick={() => navigate("/memos")}
+        aria-label="Capture"
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: 999,
+          border: "1px solid rgba(205,170,100,0.36)",
+          background:
+            "radial-gradient(circle at 50% 30%, rgba(205,170,100,0.42), rgba(120,75,20,0.32) 58%, rgba(40,25,10,0.70))",
+          boxShadow: "0 0 28px rgba(205,170,100,0.22)",
+          color: "rgba(255,235,195,0.94)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          marginTop: -26,
+        }}
+      >
+        <Plus size={30} strokeWidth={1.55} />
+      </button>
+
+      <button onClick={() => navigate("/reflections")} style={itemStyle}>
+        <BarChart3 size={20} strokeWidth={1.45} />
+        <span>Insights</span>
+      </button>
+
+      <button onClick={() => navigate("/settings")} style={itemStyle}>
+        <UserRound size={20} strokeWidth={1.45} />
+        <span>Profile</span>
+      </button>
+    </div>
+  );
+}
+
 export function Dashboard() {
+  const [, navigate] = useLocation();
+  const [authOpen, setAuthOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [dailyOpen, setDailyOpen] = useState(false);
+  const [selectedDailyMood, setSelectedDailyMood] = useState<DashboardMoodKey | null>(null);
+  const [todayMood, setTodayMood] = useState<string | null>(null);
+  const [yesterdayMood, setYesterdayMood] = useState<string | null>(null);
+  const [dailyIntention, setDailyIntention] = useState<string | null>(null);
+  const [quickThought, setQuickThought] = useState("");
+  const [quickSaving, setQuickSaving] = useState(false);
+  const [quickSaved, setQuickSaved] = useState(false);
+
+  const dailyCheckin = useMemo(
+    () => getDailyCheckin(todayMood, yesterdayMood),
+    [todayMood, yesterdayMood]
+  );
+
   const saveQuickThought = async () => {
     const text = quickThought.trim();
     if (!text || quickSaving) return;
-  
+
     setQuickSaving(true);
     setQuickSaved(false);
-  
+
     try {
       await saveThought(text);
       setQuickThought("");
       setQuickSaved(true);
-  
       setTimeout(() => setQuickSaved(false), 1800);
     } catch (err) {
       console.error("Could not save quick thought", err);
@@ -241,104 +440,12 @@ export function Dashboard() {
       setQuickSaving(false);
     }
   };
-  const [selectedDailyMood, setSelectedDailyMood] =
-  useState<DashboardMoodKey | null>(null);
-  const [, navigate] = useLocation();
-  const [authOpen, setAuthOpen] = useState(false);
-  const [quickThought, setQuickThought] = useState("");
-const [quickSaving, setQuickSaving] = useState(false);
-const [quickSaved, setQuickSaved] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [guideOpen, setGuideOpen] = useState(false);
-  const [welcomeOpen, setWelcomeOpen] = useState(false);
-  const [dailyOpen, setDailyOpen] = useState(false);
-  if (localStorage.getItem("nest_guide_completed") !== "true") {
-    setTimeout(() => setGuideOpen(true), 450);
-   }
-  const [todayMood, setTodayMood] = useState<string | null>(null);
-  const [yesterdayMood, setYesterdayMood] = useState<string | null>(null);
-  const [dailyIntention, setDailyIntention] = useState<string | null>(null);
-
-  function CalmModal({ children }: { children: React.ReactNode }) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 300,
-          background: "rgba(6,5,8,0.86)",
-          backdropFilter: "blur(10px)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 24,
-        }}
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 12, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          style={{
-            width: "100%",
-            maxWidth: 360,
-            background: "rgba(18,15,12,0.96)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 24,
-            padding: 24,
-            boxShadow: "0 20px 80px rgba(0,0,0,0.45)",
-          }}
-        >
-          {children}
-        </motion.div>
-      </motion.div>
-    );
-  }
-
-  const modalEyebrow: React.CSSProperties = {
-    fontSize: 10,
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
-    color: "rgba(205,170,100,0.42)",
-    marginBottom: 10,
-  };
-
-  const modalTitle: React.CSSProperties = {
-    fontFamily: "Georgia, serif",
-    fontSize: 24,
-    fontWeight: 400,
-    lineHeight: 1.25,
-    color: "rgba(235,215,180,0.92)",
-    marginBottom: 14,
-  };
-
-  const modalText: React.CSSProperties = {
-    fontSize: 13,
-    lineHeight: 1.65,
-    color: "rgba(198,178,150,0.62)",
-    marginBottom: 16,
-  };
-
-  const modalButton: React.CSSProperties = {
-    width: "100%",
-    background: "none",
-    border: "none",
-    borderTop: "1px solid rgba(255,255,255,0.06)",
-    padding: "14px 0",
-    color: "rgba(220,205,182,0.68)",
-    fontSize: 12,
-    letterSpacing: "0.08em",
-    cursor: "pointer",
-    textAlign: "left",
-  };
 
   useEffect(() => {
     async function init() {
       registerVisitForPwaPrompt();
 
       const today = new Date().toISOString().slice(0, 10);
-
       const { data } = await supabase.auth.getUser();
       setUser(data.user ?? null);
 
@@ -348,6 +455,10 @@ const [quickSaved, setQuickSaved] = useState(false);
 
       if (localStorage.getItem("nest_daily_checkin_date") !== today) {
         setDailyOpen(true);
+      }
+
+      if (localStorage.getItem("nest_guide_completed") !== "true") {
+        setTimeout(() => setGuideOpen(true), 450);
       }
 
       const continuity = await loadMoodContinuity();
@@ -376,15 +487,6 @@ const [quickSaved, setQuickSaved] = useState(false);
     setUser(null);
   };
 
-
-  const [anchors] = useLocalStorage<AnchorItem[]>("nest_anchors", []);
-  const previewAnchors = useMemo(() => anchors.slice(0, 2), [anchors]);
-
-  const dailyCheckin = useMemo(
-    () => getDailyCheckin(todayMood, yesterdayMood),
-    [todayMood, yesterdayMood]
-  );
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -392,7 +494,7 @@ const [quickSaved, setQuickSaved] = useState(false);
       transition={{ duration: 0.7 }}
       style={{
         minHeight: "100svh",
-        background: "rgba(9, 9, 13, 0.88)",
+        background: colors.bg,
         position: "relative",
         overflow: "hidden",
         maxWidth: 480,
@@ -401,12 +503,14 @@ const [quickSaved, setQuickSaved] = useState(false);
         flexDirection: "column",
       }}
     >
+      <RainLayer />
+
       <div
         style={{
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(ellipse 70% 35% at 50% 10%, rgba(185, 120, 35, 0.05) 0%, transparent 70%)",
+            "radial-gradient(ellipse 85% 35% at 50% 0%, rgba(205, 145, 45, 0.075) 0%, transparent 68%), linear-gradient(90deg, rgba(255,255,255,0.025), transparent 15%, transparent 85%, rgba(255,255,255,0.018))",
           pointerEvents: "none",
           zIndex: 0,
         }}
@@ -415,51 +519,50 @@ const [quickSaved, setQuickSaved] = useState(false);
       <div
         style={{
           flex: 1,
-          padding: "0 20px 32px",
-          paddingTop: "calc(env(safe-area-inset-top, 0px) + 52px)",
+          padding: "0 20px 0",
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 46px)",
           position: "relative",
           zIndex: 1,
           display: "flex",
           flexDirection: "column",
-          gap: 22,
+          gap: 25,
         }}
       >
-        <motion.div
+        <motion.header
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.7 }}
+          transition={{ delay: 0.08, duration: 0.65 }}
           style={{
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "space-between",
+            gap: 14,
           }}
         >
           <div>
             <p
               style={{
-                fontSize: 22,
-                fontWeight: 300,
-                color: "rgba(235, 220, 198, 0.88)",
-                letterSpacing: "0.01em",
+                fontSize: 28,
+                fontWeight: 700,
+                color: colors.text,
+                letterSpacing: "-0.035em",
                 marginBottom: 5,
-                lineHeight: 1.2,
+                lineHeight: 1.08,
               }}
             >
               {getGreeting()}.
             </p>
-
             <p
               style={{
                 fontSize: 13,
-                color: "rgba(185, 162, 128, 0.50)",
+                color: colors.textSoft,
                 fontWeight: 300,
                 lineHeight: 1.5,
-                maxWidth: 280,
-                letterSpacing: "0.01em",
+                maxWidth: 300,
               }}
             >
               {yesterdayMood && !todayMood
-                ? `Yesterday you felt ${moodLabel(yesterdayMood)}. You can leave something here today.`
+                ? `Yesterday you felt ${moodLabel(yesterdayMood)}. Leave something here today.`
                 : "Your Nest is here if you need it."}
             </p>
           </div>
@@ -468,17 +571,16 @@ const [quickSaved, setQuickSaved] = useState(false);
             <button
               onClick={user ? handleLogout : () => setAuthOpen(true)}
               style={{
-                background: "rgba(205, 170, 100, 0.045)",
-                border: "1px solid rgba(205, 170, 100, 0.12)",
+                background: "rgba(205, 170, 100, 0.055)",
+                border: "1px solid rgba(205, 170, 100, 0.16)",
                 borderRadius: 999,
                 cursor: "pointer",
-                color: user
-                  ? "rgba(185, 162, 128, 0.45)"
-                  : "rgba(205, 170, 100, 0.62)",
-                padding: "7px 10px",
+                color: user ? colors.textFaint : colors.gold,
+                padding: "7px 11px",
                 fontSize: 9,
-                letterSpacing: "0.16em",
+                letterSpacing: "0.15em",
                 textTransform: "uppercase",
+                fontWeight: 700,
               }}
             >
               {user ? "Logout" : "Login"}
@@ -486,714 +588,423 @@ const [quickSaved, setQuickSaved] = useState(false);
 
             <button
               onClick={() => navigate("/settings")}
+              aria-label="Settings"
               style={{
                 background: "none",
                 border: "none",
                 cursor: "pointer",
-                color: "rgba(185, 162, 128, 0.32)",
+                color: "rgba(215, 205, 188, 0.54)",
                 padding: 4,
-                marginTop: 3,
+                marginTop: 2,
               }}
             >
-              <Settings size={17} strokeWidth={1.4} />
+              <Settings size={18} strokeWidth={1.5} />
             </button>
           </div>
-        </motion.div>
-        <motion.div
-  initial={{ opacity: 0, y: 8 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ delay: 0.13, duration: 0.7 }}
-  style={{
-    background: "rgba(255,255,255,0.024)",
-    border: "1px solid rgba(255,255,255,0.062)",
-    borderRadius: 18,
-    padding: "14px 15px",
-  }}
->
-  <div
-    style={{
-      fontSize: 13,
-      color: "rgba(220,205,182,0.78)",
-      marginBottom: 9,
-    }}
-  >
-    What’s on your mind?
-  </div>
+        </motion.header>
 
-  <div
-    style={{
-      display: "flex",
-      alignItems: "flex-end",
-      gap: 10,
-    }}
-  >
-    <textarea
-      autoFocus
-      value={quickThought}
-      onChange={(e) => setQuickThought(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          saveQuickThought();
-        }
-      }}
-      placeholder="Start typing…"
-      rows={quickThought.length > 80 ? 3 : 1}
-      style={{
-        flex: 1,
-        resize: "none",
-        background: "rgba(255,255,255,0.035)",
-        border: "1px solid rgba(255,255,255,0.07)",
-        borderRadius: 14,
-        padding: "12px 13px",
-        color: "rgba(240,232,218,0.88)",
-        fontSize: 13,
-        lineHeight: 1.5,
-        outline: "none",
-        fontFamily: "inherit",
-        minHeight: 44,
-      }}
-    />
-
-    <button
-      onClick={saveQuickThought}
-      disabled={!quickThought.trim() || quickSaving}
-      style={{
-        width: 44,
-        height: 44,
-        borderRadius: 999,
-        border: "1px solid rgba(205,170,100,0.16)",
-        background: "rgba(205,170,100,0.07)",
-        color: "rgba(205,170,100,0.72)",
-        cursor: !quickThought.trim() || quickSaving ? "default" : "pointer",
-        opacity: !quickThought.trim() || quickSaving ? 0.35 : 1,
-        fontSize: 17,
-      }}
-    >
-      ✓
-    </button>
-  </div>
-
-  {quickSaved && (
-    <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      style={{
-        marginTop: 8,
-        fontSize: 11,
-        color: "rgba(205,170,100,0.52)",
-      }}
-    >
-      Saved to Thoughts.
-    </motion.div>
-  )}
-</motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.16, duration: 0.8 }}
-        >
-          <Link href="/nest">
-            <div
-              style={{
-                borderRadius: 24,
-                overflow: "hidden",
-                cursor: "pointer",
-                position: "relative",
-                minHeight: 190,
-                background:
-                  "linear-gradient(165deg, #141009 0%, #191108 55%, #110d06 100%)",
-                border: "1px solid rgba(200, 155, 60, 0.11)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "flex-end",
-                padding: "22px 22px",
-              }}
-            >
-              <motion.div
-                animate={{ opacity: [0.72, 1, 0.72] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background:
-                    "radial-gradient(ellipse 70% 55% at 50% 100%, rgba(195, 130, 38, 0.22) 0%, rgba(150, 90, 25, 0.06) 55%, transparent 75%)",
-                  pointerEvents: "none",
-                }}
-              />
-
-              <motion.div
-                animate={{ opacity: [0.55, 0.75, 0.55] }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1,
-                }}
-                style={{
-                  position: "absolute",
-                  top: "35%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: 56,
-                  height: 64,
-                  borderRadius: "45% 45% 50% 50%",
-                  background:
-                    "radial-gradient(ellipse at 50% 65%, rgba(195, 130, 38, 0.32) 0%, rgba(140, 85, 20, 0.08) 60%, transparent 80%)",
-                }}
-              />
-
-              <div style={{ position: "relative", zIndex: 2 }}>
-                <p
-                  style={{
-                    fontSize: 10,
-                    letterSpacing: "0.22em",
-                    textTransform: "uppercase",
-                    color: "rgba(200, 165, 95, 0.50)",
-                    marginBottom: 7,
-                    fontWeight: 500,
-                  }}
-                >
-                  Nest mode
-                </p>
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-end",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <div>
-                    <h2
-                      style={{
-                        fontFamily: "Georgia, 'Times New Roman', serif",
-                        fontSize: 27,
-                        fontWeight: 400,
-                        color: "rgba(235, 215, 180, 0.92)",
-                        letterSpacing: "0.03em",
-                        lineHeight: 1.15,
-                        marginBottom: 5,
-                      }}
-                    >
-                      The Nest
-                    </h2>
-
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: "rgba(185, 158, 115, 0.48)",
-                        fontWeight: 300,
-                        letterSpacing: "0.02em",
-                      }}
-                    >
-                      A place to leave what would otherwise disappear.
-                    </p>
-                  </div>
-
-                  <ChevronRight
-                    size={17}
-                    color="rgba(200, 165, 95, 0.38)"
-                    strokeWidth={1.3}
-                    style={{ marginBottom: 2 }}
-                  />
-                </div>
-              </div>
-            </div>
-          </Link>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.7 }}
+          transition={{ delay: 0.13, duration: 0.7 }}
           style={{
-            background: "rgba(255,255,255,0.022)",
-            border: "1px solid rgba(255,255,255,0.055)",
-            borderRadius: 16,
-            padding: "15px 18px",
+            background:
+              "linear-gradient(145deg, rgba(205,170,100,0.095), rgba(255,255,255,0.024))",
+            border: `1px solid ${colors.goldBorder}`,
+            borderRadius: 18,
+            padding: "20px 18px",
+            boxShadow: "0 18px 70px rgba(0,0,0,0.18)",
           }}
         >
-          <p style={sectionLabel}>Today</p>
-
-          <p
-            style={{
-              fontSize: 13,
-              color: "rgba(220,205,182,0.66)",
-              lineHeight: 1.6,
-            }}
-          >
-            {dailyIntention || dailyCheckin.invitation}
-          </p>
-
-          <button onClick={() => setDailyOpen(true)} style={quietSmallButton}>
-            Choose gently
-          </button>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.24, duration: 0.7 }}
-        >
-          <p style={sectionLabel}>Capture</p>
-          <p style={sectionDescription}>The things you want to keep.</p>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <Link href="/memos">
-              <div
-                style={{
-                  background:
-                    "linear-gradient(145deg, rgba(205,170,100,0.105), rgba(255,255,255,0.028))",
-                  border: "1px solid rgba(205,170,100,0.16)",
-                  borderRadius: 20,
-                  padding: "22px 20px",
-                  cursor: "pointer",
-                  minHeight: 118,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <div>
-                  <Mic
-                    size={19}
-                    strokeWidth={1.4}
-                    color="rgba(205, 170, 100, 0.72)"
-                    style={{ marginBottom: 14 }}
-                  />
-
-                  <div
-                    style={{
-                      fontFamily: "Georgia, 'Times New Roman', serif",
-                      fontSize: 22,
-                      fontWeight: 400,
-                      color: "rgba(235, 215, 180, 0.92)",
-                      marginBottom: 6,
-                    }}
-                  >
-                    Capsules
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "rgba(185, 158, 115, 0.48)",
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    Voice notes before they disappear.
-                  </div>
-                </div>
-
-                <ChevronRight
-                  size={17}
-                  color="rgba(200, 165, 95, 0.38)"
-                  strokeWidth={1.3}
-                />
-              </div>
-            </Link>
-
-            <Link href="/thoughts">
-              <div
-                style={{
-                  background: "rgba(255,255,255,0.028)",
-                  border: "1px solid rgba(255,255,255,0.065)",
-                  borderRadius: 18,
-                  padding: "18px 18px",
-                  cursor: "pointer",
-                  minHeight: 92,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <div>
-                  <Feather
-                    size={17}
-                    strokeWidth={1.4}
-                    color="rgba(205, 170, 100, 0.58)"
-                    style={{ marginBottom: 10 }}
-                  />
-
-                  <div
-                    style={{
-                      fontSize: 17,
-                      fontWeight: 400,
-                      color: "rgba(225, 210, 188, 0.82)",
-                      marginBottom: 5,
-                    }}
-                  >
-                    Thoughts
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "rgba(175, 158, 132, 0.42)",
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    A place to put it down.
-                  </div>
-                </div>
-
-                <ChevronRight
-                  size={15}
-                  strokeWidth={1.3}
-                  color="rgba(200, 165, 95, 0.28)"
-                />
-              </div>
-            </Link>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.7 }}
-        >
-          <p style={sectionLabel}>Looking back</p>
-          <p style={sectionDescription}>Made from what you’ve left behind.</p>
-
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 10,
+              fontSize: 21,
+              color: "rgba(245,222,184,0.92)",
+              marginBottom: 16,
+              fontWeight: 500,
+              letterSpacing: "-0.02em",
             }}
           >
-            <Link href="/reflections">
-              <div
-                style={{
-                  background: "rgba(255,255,255,0.024)",
-                  border: "1px solid rgba(255,255,255,0.058)",
-                  borderRadius: 16,
-                  padding: "16px 14px",
-                  cursor: "pointer",
-                  minHeight: 96,
-                }}
-              >
-                <BookOpen
-                  size={16}
-                  strokeWidth={1.4}
-                  color="rgba(205, 170, 100, 0.50)"
-                  style={{ marginBottom: 12 }}
-                />
-
-                <div
-                  style={{
-                    fontSize: 14,
-                    color: "rgba(225, 210, 188, 0.78)",
-                    marginBottom: 5,
-                  }}
-                >
-                  Weekly Reflection
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "rgba(175, 158, 132, 0.36)",
-                    lineHeight: 1.45,
-                  }}
-                >
-                  A quiet look at your week.
-                </div>
-              </div>
-            </Link>
-
-            <Link href="/reflections">
-              <div
-                style={{
-                  background: "rgba(255,255,255,0.020)",
-                  border: "1px solid rgba(255,255,255,0.052)",
-                  borderRadius: 16,
-                  padding: "16px 14px",
-                  cursor: "pointer",
-                  minHeight: 96,
-                }}
-              >
-                <BookOpen
-                  size={16}
-                  strokeWidth={1.4}
-                  color="rgba(205, 170, 100, 0.42)"
-                  style={{ marginBottom: 12 }}
-                />
-
-                <div
-                  style={{
-                    fontSize: 14,
-                    color: "rgba(225, 210, 188, 0.70)",
-                    marginBottom: 5,
-                  }}
-                >
-                  Monthly Reflection
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "rgba(175, 158, 132, 0.34)",
-                    lineHeight: 1.45,
-                  }}
-                >
-                  See what stayed with you.
-                </div>
-              </div>
-            </Link>
+            What’s on your mind?
           </div>
-          <Link href="/ask-past">
-  <div
-    style={{
-      marginTop: 12,
-      background: "rgba(205,170,100,0.035)",
-      border: "1px solid rgba(205,170,100,0.10)",
-      borderRadius: 16,
-      padding: "16px 16px",
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 14,
-    }}
-  >
-    <div>
-      <div
-        style={{
-          fontSize: 14,
-          color: "rgba(230,215,190,0.82)",
-          marginBottom: 5,
-        }}
-      >
-        Ask your past
-      </div>
 
-      <div
-        style={{
-          fontSize: 11,
-          color: "rgba(175,158,132,0.40)",
-          lineHeight: 1.45,
-        }}
-      >
-        Search your thoughts, voice capsules and anchors with AI.
-      </div>
-    </div>
-
-    <ChevronRight
-      size={16}
-      strokeWidth={1.3}
-      color="rgba(205,170,100,0.42)"
-    />
-  </div>
-</Link>
-        </motion.div>
-
-       {/* <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.36, duration: 0.7 }}
-        >
-          <Link href="/anchors">
-            <div
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 12 }}>
+            <textarea
+              autoFocus
+              value={quickThought}
+              onChange={(e) => setQuickThought(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  saveQuickThought();
+                }
+              }}
+              placeholder="Start typing..."
+              rows={quickThought.length > 70 ? 3 : 1}
               style={{
-                background: "rgba(255,255,255,0.020)",
-                border: "1px solid rgba(255,255,255,0.055)",
-                borderRadius: 16,
-                padding: "15px 18px",
-                cursor: "pointer",
+                flex: 1,
+                resize: "none",
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                color: colors.text,
+                fontSize: 16,
+                lineHeight: 1.55,
+                outline: "none",
+                fontFamily: "inherit",
+                minHeight: 44,
+              }}
+            />
+
+            <button
+              onClick={saveQuickThought}
+              disabled={!quickThought.trim() || quickSaving}
+              aria-label="Save thought"
+              style={{
+                width: 56,
+                height: 56,
+                flex: "0 0 auto",
+                borderRadius: 999,
+                border: "1px solid rgba(205,170,100,0.16)",
+                background:
+                  "radial-gradient(circle at 50% 35%, rgba(205,170,100,0.22), rgba(90,55,18,0.38))",
+                color: "rgba(255,235,195,0.86)",
+                cursor: !quickThought.trim() || quickSaving ? "default" : "pointer",
+                opacity: !quickThought.trim() || quickSaving ? 0.45 : 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 12,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-                  <Anchor
-                    size={15}
-                    strokeWidth={1.4}
-                    color="rgba(205, 170, 100, 0.46)"
-                  />
+              {quickSaving ? <Check size={20} /> : <Send size={21} strokeWidth={1.7} />}
+            </button>
+          </div>
 
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 400,
-                        color: "rgba(225, 210, 188, 0.74)",
-                      }}
-                    >
-                      Anchors
-                    </div>
+          {quickSaved && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                marginTop: 10,
+                fontSize: 11,
+                color: colors.goldSoft,
+              }}
+            >
+              Saved to Thoughts.
+            </motion.div>
+          )}
+        </motion.section>
 
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "rgba(175, 158, 132, 0.34)",
-                        marginTop: 2,
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      Real things. This room. Right now.
-                    </div>
-                  </div>
-                </div>
-
-                <ChevronRight
-                  size={15}
-                  strokeWidth={1.3}
-                  color="rgba(200, 165, 95, 0.26)"
-                />
-              </div>
-
-              {previewAnchors.length > 0 && (
-                <div
-                  style={{
-                    marginTop: 12,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 7,
-                  }}
-                >
-                  {previewAnchors.map((anchor) => (
-                    <div
-                      key={anchor.id}
-                      style={{
-                        background: "rgba(255, 255, 255, 0.020)",
-                        border: "1px solid rgba(255, 255, 255, 0.045)",
-                        borderRadius: 11,
-                        padding: "10px 12px",
-                      }}
-                    >
-                      {anchor.type === "text" ? (
-                        <p
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 300,
-                            color: "rgba(220, 205, 182, 0.58)",
-                            lineHeight: 1.45,
-                          }}
-                        >
-                          {anchor.content}
-                        </p>
-                      ) : (
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: "rgba(185, 158, 115, 0.38)",
-                            fontStyle: "italic",
-                          }}
-                        >
-                          Photo anchor
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Link>
-        </motion.div>
-*/}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.42, duration: 0.7 }}
+          transition={{ delay: 0.18, duration: 0.65 }}
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
         >
-          <Link href="/atmosphere">
+          <Link href="/memos">
             <div
               style={{
-                background: "rgba(255, 255, 255, 0.016)",
-                border: "1px solid rgba(255, 255, 255, 0.048)",
+                background: colors.card,
+                border: `1px solid ${colors.border}`,
                 borderRadius: 16,
-                padding: "14px 18px",
+                minHeight: 72,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 12,
                 cursor: "pointer",
+                color: colors.gold,
+                fontSize: 15,
+                fontWeight: 600,
+              }}
+            >
+              <Mic size={20} strokeWidth={1.55} />
+              Record voice
+            </div>
+          </Link>
+
+          <Link href="/thoughts">
+            <div
+              style={{
+                background: colors.card,
+                border: `1px solid ${colors.border}`,
+                borderRadius: 16,
+                minHeight: 72,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 12,
+                cursor: "pointer",
+                color: colors.gold,
+                fontSize: 15,
+                fontWeight: 600,
+              }}
+            >
+              <Feather size={20} strokeWidth={1.55} />
+              Write thought
+            </div>
+          </Link>
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.23, duration: 0.65 }}
+        >
+          <SectionHeader label="Continue" description="Pick up where you left off." />
+          <Link href="/memos">
+            <div
+              style={{
+                background: "rgba(255,255,255,0.030)",
+                border: `1px solid ${colors.border}`,
+                borderRadius: 18,
+                padding: "18px 18px",
+                minHeight: 72,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
+                gap: 14,
+                cursor: "pointer",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-                <Music2
-                  size={15}
-                  strokeWidth={1.4}
-                  color="rgba(205, 170, 100, 0.40)"
-                />
-
+              <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 999,
+                    background: "rgba(205,170,100,0.075)",
+                    color: colors.gold,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px solid rgba(205,170,100,0.10)",
+                  }}
+                >
+                  <Mic size={20} strokeWidth={1.5} />
+                </div>
                 <div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 400,
-                      color: "rgba(225, 210, 188, 0.68)",
-                      letterSpacing: "0.01em",
-                    }}
-                  >
-                    Atmosphere
+                  <div style={{ color: colors.text, fontSize: 15, marginBottom: 4 }}>
+                    Late night thoughts
                   </div>
-
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: "rgba(175, 158, 132, 0.30)",
-                      fontWeight: 300,
-                      marginTop: 2,
-                      letterSpacing: "0.01em",
-                    }}
-                  >
-                    {(() => {
-                      try {
-                        const p = localStorage.getItem("nest_atmo_preset");
-                        const f = localStorage.getItem("nest_atmo_file");
-
-                        if (f && p) {
-                          const labels: Record<string, string> = {
-                            deep_night: "Deep Night",
-                            quiet_rain: "Quiet Rain",
-                            foggy: "Foggy",
-                            warm_room: "Warm Room",
-                            midnight_train: "Midnight Train",
-                            heavy_mind: "Heavy Mind",
-                            soft_distance: "Soft Distance",
-                            ocean_drift: "Ocean Drift",
-                          };
-
-                          return `${f} — ${labels[p] ?? p}`;
-                        }
-
-                        if (f) return f;
-                      } catch (_) {}
-
-                      return "Shape the sound around you";
-                    })()}
-                  </div>
+                  <div style={{ color: colors.textSoft, fontSize: 12 }}>0:42</div>
                 </div>
               </div>
 
-              <ChevronRight
-                size={15}
-                strokeWidth={1.3}
-                color="rgba(200, 165, 95, 0.22)"
-              />
+              <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
+                <span style={{ color: colors.textSoft, fontSize: 12 }}>Today</span>
+                <div
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 999,
+                    background: "rgba(205,170,100,0.08)",
+                    color: colors.gold,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px solid rgba(205,170,100,0.12)",
+                  }}
+                >
+                  <Play size={18} fill="rgba(205,170,100,0.65)" strokeWidth={1.2} />
+                </div>
+              </div>
             </div>
           </Link>
-        </motion.div>
+        </motion.section>
 
-        <div style={{ marginTop: "auto", paddingTop: 8 }}>
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.28, duration: 0.65 }}
+        >
+          <SectionHeader label="Memory from the past" description="A moment worth remembering." />
+          <Link href="/nest">
+            <div
+              style={{
+                position: "relative",
+                minHeight: 150,
+                overflow: "hidden",
+                borderRadius: 18,
+                padding: "20px 18px",
+                border: "1px solid rgba(205,170,100,0.14)",
+                background:
+                  "linear-gradient(135deg, rgba(205,170,100,0.075), rgba(255,255,255,0.020))",
+                cursor: "pointer",
+              }}
+            >
+              <motion.div
+                animate={{ opacity: [0.52, 0.82, 0.52], scale: [0.98, 1.04, 0.98] }}
+                transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
+                style={{
+                  position: "absolute",
+                  right: 22,
+                  bottom: 14,
+                  width: 150,
+                  height: 92,
+                  background:
+                    "radial-gradient(ellipse at center, rgba(210,155,60,0.40), rgba(210,155,60,0.10) 42%, transparent 72%)",
+                  filter: "blur(2px)",
+                  borderRadius: "50%",
+                }}
+              />
+              <motion.div
+                animate={{ y: [0, -3, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                style={{
+                  position: "absolute",
+                  right: 72,
+                  bottom: 43,
+                  width: 38,
+                  height: 48,
+                  borderRadius: "50% 50% 45% 45%",
+                  background:
+                    "radial-gradient(circle at 40% 25%, rgba(255,235,185,0.95), rgba(205,145,45,0.75) 55%, rgba(95,55,15,0.25) 85%)",
+                  boxShadow: "0 0 35px rgba(205,145,45,0.30)",
+                }}
+              />
+
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 7, color: colors.textSoft, fontSize: 12, marginBottom: 16 }}>
+                  <Clock3 size={14} strokeWidth={1.4} />
+                  8 days ago
+                </div>
+                <div style={{ color: colors.text, fontSize: 18, lineHeight: 1.4, marginBottom: 20 }}>
+                  “My head is loud again.”
+                </div>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    border: "1px solid rgba(205,170,100,0.18)",
+                    borderRadius: 999,
+                    padding: "10px 14px",
+                    color: colors.gold,
+                    fontSize: 10,
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    fontWeight: 700,
+                  }}
+                >
+                  View then <ChevronRight size={14} strokeWidth={1.5} />
+                </div>
+              </div>
+            </div>
+          </Link>
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.33, duration: 0.65 }}
+        >
+          <SectionHeader label="Ask your past" description="Ask anything. Your past knows." />
+          <Link href="/ask-past">
+            <div
+              style={{
+                background: "rgba(255,255,255,0.030)",
+                border: `1px solid ${colors.border}`,
+                borderRadius: 16,
+                minHeight: 64,
+                padding: "0 15px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 14,
+                cursor: "pointer",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 13, minWidth: 0 }}>
+                <Sparkles size={20} strokeWidth={1.45} color={colors.gold} />
+                <span
+                  style={{
+                    color: "rgba(220,210,195,0.68)",
+                    fontSize: 15,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  When did I first mention this idea?
+                </span>
+              </div>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 999,
+                  background: "rgba(205,170,100,0.08)",
+                  color: colors.gold,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "1px solid rgba(205,170,100,0.12)",
+                  flex: "0 0 auto",
+                }}
+              >
+                <ChevronRight size={18} strokeWidth={1.5} />
+              </div>
+            </div>
+          </Link>
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.38, duration: 0.65 }}
+        >
+          <SectionHeader label="Insights" description="Discover patterns. Understand yourself." />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            {[
+              { icon: <Mic size={18} strokeWidth={1.5} />, value: "28", label: "Voice capsules", sub: "This month" },
+              { icon: <Feather size={18} strokeWidth={1.5} />, value: "16", label: "Written thoughts", sub: "This month" },
+              { icon: <Sparkles size={18} strokeWidth={1.5} />, value: todayMood ? moodLabel(todayMood) : "Calm", label: "Most common mood", sub: "This week" },
+            ].map((item, index) => (
+              <Link key={index} href="/reflections">
+                <div
+                  style={{
+                    minHeight: 128,
+                    background: colors.card,
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: 16,
+                    padding: "16px 13px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <div style={{ color: colors.gold, marginBottom: 18 }}>{item.icon}</div>
+                  <div
+                    style={{
+                      color: "rgba(255,225,180,0.94)",
+                      fontSize: index === 2 ? 22 : 28,
+                      lineHeight: 1.05,
+                      marginBottom: 8,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {item.value}
+                  </div>
+                  <div style={{ color: colors.text, fontSize: 12, lineHeight: 1.28, marginBottom: 5 }}>
+                    {item.label}
+                  </div>
+                  <div style={{ color: colors.textFaint, fontSize: 11 }}>{item.sub}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </motion.section>
+
+        <div style={{ paddingTop: 4, paddingBottom: 4 }}>
           <AudioControls minimal />
         </div>
+
+        <BottomNav navigate={navigate} />
       </div>
 
       {welcomeOpen && (
         <CalmModal>
           <p style={modalEyebrow}>Welcome</p>
-
           <h2 style={modalTitle}>This is your place to slow down.</h2>
-
           <p style={modalText}>
             You can use The Nest without an account.
             <br />
@@ -1201,7 +1012,6 @@ const [quickSaved, setQuickSaved] = useState(false);
             Creating a free account lets your Nest remember your thoughts,
             voice capsules, anchors and reflections across devices.
           </p>
-
           <button
             onClick={() => {
               localStorage.setItem("nest_welcome_seen", "true");
@@ -1211,7 +1021,6 @@ const [quickSaved, setQuickSaved] = useState(false);
           >
             Continue without account
           </button>
-
           <button
             onClick={() => {
               localStorage.setItem("nest_welcome_seen", "true");
@@ -1228,13 +1037,11 @@ const [quickSaved, setQuickSaved] = useState(false);
       {dailyOpen && (
         <CalmModal>
           <p style={modalEyebrow}>{dailyCheckin.title}</p>
-
           {dailyCheckin.yesterday && (
             <p style={{ ...modalText, marginBottom: 10 }}>
               {dailyCheckin.yesterday}
             </p>
           )}
-
           <h2 style={modalTitle}>{dailyCheckin.question}</h2>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -1244,7 +1051,7 @@ const [quickSaved, setQuickSaved] = useState(false);
                 onClick={() => setSelectedDailyMood(mood.key)}
                 style={{
                   background:
-                  selectedDailyMood === mood.key
+                    selectedDailyMood === mood.key
                       ? "rgba(205,170,100,0.12)"
                       : "rgba(255,255,255,0.035)",
                   border: "1px solid rgba(255,255,255,0.065)",
@@ -1259,80 +1066,50 @@ const [quickSaved, setQuickSaved] = useState(false);
               </button>
             ))}
           </div>
+
           <button
-  disabled={!selectedDailyMood}
-  onClick={async () => {
-    if (!selectedDailyMood) return;
-    await saveDailyMood(selectedDailyMood as MoodKey);
+            disabled={!selectedDailyMood}
+            onClick={async () => {
+              if (!selectedDailyMood) return;
+              await saveDailyMood(selectedDailyMood as MoodKey);
 
-    const today = new Date().toISOString().slice(0, 10);
-    
-    if (user?.id) {
-      await supabase.from("nest_daily_activity").upsert({
-        user_id: user.id,
-        activity_date: today,
-      });
-    }
+              const today = new Date().toISOString().slice(0, 10);
 
-    setTodayMood(selectedDailyMood);
-localStorage.setItem("nest_daily_checkin_date", today);
-setSelectedDailyMood(null);
-setDailyOpen(false);
-  }}
-  style={{
-    width: "100%",
-    marginTop: 14,
-    background: selectedDailyMood
-      ? "rgba(205,170,100,0.10)"
-      : "rgba(255,255,255,0.025)",
-    border: selectedDailyMood
-      ? "1px solid rgba(205,170,100,0.18)"
-      : "1px solid rgba(255,255,255,0.05)",
-    borderRadius: 14,
-    padding: "14px 16px",
-    color: selectedDailyMood
-      ? "rgba(225,205,176,0.82)"
-      : "rgba(175,158,132,0.36)",
-    fontSize: 11,
-    letterSpacing: "0.16em",
-    textTransform: "uppercase",
-    cursor: selectedDailyMood ? "pointer" : "default",
-  }}
->
-  Continue
-</button>
-{/*
-         <p style={{ ...modalText, marginTop: 18 }}>
-            One quiet invitation for today:
-          </p>
+              if (user?.id) {
+                await supabase.from("nest_daily_activity").upsert({
+                  user_id: user.id,
+                  activity_date: today,
+                });
+              }
 
-          {[dailyCheckin.invitation, ...INTENTIONS.filter((item) => item !== dailyCheckin.invitation)].map((item) => (
-            <button
-              key={item}
-              onClick={async () => {
-                await saveDailyIntention(item);
+              setTodayMood(selectedDailyMood);
+              localStorage.setItem("nest_daily_checkin_date", today);
+              setSelectedDailyMood(null);
+              setDailyOpen(false);
+            }}
+            style={{
+              width: "100%",
+              marginTop: 14,
+              background: selectedDailyMood
+                ? "rgba(205,170,100,0.10)"
+                : "rgba(255,255,255,0.025)",
+              border: selectedDailyMood
+                ? "1px solid rgba(205,170,100,0.18)"
+                : "1px solid rgba(255,255,255,0.05)",
+              borderRadius: 14,
+              padding: "14px 16px",
+              color: selectedDailyMood
+                ? "rgba(225,205,176,0.82)"
+                : "rgba(175,158,132,0.36)",
+              fontSize: 11,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+              cursor: selectedDailyMood ? "pointer" : "default",
+            }}
+          >
+            Continue
+          </button>
 
-                const today = new Date().toISOString().slice(0, 10);
-
-                if (user?.id) {
-                  await supabase.from("nest_daily_activity").upsert({
-                    user_id: user.id,
-                    activity_date: today,
-                  });
-                }
-
-                setDailyIntention(item);
-
-                localStorage.setItem("nest_daily_checkin_date", today);
-
-                setDailyOpen(false);
-              }}
-              style={modalButton}
-            >
-              {item}
-            </button>
-          ))}
-*/}
           <button
             onClick={() => {
               localStorage.setItem(
@@ -1347,33 +1124,35 @@ setDailyOpen(false);
           </button>
         </CalmModal>
       )}
-{guideOpen && (
-<CalmModal>
-<p style={modalEyebrow}>Welcome</p>
-<h2 style={modalTitle}>A short guide to The Nest.</h2>
-<p style={modalText}>
-     Take less than 30 seconds to understand what this place is for.
-</p>
-<button
-     onClick={() => {
-       setGuideOpen(false);
-       navigate("/onboarding");
-     }}
-     style={{ ...modalButton, color: "rgba(205,170,100,0.76)" }}
->
-     Open guide
-</button>
-<button
-     onClick={() => {
-       localStorage.setItem("nest_guide_completed", "true");
-       setGuideOpen(false);
-     }}
-     style={{ ...modalButton, color: "rgba(175,158,132,0.44)" }}
->
-     Skip
-</button>
-</CalmModal>
-)}
+
+      {guideOpen && (
+        <CalmModal>
+          <p style={modalEyebrow}>Welcome</p>
+          <h2 style={modalTitle}>A short guide to The Nest.</h2>
+          <p style={modalText}>
+            Take less than 30 seconds to understand what this place is for.
+          </p>
+          <button
+            onClick={() => {
+              setGuideOpen(false);
+              navigate("/onboarding");
+            }}
+            style={{ ...modalButton, color: "rgba(205,170,100,0.76)" }}
+          >
+            Open guide
+          </button>
+          <button
+            onClick={() => {
+              localStorage.setItem("nest_guide_completed", "true");
+              setGuideOpen(false);
+            }}
+            style={{ ...modalButton, color: "rgba(175,158,132,0.44)" }}
+          >
+            Skip
+          </button>
+        </CalmModal>
+      )}
+
       <AuthModal
         open={authOpen}
         onClose={() => setAuthOpen(false)}
