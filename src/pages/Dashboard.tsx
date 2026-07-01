@@ -189,93 +189,6 @@ function getDailyCheckin(todayMood: string | null, yesterdayMood: string | null)
   };
 }
 
-
-type ArchivedThought = {
-  id: string;
-  text: string;
-  createdAt?: string;
-  mood?: string | null;
-};
-
-function normalizeThought(raw: any, index: number): ArchivedThought | null {
-  if (!raw) return null;
-  const text =
-    raw.text ||
-    raw.content ||
-    raw.thought ||
-    raw.body ||
-    raw.message ||
-    (typeof raw === "string" ? raw : "");
-
-  if (!String(text).trim()) return null;
-
-  return {
-    id: String(raw.id || raw.uuid || raw.created_at || raw.createdAt || `local-${index}`),
-    text: String(text),
-    createdAt: raw.created_at || raw.createdAt || raw.date || raw.timestamp,
-    mood: raw.mood || raw.mood_key || null,
-  };
-}
-
-async function loadThoughtArchive(userId?: string): Promise<ArchivedThought[]> {
-  const collected: ArchivedThought[] = [];
-  const seen = new Set<string>();
-
-  const addMany = (items: any[]) => {
-    items.forEach((item, index) => {
-      const thought = normalizeThought(item, index);
-      if (!thought) return;
-      const key = `${thought.id}-${thought.text}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      collected.push(thought);
-    });
-  };
-
-  const localKeys = ["nest_thoughts", "thoughts", "user_thoughts", "local_thoughts"];
-  for (const key of localKeys) {
-    try {
-      const value = localStorage.getItem(key);
-      if (!value) continue;
-      const parsed = JSON.parse(value);
-      addMany(Array.isArray(parsed) ? parsed : [parsed]);
-    } catch {
-      // Ignore unknown local storage formats.
-    }
-  }
-
-  if (userId) {
-    const tables = ["thoughts", "nest_thoughts", "user_thoughts"];
-    for (const table of tables) {
-      try {
-        const { data, error } = await supabase
-          .from(table)
-          .select("*")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false })
-          .limit(50);
-
-        if (!error && data) addMany(data);
-      } catch {
-        // Some projects use a different table name; keep the UI alive.
-      }
-    }
-  }
-
-  return collected.sort((a, b) => {
-    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-    return bTime - aTime;
-  });
-}
-
-function formatArchiveDate(value?: string) {
-  if (!value) return "Saved thought";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Saved thought";
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
 const colors = {
   bg: "rgba(9, 9, 13, 0.94)",
   card: "rgba(255,255,255,0.027)",
@@ -454,21 +367,25 @@ function BottomNav({
 
   return (
     <div
-      style={{
-        position: "sticky",
-        bottom: 0,
-        zIndex: 30,
-        margin: "8px -20px 0",
-        padding: "10px 18px calc(env(safe-area-inset-bottom, 0px) + 10px)",
-        background: "linear-gradient(to top, rgba(10,9,11,0.97), rgba(10,9,11,0.76))",
-        backdropFilter: "blur(18px)",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-        borderRadius: "26px 26px 0 0",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        boxShadow: "0 -20px 50px rgba(0,0,0,0.28)",
-      }}
+    style={{
+      position: "fixed",
+      left: "50%",
+      transform: "translateX(-50%)",
+      bottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+      width: "min(480px, calc(100vw - 24px))",
+      padding: "10px 18px calc(env(safe-area-inset-bottom, 0px) + 10px)",
+      background:
+        "linear-gradient(to top, rgba(10,9,11,0.96), rgba(10,9,11,0.74))",
+      backdropFilter: "blur(20px)",
+      border: "1px solid rgba(255,255,255,0.06)",
+      borderRadius: 24,
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      boxShadow: "0 -10px 40px rgba(0,0,0,.45)",
+      zIndex: 9999,
+      boxSizing: "border-box",
+    }}
     >
       <button onClick={() => setActiveTab("home")} style={itemStyle(activeTab === "home")}>
         <Home size={20} strokeWidth={1.55} />
@@ -642,30 +559,13 @@ function PageIntro({ eyebrow, title, description }: { eyebrow: string; title: st
   );
 }
 
-function HistoryPage({
-  search,
-  setSearch,
-  filter,
-  setFilter,
-  navigate,
-  thoughts,
-  thoughtsLoading,
-}: {
-  search: string;
-  setSearch: (value: string) => void;
-  filter: string;
-  setFilter: (value: string) => void;
-  navigate: (path: string) => void;
-  thoughts: ArchivedThought[];
-  thoughtsLoading: boolean;
-}) {
+function HistoryPage({ search, setSearch, filter, setFilter, navigate }: { search: string; setSearch: (value: string) => void; filter: string; setFilter: (value: string) => void; navigate: (path: string) => void }) {
   const filters = ["Voice", "Thoughts", "Mood", "Date"];
-  const normalizedSearch = search.trim().toLowerCase();
-  const visibleThoughts = thoughts.filter((thought) => {
-    const matchesSearch = !normalizedSearch || thought.text.toLowerCase().includes(normalizedSearch);
-    const matchesFilter = !filter || filter === "Thoughts" || filter === "Date" || filter === "Mood";
-    return matchesSearch && matchesFilter;
-  });
+  const sections = [
+    { title: "Voice Capsules", meta: "Everything you recorded", icon: <Mic size={18} /> , path: "/memos"},
+    { title: "Thoughts", meta: "Every written thought", icon: <Feather size={18} />, path: "/thoughts" },
+    { title: "Memories", meta: "Moments worth returning to", icon: <BookOpen size={18} />, path: "/nest" },
+  ];
 
   return (
     <>
@@ -697,59 +597,19 @@ function HistoryPage({
           }}>{item}</button>
         ))}
       </div>
-
-      <SectionHeader label="Voice capsules" description="Everything you recorded." />
-      <SoftCard onClick={() => navigate("/memos")}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-            <div style={{ width: 42, height: 42, borderRadius: 999, display: "flex", alignItems: "center", justifyContent: "center", color: colors.gold, background: "rgba(205,170,100,0.07)", border: "1px solid rgba(205,170,100,0.12)" }}><Mic size={18} /></div>
-            <div><div style={{ color: colors.text, fontSize: 15, marginBottom: 4 }}>Open voice archive</div><div style={{ color: colors.textSoft, fontSize: 12 }}>Recordings stay in Voice Capsules.</div></div>
-          </div>
-          <ChevronRight size={18} color={colors.goldSoft} />
-        </div>
-      </SoftCard>
-
-      <SectionHeader label="Thoughts" description="Every written thought appears here, not as an empty menu." />
-      <div style={{ display: "grid", gap: 10 }}>
-        {thoughtsLoading && (
-          <SoftCard>
-            <div style={{ color: colors.textSoft, fontSize: 13 }}>Loading thoughts...</div>
-          </SoftCard>
-        )}
-
-        {!thoughtsLoading && visibleThoughts.length === 0 && (
-          <SoftCard onClick={() => navigate("/thoughts")}>
-            <div style={{ color: colors.text, fontSize: 15, marginBottom: 6 }}>No thoughts found here yet.</div>
-            <div style={{ color: colors.textSoft, fontSize: 12, lineHeight: 1.5 }}>Save a Quick Thought on Home or open the full Thoughts page.</div>
-          </SoftCard>
-        )}
-
-        {!thoughtsLoading && visibleThoughts.slice(0, 8).map((thought) => (
-          <SoftCard key={thought.id} onClick={() => navigate("/thoughts")}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 13 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 999, flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center", color: colors.gold, background: "rgba(205,170,100,0.07)", border: "1px solid rgba(205,170,100,0.12)" }}><Feather size={17} /></div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ color: colors.text, fontSize: 14, lineHeight: 1.45, marginBottom: 8, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{thought.text}</div>
-                <div style={{ display: "flex", gap: 8, color: colors.textFaint, fontSize: 11 }}>
-                  <span>{formatArchiveDate(thought.createdAt)}</span>
-                  {thought.mood && <span>• {moodLabel(thought.mood)}</span>}
-                </div>
+      <div style={{ display: "grid", gap: 11 }}>
+        {sections.map((section) => (
+          <SoftCard key={section.title} onClick={() => navigate(section.path)}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 999, display: "flex", alignItems: "center", justifyContent: "center", color: colors.gold, background: "rgba(205,170,100,0.07)", border: "1px solid rgba(205,170,100,0.12)" }}>{section.icon}</div>
+                <div><div style={{ color: colors.text, fontSize: 15, marginBottom: 4 }}>{section.title}</div><div style={{ color: colors.textSoft, fontSize: 12 }}>{section.meta}</div></div>
               </div>
+              <ChevronRight size={18} color={colors.goldSoft} />
             </div>
           </SoftCard>
         ))}
       </div>
-
-      <SectionHeader label="Memories" description="Moments worth returning to." />
-      <SoftCard onClick={() => navigate("/nest")}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-            <div style={{ width: 42, height: 42, borderRadius: 999, display: "flex", alignItems: "center", justifyContent: "center", color: colors.gold, background: "rgba(205,170,100,0.07)", border: "1px solid rgba(205,170,100,0.12)" }}><BookOpen size={18} /></div>
-            <div><div style={{ color: colors.text, fontSize: 15, marginBottom: 4 }}>Open memories</div><div style={{ color: colors.textSoft, fontSize: 12 }}>Return to moments from the past.</div></div>
-          </div>
-          <ChevronRight size={18} color={colors.goldSoft} />
-        </div>
-      </SoftCard>
     </>
   );
 }
@@ -829,8 +689,6 @@ export function Dashboard() {
   const [captureOpen, setCaptureOpen] = useState(false);
   const [historySearch, setHistorySearch] = useState("");
   const [historyFilter, setHistoryFilter] = useState("");
-  const [archivedThoughts, setArchivedThoughts] = useState<ArchivedThought[]>([]);
-  const [thoughtsLoading, setThoughtsLoading] = useState(false);
 
   const dailyCheckin = useMemo(
     () => getDailyCheckin(todayMood, yesterdayMood),
@@ -846,7 +704,6 @@ export function Dashboard() {
 
     try {
       await saveThought(text);
-      setArchivedThoughts((current) => [{ id: `quick-${Date.now()}`, text, createdAt: new Date().toISOString(), mood: todayMood }, ...current]);
       setQuickThought("");
       setQuickSaved(true);
       setTimeout(() => setQuickSaved(false), 1800);
@@ -864,11 +721,6 @@ export function Dashboard() {
       const today = new Date().toISOString().slice(0, 10);
       const { data } = await supabase.auth.getUser();
       setUser(data.user ?? null);
-
-      setThoughtsLoading(true);
-      loadThoughtArchive(data.user?.id)
-        .then(setArchivedThoughts)
-        .finally(() => setThoughtsLoading(false));
 
       if (localStorage.getItem("nest_welcome_seen") !== "true") {
         setWelcomeOpen(true);
@@ -896,10 +748,6 @@ export function Dashboard() {
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      setThoughtsLoading(true);
-      loadThoughtArchive(session?.user?.id)
-        .then(setArchivedThoughts)
-        .finally(() => setThoughtsLoading(false));
     });
 
     return () => {
@@ -1373,8 +1221,6 @@ export function Dashboard() {
             filter={historyFilter}
             setFilter={setHistoryFilter}
             navigate={navigate}
-            thoughts={archivedThoughts}
-            thoughtsLoading={thoughtsLoading}
           />
         )}
 

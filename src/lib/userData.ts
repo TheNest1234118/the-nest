@@ -6,24 +6,39 @@ export async function getCurrentUser() {
   if (error || !data.user) return null;
   return data.user;
 }
-
 export async function loadThoughts() {
   const user = await getCurrentUser();
   if (!user) return [];
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("thoughts")
     .select("*")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
+  if (error) throw error;
+
   return Promise.all(
-    (data || []).map(async (thought: any) => ({
-      ...thought,
-      text: thought.text_encrypted
-        ? await decryptText(thought.text_encrypted)
-        : thought.text,
-    }))
+    (data || []).map(async (thought: any) => {
+      try {
+        return {
+          ...thought,
+          text: thought.text_encrypted
+            ? await decryptText(thought.text_encrypted)
+            : thought.text,
+        };
+      } catch (err) {
+        console.error("Could not decrypt thought:", thought.id, err);
+
+        return {
+          ...thought,
+          text:
+            thought.text && thought.text !== "[encrypted]"
+              ? thought.text
+              : "Could not decrypt this thought.",
+        };
+      }
+    })
   );
 }
 export async function deleteThought(id: string) {
