@@ -751,7 +751,7 @@ export function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.23, duration: 0.65 }}
         >
-          <SectionHeader label="Continue" description="Pick up where you left off." />
+          <SectionHeader label="Last voice capsule" description="Continue your latest recording" />
           <Link href="/memos">
             <div
               style={{
@@ -947,51 +947,6 @@ export function Dashboard() {
               </div>
             </div>
           </Link>
-        </motion.section>
-
-        <motion.section
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.38, duration: 0.65 }}
-        >
-          <SectionHeader label="Insights" description="Discover patterns. Understand yourself." />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-            {[
-              { icon: <Mic size={18} strokeWidth={1.5} />, value: "28", label: "Voice capsules", sub: "This month" },
-              { icon: <Feather size={18} strokeWidth={1.5} />, value: "16", label: "Written thoughts", sub: "This month" },
-              { icon: <Sparkles size={18} strokeWidth={1.5} />, value: todayMood ? moodLabel(todayMood) : "Calm", label: "Most common mood", sub: "This week" },
-            ].map((item, index) => (
-              <Link key={index} href="/reflections">
-                <div
-                  style={{
-                    minHeight: 128,
-                    background: colors.card,
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: 16,
-                    padding: "16px 13px",
-                    cursor: "pointer",
-                  }}
-                >
-                  <div style={{ color: colors.gold, marginBottom: 18 }}>{item.icon}</div>
-                  <div
-                    style={{
-                      color: "rgba(255,225,180,0.94)",
-                      fontSize: index === 2 ? 22 : 28,
-                      lineHeight: 1.05,
-                      marginBottom: 8,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {item.value}
-                  </div>
-                  <div style={{ color: colors.text, fontSize: 12, lineHeight: 1.28, marginBottom: 5 }}>
-                    {item.label}
-                  </div>
-                  <div style={{ color: colors.textFaint, fontSize: 11 }}>{item.sub}</div>
-                </div>
-              </Link>
-            ))}
-          </div>
         </motion.section>
 
         <div style={{ paddingTop: 4, paddingBottom: 4 }}>
