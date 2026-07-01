@@ -13,17 +13,27 @@ import {
 } from "@/lib/dailyNest";
 import {
   BarChart3,
+  Bell,
   BookOpen,
+  Camera,
   Check,
   ChevronRight,
   Clock3,
+  CloudRain,
+  Crown,
+  Download,
   Feather,
+  FileText,
   Home,
+  Lock,
   Mic,
+  Palette,
   Play,
   Plus,
+  Search,
   Send,
   Settings,
+  Shield,
   Sparkles,
   UserRound,
 } from "lucide-react";
@@ -179,6 +189,93 @@ function getDailyCheckin(todayMood: string | null, yesterdayMood: string | null)
   };
 }
 
+
+type ArchivedThought = {
+  id: string;
+  text: string;
+  createdAt?: string;
+  mood?: string | null;
+};
+
+function normalizeThought(raw: any, index: number): ArchivedThought | null {
+  if (!raw) return null;
+  const text =
+    raw.text ||
+    raw.content ||
+    raw.thought ||
+    raw.body ||
+    raw.message ||
+    (typeof raw === "string" ? raw : "");
+
+  if (!String(text).trim()) return null;
+
+  return {
+    id: String(raw.id || raw.uuid || raw.created_at || raw.createdAt || `local-${index}`),
+    text: String(text),
+    createdAt: raw.created_at || raw.createdAt || raw.date || raw.timestamp,
+    mood: raw.mood || raw.mood_key || null,
+  };
+}
+
+async function loadThoughtArchive(userId?: string): Promise<ArchivedThought[]> {
+  const collected: ArchivedThought[] = [];
+  const seen = new Set<string>();
+
+  const addMany = (items: any[]) => {
+    items.forEach((item, index) => {
+      const thought = normalizeThought(item, index);
+      if (!thought) return;
+      const key = `${thought.id}-${thought.text}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      collected.push(thought);
+    });
+  };
+
+  const localKeys = ["nest_thoughts", "thoughts", "user_thoughts", "local_thoughts"];
+  for (const key of localKeys) {
+    try {
+      const value = localStorage.getItem(key);
+      if (!value) continue;
+      const parsed = JSON.parse(value);
+      addMany(Array.isArray(parsed) ? parsed : [parsed]);
+    } catch {
+      // Ignore unknown local storage formats.
+    }
+  }
+
+  if (userId) {
+    const tables = ["thoughts", "nest_thoughts", "user_thoughts"];
+    for (const table of tables) {
+      try {
+        const { data, error } = await supabase
+          .from(table)
+          .select("*")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(50);
+
+        if (!error && data) addMany(data);
+      } catch {
+        // Some projects use a different table name; keep the UI alive.
+      }
+    }
+  }
+
+  return collected.sort((a, b) => {
+    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return bTime - aTime;
+  });
+}
+
+function formatArchiveDate(value?: string) {
+  if (!value) return "Saved thought";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Saved thought";
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 const colors = {
   bg: "rgba(9, 9, 13, 0.94)",
   card: "rgba(255,255,255,0.027)",
@@ -325,19 +422,35 @@ function SectionHeader({ label, description }: { label: string; description?: st
   );
 }
 
-function BottomNav({ navigate }: { navigate: (path: string) => void }) {
-  const itemStyle: React.CSSProperties = {
+type NestTab = "home" | "history" | "insights" | "profile";
+
+function navColor(active: boolean) {
+  return active ? colors.gold : "rgba(215,205,190,0.46)";
+}
+
+function BottomNav({
+  activeTab,
+  setActiveTab,
+  onCapture,
+}: {
+  activeTab: NestTab;
+  setActiveTab: (tab: NestTab) => void;
+  onCapture: () => void;
+}) {
+  const itemStyle = (active: boolean): React.CSSProperties => ({
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     gap: 4,
-    minWidth: 50,
+    minWidth: 54,
     background: "none",
     border: "none",
-    color: "rgba(215,205,190,0.50)",
+    color: navColor(active),
     fontSize: 10,
     cursor: "pointer",
-  };
+    transition: "color 220ms ease, opacity 220ms ease",
+    opacity: active ? 1 : 0.78,
+  });
 
   return (
     <div
@@ -347,7 +460,7 @@ function BottomNav({ navigate }: { navigate: (path: string) => void }) {
         zIndex: 30,
         margin: "8px -20px 0",
         padding: "10px 18px calc(env(safe-area-inset-bottom, 0px) + 10px)",
-        background: "linear-gradient(to top, rgba(10,9,11,0.96), rgba(10,9,11,0.74))",
+        background: "linear-gradient(to top, rgba(10,9,11,0.97), rgba(10,9,11,0.76))",
         backdropFilter: "blur(18px)",
         borderTop: "1px solid rgba(255,255,255,0.06)",
         borderRadius: "26px 26px 0 0",
@@ -357,48 +470,344 @@ function BottomNav({ navigate }: { navigate: (path: string) => void }) {
         boxShadow: "0 -20px 50px rgba(0,0,0,0.28)",
       }}
     >
-      <button onClick={() => navigate("/")} style={{ ...itemStyle, color: colors.gold }}>
+      <button onClick={() => setActiveTab("home")} style={itemStyle(activeTab === "home")}>
         <Home size={20} strokeWidth={1.55} />
         <span>Home</span>
       </button>
 
-      <button onClick={() => navigate("/nest")} style={itemStyle}>
+      <button onClick={() => setActiveTab("history")} style={itemStyle(activeTab === "history")}>
         <Clock3 size={20} strokeWidth={1.45} />
         <span>History</span>
       </button>
 
-      <button
-        onClick={() => navigate("/memos")}
-        aria-label="Capture"
+      <motion.button
+        whileTap={{ scale: 0.94 }}
+        onClick={onCapture}
+        aria-label="Capture everything"
         style={{
-          width: 64,
-          height: 64,
+          width: 66,
+          height: 66,
           borderRadius: 999,
-          border: "1px solid rgba(205,170,100,0.36)",
+          border: "1px solid rgba(205,170,100,0.38)",
           background:
-            "radial-gradient(circle at 50% 30%, rgba(205,170,100,0.42), rgba(120,75,20,0.32) 58%, rgba(40,25,10,0.70))",
-          boxShadow: "0 0 28px rgba(205,170,100,0.22)",
-          color: "rgba(255,235,195,0.94)",
+            "radial-gradient(circle at 50% 28%, rgba(245,220,170,0.50), rgba(205,170,100,0.34) 48%, rgba(65,38,12,0.76))",
+          boxShadow: "0 0 34px rgba(205,170,100,0.25), inset 0 1px 0 rgba(255,255,255,0.16)",
+          color: "rgba(255,238,205,0.96)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           cursor: "pointer",
-          marginTop: -26,
+          marginTop: -28,
         }}
       >
-        <Plus size={30} strokeWidth={1.55} />
-      </button>
+        <Plus size={31} strokeWidth={1.55} />
+      </motion.button>
 
-      <button onClick={() => navigate("/reflections")} style={itemStyle}>
+      <button onClick={() => setActiveTab("insights")} style={itemStyle(activeTab === "insights")}>
         <BarChart3 size={20} strokeWidth={1.45} />
         <span>Insights</span>
       </button>
 
-      <button onClick={() => navigate("/settings")} style={itemStyle}>
+      <button onClick={() => setActiveTab("profile")} style={itemStyle(activeTab === "profile")}>
         <UserRound size={20} strokeWidth={1.45} />
         <span>Profile</span>
       </button>
     </div>
+  );
+}
+
+function CaptureSheet({
+  open,
+  onClose,
+  navigate,
+}: {
+  open: boolean;
+  onClose: () => void;
+  navigate: (path: string) => void;
+}) {
+  if (!open) return null;
+
+  const options = [
+    { icon: <Mic size={20} strokeWidth={1.45} />, label: "Voice", path: "/memos", available: true },
+    { icon: <Feather size={20} strokeWidth={1.45} />, label: "Thought", path: "/thoughts", available: true },
+    { icon: <Camera size={20} strokeWidth={1.45} />, label: "Photo", path: "", available: false },
+    { icon: <FileText size={20} strokeWidth={1.45} />, label: "Note", path: "", available: false },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 260,
+        background: "rgba(5,4,7,0.62)",
+        backdropFilter: "blur(8px)",
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+      }}
+    >
+      <motion.div
+        initial={{ y: 80, opacity: 0, scale: 0.98 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%",
+          maxWidth: 480,
+          padding: "20px 20px calc(env(safe-area-inset-bottom, 0px) + 24px)",
+          borderRadius: "30px 30px 0 0",
+          borderTop: "1px solid rgba(205,170,100,0.18)",
+          background:
+            "linear-gradient(160deg, rgba(23,19,14,0.98), rgba(10,9,12,0.98))",
+          boxShadow: "0 -28px 90px rgba(0,0,0,0.55)",
+        }}
+      >
+        <div style={{ width: 42, height: 4, borderRadius: 999, background: "rgba(255,255,255,0.12)", margin: "0 auto 18px" }} />
+        <p style={modalEyebrow}>Capture Everything</p>
+        <h2 style={{ ...modalTitle, marginBottom: 18 }}>Capture</h2>
+        <div style={{ display: "grid", gap: 10 }}>
+          {options.map((option, index) => (
+            <motion.button
+              key={option.label}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.06 + index * 0.045 }}
+              disabled={!option.available}
+              onClick={() => {
+                if (!option.available) return;
+                onClose();
+                navigate(option.path);
+              }}
+              style={{
+                width: "100%",
+                minHeight: 62,
+                borderRadius: 18,
+                border: "1px solid rgba(255,255,255,0.065)",
+                background: option.available ? "rgba(255,255,255,0.035)" : "rgba(255,255,255,0.018)",
+                color: option.available ? colors.text : colors.textFaint,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 14,
+                padding: "0 16px",
+                cursor: option.available ? "pointer" : "default",
+              }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: 13 }}>
+                <span style={{ color: option.available ? colors.gold : colors.textFaint }}>{option.icon}</span>
+                <span style={{ fontSize: 15 }}>{option.label}</span>
+              </span>
+              {!option.available ? (
+                <span style={{ fontSize: 10, color: colors.textFaint, letterSpacing: "0.13em", textTransform: "uppercase" }}>Coming Soon</span>
+              ) : (
+                <ChevronRight size={17} strokeWidth={1.4} color={colors.goldSoft} />
+              )}
+            </motion.button>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function SoftCard({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        background: colors.card,
+        border: `1px solid ${colors.border}`,
+        borderRadius: 18,
+        padding: "17px 16px",
+        cursor: onClick ? "pointer" : "default",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function PageIntro({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
+  return (
+    <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
+      <p style={sectionLabel}>{eyebrow}</p>
+      <h1 style={{ ...serif, color: colors.text, fontSize: 30, lineHeight: 1.12, margin: "0 0 10px" }}>{title}</h1>
+      <p style={{ color: colors.textSoft, fontSize: 13, lineHeight: 1.6, maxWidth: 360 }}>{description}</p>
+    </motion.section>
+  );
+}
+
+function HistoryPage({
+  search,
+  setSearch,
+  filter,
+  setFilter,
+  navigate,
+  thoughts,
+  thoughtsLoading,
+}: {
+  search: string;
+  setSearch: (value: string) => void;
+  filter: string;
+  setFilter: (value: string) => void;
+  navigate: (path: string) => void;
+  thoughts: ArchivedThought[];
+  thoughtsLoading: boolean;
+}) {
+  const filters = ["Voice", "Thoughts", "Mood", "Date"];
+  const normalizedSearch = search.trim().toLowerCase();
+  const visibleThoughts = thoughts.filter((thought) => {
+    const matchesSearch = !normalizedSearch || thought.text.toLowerCase().includes(normalizedSearch);
+    const matchesFilter = !filter || filter === "Thoughts" || filter === "Date" || filter === "Mood";
+    return matchesSearch && matchesFilter;
+  });
+
+  return (
+    <>
+      <PageIntro eyebrow="Remember" title="Your complete archive." description="Search, filter and return to every voice capsule, thought and memory you have saved." />
+      <SoftCard>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Search size={18} strokeWidth={1.45} color={colors.goldSoft} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search your Nest..."
+            style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: colors.text, fontSize: 15 }}
+          />
+        </div>
+      </SoftCard>
+      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
+        {filters.map((item) => (
+          <button key={item} onClick={() => setFilter(filter === item ? "" : item)} style={{
+            border: filter === item ? "1px solid rgba(205,170,100,0.26)" : `1px solid ${colors.border}`,
+            background: filter === item ? "rgba(205,170,100,0.09)" : colors.card,
+            color: filter === item ? colors.gold : colors.textSoft,
+            borderRadius: 999,
+            padding: "9px 13px",
+            fontSize: 11,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}>{item}</button>
+        ))}
+      </div>
+
+      <SectionHeader label="Voice capsules" description="Everything you recorded." />
+      <SoftCard onClick={() => navigate("/memos")}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 999, display: "flex", alignItems: "center", justifyContent: "center", color: colors.gold, background: "rgba(205,170,100,0.07)", border: "1px solid rgba(205,170,100,0.12)" }}><Mic size={18} /></div>
+            <div><div style={{ color: colors.text, fontSize: 15, marginBottom: 4 }}>Open voice archive</div><div style={{ color: colors.textSoft, fontSize: 12 }}>Recordings stay in Voice Capsules.</div></div>
+          </div>
+          <ChevronRight size={18} color={colors.goldSoft} />
+        </div>
+      </SoftCard>
+
+      <SectionHeader label="Thoughts" description="Every written thought appears here, not as an empty menu." />
+      <div style={{ display: "grid", gap: 10 }}>
+        {thoughtsLoading && (
+          <SoftCard>
+            <div style={{ color: colors.textSoft, fontSize: 13 }}>Loading thoughts...</div>
+          </SoftCard>
+        )}
+
+        {!thoughtsLoading && visibleThoughts.length === 0 && (
+          <SoftCard onClick={() => navigate("/thoughts")}>
+            <div style={{ color: colors.text, fontSize: 15, marginBottom: 6 }}>No thoughts found here yet.</div>
+            <div style={{ color: colors.textSoft, fontSize: 12, lineHeight: 1.5 }}>Save a Quick Thought on Home or open the full Thoughts page.</div>
+          </SoftCard>
+        )}
+
+        {!thoughtsLoading && visibleThoughts.slice(0, 8).map((thought) => (
+          <SoftCard key={thought.id} onClick={() => navigate("/thoughts")}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 13 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 999, flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center", color: colors.gold, background: "rgba(205,170,100,0.07)", border: "1px solid rgba(205,170,100,0.12)" }}><Feather size={17} /></div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ color: colors.text, fontSize: 14, lineHeight: 1.45, marginBottom: 8, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{thought.text}</div>
+                <div style={{ display: "flex", gap: 8, color: colors.textFaint, fontSize: 11 }}>
+                  <span>{formatArchiveDate(thought.createdAt)}</span>
+                  {thought.mood && <span>• {moodLabel(thought.mood)}</span>}
+                </div>
+              </div>
+            </div>
+          </SoftCard>
+        ))}
+      </div>
+
+      <SectionHeader label="Memories" description="Moments worth returning to." />
+      <SoftCard onClick={() => navigate("/nest")}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 999, display: "flex", alignItems: "center", justifyContent: "center", color: colors.gold, background: "rgba(205,170,100,0.07)", border: "1px solid rgba(205,170,100,0.12)" }}><BookOpen size={18} /></div>
+            <div><div style={{ color: colors.text, fontSize: 15, marginBottom: 4 }}>Open memories</div><div style={{ color: colors.textSoft, fontSize: 12 }}>Return to moments from the past.</div></div>
+          </div>
+          <ChevronRight size={18} color={colors.goldSoft} />
+        </div>
+      </SoftCard>
+    </>
+  );
+}
+
+function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
+  const insights = ["Weekly Reflection", "Monthly Reflection", "Mood Trends", "AI Patterns", "Topics", "Heatmap", "Word Cloud", "Emotional Timeline", "Statistics"];
+  return (
+    <>
+      <PageIntro eyebrow="Understand Yourself" title="A place for reflection." description="All analytics live here now, separate from daily capture, so Home stays calm and effortless." />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {insights.map((item, index) => (
+          <SoftCard key={item} onClick={() => navigate("/reflections")}>
+            <div style={{ minHeight: 74, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <BarChart3 size={18} strokeWidth={1.45} color={colors.goldSoft} />
+              <div style={{ color: colors.text, fontSize: 14, lineHeight: 1.35 }}>{item}</div>
+              <div style={{ color: colors.textFaint, fontSize: 11 }}>{index < 2 ? "Reflection" : "Pattern"}</div>
+            </div>
+          </SoftCard>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function ProfilePage({ user, onLogin, onLogout, navigate }: { user: User | null; onLogin: () => void; onLogout: () => void; navigate: (path: string) => void }) {
+  const rows = [
+    { label: "Account", icon: <UserRound size={18} />, action: user ? onLogout : onLogin, value: user ? "Logout" : "Login" },
+    { label: "Settings", icon: <Settings size={18} />, action: () => navigate("/settings") },
+    { label: "Notifications", icon: <Bell size={18} />, action: () => navigate("/settings") },
+    { label: "Atmosphere", icon: <CloudRain size={18} />, action: () => navigate("/settings") },
+    { label: "Theme", icon: <Palette size={18} />, action: () => navigate("/settings") },
+    { label: "Privacy", icon: <Shield size={18} />, action: () => navigate("/settings") },
+    { label: "Export Data", icon: <Download size={18} />, action: () => navigate("/settings") },
+    { label: "Premium", icon: <Crown size={18} />, action: () => navigate("/settings") },
+  ];
+  return (
+    <>
+      <PageIntro eyebrow="Profile" title="Your account and settings." description="Technical controls live here, away from journaling content." />
+      <div style={{ display: "grid", gap: 10 }}>
+        {rows.map((row) => (
+          <SoftCard key={row.label} onClick={row.action}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 13, color: colors.text }}>
+                <span style={{ color: colors.goldSoft }}>{row.icon}</span>
+                <span style={{ fontSize: 15 }}>{row.label}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 9, color: colors.textSoft, fontSize: 12 }}>
+                {row.value && <span>{row.value}</span>}
+                <ChevronRight size={17} color={colors.goldSoft} />
+              </div>
+            </div>
+          </SoftCard>
+        ))}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, color: colors.textFaint, fontSize: 12, lineHeight: 1.5 }}>
+        <Lock size={14} /> No journaling content is shown on this page.
+      </div>
+    </>
   );
 }
 
@@ -416,6 +825,12 @@ export function Dashboard() {
   const [quickThought, setQuickThought] = useState("");
   const [quickSaving, setQuickSaving] = useState(false);
   const [quickSaved, setQuickSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState<NestTab>("home");
+  const [captureOpen, setCaptureOpen] = useState(false);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyFilter, setHistoryFilter] = useState("");
+  const [archivedThoughts, setArchivedThoughts] = useState<ArchivedThought[]>([]);
+  const [thoughtsLoading, setThoughtsLoading] = useState(false);
 
   const dailyCheckin = useMemo(
     () => getDailyCheckin(todayMood, yesterdayMood),
@@ -431,6 +846,7 @@ export function Dashboard() {
 
     try {
       await saveThought(text);
+      setArchivedThoughts((current) => [{ id: `quick-${Date.now()}`, text, createdAt: new Date().toISOString(), mood: todayMood }, ...current]);
       setQuickThought("");
       setQuickSaved(true);
       setTimeout(() => setQuickSaved(false), 1800);
@@ -448,6 +864,11 @@ export function Dashboard() {
       const today = new Date().toISOString().slice(0, 10);
       const { data } = await supabase.auth.getUser();
       setUser(data.user ?? null);
+
+      setThoughtsLoading(true);
+      loadThoughtArchive(data.user?.id)
+        .then(setArchivedThoughts)
+        .finally(() => setThoughtsLoading(false));
 
       if (localStorage.getItem("nest_welcome_seen") !== "true") {
         setWelcomeOpen(true);
@@ -475,6 +896,10 @@ export function Dashboard() {
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      setThoughtsLoading(true);
+      loadThoughtArchive(session?.user?.id)
+        .then(setArchivedThoughts)
+        .finally(() => setThoughtsLoading(false));
     });
 
     return () => {
@@ -567,42 +992,27 @@ export function Dashboard() {
             </p>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button
-              onClick={user ? handleLogout : () => setAuthOpen(true)}
-              style={{
-                background: "rgba(205, 170, 100, 0.055)",
-                border: "1px solid rgba(205, 170, 100, 0.16)",
-                borderRadius: 999,
-                cursor: "pointer",
-                color: user ? colors.textFaint : colors.gold,
-                padding: "7px 11px",
-                fontSize: 9,
-                letterSpacing: "0.15em",
-                textTransform: "uppercase",
-                fontWeight: 700,
-              }}
-            >
-              {user ? "Logout" : "Login"}
-            </button>
-
-            <button
-              onClick={() => navigate("/settings")}
-              aria-label="Settings"
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: "rgba(215, 205, 188, 0.54)",
-                padding: 4,
-                marginTop: 2,
-              }}
-            >
-              <Settings size={18} strokeWidth={1.5} />
-            </button>
-          </div>
+          <button
+            onClick={() => setActiveTab("profile")}
+            style={{
+              background: "rgba(205, 170, 100, 0.045)",
+              border: "1px solid rgba(205, 170, 100, 0.12)",
+              borderRadius: 999,
+              cursor: "pointer",
+              color: colors.goldSoft,
+              padding: "8px 11px",
+              fontSize: 9,
+              letterSpacing: "0.15em",
+              textTransform: "uppercase",
+              fontWeight: 700,
+            }}
+          >
+            Profile
+          </button>
         </motion.header>
 
+        {activeTab === "home" && (
+          <>
         <motion.section
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -953,8 +1363,44 @@ export function Dashboard() {
           <AudioControls minimal />
         </div>
 
-        <BottomNav navigate={navigate} />
+          </>
+        )}
+
+        {activeTab === "history" && (
+          <HistoryPage
+            search={historySearch}
+            setSearch={setHistorySearch}
+            filter={historyFilter}
+            setFilter={setHistoryFilter}
+            navigate={navigate}
+            thoughts={archivedThoughts}
+            thoughtsLoading={thoughtsLoading}
+          />
+        )}
+
+        {activeTab === "insights" && <InsightsPage navigate={navigate} />}
+
+        {activeTab === "profile" && (
+          <ProfilePage
+            user={user}
+            onLogin={() => setAuthOpen(true)}
+            onLogout={handleLogout}
+            navigate={navigate}
+          />
+        )}
+
+        <BottomNav
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onCapture={() => setCaptureOpen(true)}
+        />
       </div>
+
+      <CaptureSheet
+        open={captureOpen}
+        onClose={() => setCaptureOpen(false)}
+        navigate={navigate}
+      />
 
       {welcomeOpen && (
         <CalmModal>
