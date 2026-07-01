@@ -875,17 +875,20 @@ export function Dashboard() {
       />
 
       <div
-        style={{
-          flex: 1,
-          padding: "0 20px 0",
-          paddingTop: "calc(env(safe-area-inset-top, 0px) + 46px)",
-          position: "relative",
-          zIndex: 1,
-          display: "flex",
-          flexDirection: "column",
-          gap: 25,
-        }}
-      >
+      
+       style={{
+         flex: 1,
+         padding: "0 20px 0",
+         paddingTop: "calc(env(safe-area-inset-top, 0px) + 46px)",
+         paddingBottom: "170px",
+         overflowY: "auto",
+         position: "relative",
+         zIndex: 1,
+         display: "flex",
+         flexDirection: "column",
+         gap: 25,
+       }}
+     >
         <motion.header
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}

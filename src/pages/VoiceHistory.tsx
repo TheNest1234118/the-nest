@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { ChevronLeft, Pause, Play, Trash2 } from "lucide-react";
+import { ChevronLeft, Pause, Play, Trash2, FileText } from "lucide-react";
 import {
   loadMemos,
   deleteMemoFromSupabase,
@@ -19,6 +19,7 @@ function formatTime(s: number) {
 export function VoiceHistory() {
   const [memos, setMemos] = useState<Memo[]>([]);
   const [search, setSearch] = useState("");
+  const [selectedTranscript, setSelectedTranscript] = useState<Memo | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
 
@@ -131,19 +132,37 @@ export function VoiceHistory() {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <button
-                  onClick={() => togglePlay(memo)}
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 999,
-                    border: "1px solid rgba(205,170,100,.12)",
-                    background: "rgba(205,170,100,.045)",
-                    color: "rgba(205,170,100,.62)",
-                  }}
-                >
-                  {playingId === memo.id ? <Pause size={16} /> : <Play size={16} />}
-                </button>
+              <button
+  onClick={() => togglePlay(memo)}
+  style={{
+    width: 44,
+    height: 44,
+    borderRadius: 999,
+    border: "1px solid rgba(205,170,100,0.20)",
+    background:
+      playingId === memo.id
+        ? "rgba(205,170,100,0.14)"
+        : "rgba(205,170,100,0.06)",
+    color: "rgba(225,205,176,0.78)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    flexShrink: 0,
+    padding: 0,
+  }}
+>
+  {playingId === memo.id ? (
+    <Pause size={16} strokeWidth={1.6} />
+  ) : (
+    <Play
+      size={15}
+      fill="currentColor"
+      strokeWidth={1.6}
+      style={{ marginLeft: 2 }}
+    />
+  )}
+</button>
 
                 <div>
                   <div style={{ color: "rgba(225,210,188,.78)", fontSize: 13 }}>
@@ -153,6 +172,31 @@ export function VoiceHistory() {
                     {formatTime(memo.duration)} ·{" "}
                     {new Date(memo.created_at).toLocaleDateString()}
                   </div>
+                  {memo.status === "ready" && memo.transcript_text && (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      setSelectedTranscript(memo);
+    }}
+    style={{
+      marginTop: 7,
+      background: "none",
+      border: "none",
+      padding: 0,
+      color: "rgba(205,170,100,0.58)",
+      fontSize: 10,
+      letterSpacing: "0.12em",
+      textTransform: "uppercase",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+    }}
+  >
+    <FileText size={12} strokeWidth={1.5} />
+    View transcript
+  </button>
+)}
                 </div>
               </div>
 
@@ -170,6 +214,92 @@ export function VoiceHistory() {
           No voice capsules found.
         </p>
       )}
+      {selectedTranscript && (
+  <div
+    onClick={() => setSelectedTranscript(null)}
+    style={{
+      position: "fixed",
+      inset: 0,
+      zIndex: 999,
+      background: "rgba(6,5,8,0.88)",
+      backdropFilter: "blur(10px)",
+      WebkitBackdropFilter: "blur(10px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "100%",
+        maxWidth: 380,
+        maxHeight: "72vh",
+        overflowY: "auto",
+        background: "rgba(18,15,12,0.96)",
+        border: "1px solid rgba(205,170,100,0.12)",
+        borderRadius: 24,
+        padding: 22,
+        boxShadow: "0 20px 80px rgba(0,0,0,0.45)",
+      }}
+    >
+      <p
+        style={{
+          fontSize: 10,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: "rgba(205,170,100,0.42)",
+          marginBottom: 10,
+        }}
+      >
+        Transcript
+      </p>
+
+      <h2
+        style={{
+          fontFamily: "Georgia, 'Times New Roman', serif",
+          fontSize: 22,
+          fontWeight: 400,
+          color: "rgba(235,215,180,0.92)",
+          marginBottom: 14,
+        }}
+      >
+        {selectedTranscript.title || "Voice capsule"}
+      </h2>
+
+      <p
+        style={{
+          whiteSpace: "pre-wrap",
+          fontSize: 13,
+          lineHeight: 1.7,
+          color: "rgba(220,205,182,0.72)",
+        }}
+      >
+        {selectedTranscript.transcript_text}
+      </p>
+
+      <button
+        onClick={() => setSelectedTranscript(null)}
+        style={{
+          width: "100%",
+          marginTop: 20,
+          border: "1px solid rgba(205,170,100,0.14)",
+          background: "rgba(205,170,100,0.06)",
+          borderRadius: 14,
+          padding: "13px 14px",
+          color: "rgba(225,205,176,0.78)",
+          fontSize: 11,
+          letterSpacing: "0.16em",
+          textTransform: "uppercase",
+          cursor: "pointer",
+        }}
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
     </motion.div>
   );
 }
