@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
+import { saveThought } from "@/lib/userData";
 import { registerVisitForPwaPrompt } from "@/lib/pwa";
 import { AuthModal } from "@/components/AuthModal";
 import { supabase } from "@/lib/supabase";
@@ -221,10 +222,32 @@ const sectionDescription: React.CSSProperties = {
 };
 
 export function Dashboard() {
+  const saveQuickThought = async () => {
+    const text = quickThought.trim();
+    if (!text || quickSaving) return;
+  
+    setQuickSaving(true);
+    setQuickSaved(false);
+  
+    try {
+      await saveThought(text);
+      setQuickThought("");
+      setQuickSaved(true);
+  
+      setTimeout(() => setQuickSaved(false), 1800);
+    } catch (err) {
+      console.error("Could not save quick thought", err);
+    } finally {
+      setQuickSaving(false);
+    }
+  };
   const [selectedDailyMood, setSelectedDailyMood] =
   useState<DashboardMoodKey | null>(null);
   const [, navigate] = useLocation();
   const [authOpen, setAuthOpen] = useState(false);
+  const [quickThought, setQuickThought] = useState("");
+const [quickSaving, setQuickSaving] = useState(false);
+const [quickSaved, setQuickSaved] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
@@ -476,7 +499,95 @@ export function Dashboard() {
             </button>
           </div>
         </motion.div>
+        <motion.div
+  initial={{ opacity: 0, y: 8 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.13, duration: 0.7 }}
+  style={{
+    background: "rgba(255,255,255,0.024)",
+    border: "1px solid rgba(255,255,255,0.062)",
+    borderRadius: 18,
+    padding: "14px 15px",
+  }}
+>
+  <div
+    style={{
+      fontSize: 13,
+      color: "rgba(220,205,182,0.78)",
+      marginBottom: 9,
+    }}
+  >
+    What’s on your mind?
+  </div>
 
+  <div
+    style={{
+      display: "flex",
+      alignItems: "flex-end",
+      gap: 10,
+    }}
+  >
+    <textarea
+      autoFocus
+      value={quickThought}
+      onChange={(e) => setQuickThought(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          saveQuickThought();
+        }
+      }}
+      placeholder="Start typing…"
+      rows={quickThought.length > 80 ? 3 : 1}
+      style={{
+        flex: 1,
+        resize: "none",
+        background: "rgba(255,255,255,0.035)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        borderRadius: 14,
+        padding: "12px 13px",
+        color: "rgba(240,232,218,0.88)",
+        fontSize: 13,
+        lineHeight: 1.5,
+        outline: "none",
+        fontFamily: "inherit",
+        minHeight: 44,
+      }}
+    />
+
+    <button
+      onClick={saveQuickThought}
+      disabled={!quickThought.trim() || quickSaving}
+      style={{
+        width: 44,
+        height: 44,
+        borderRadius: 999,
+        border: "1px solid rgba(205,170,100,0.16)",
+        background: "rgba(205,170,100,0.07)",
+        color: "rgba(205,170,100,0.72)",
+        cursor: !quickThought.trim() || quickSaving ? "default" : "pointer",
+        opacity: !quickThought.trim() || quickSaving ? 0.35 : 1,
+        fontSize: 17,
+      }}
+    >
+      ✓
+    </button>
+  </div>
+
+  {quickSaved && (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      style={{
+        marginTop: 8,
+        fontSize: 11,
+        color: "rgba(205,170,100,0.52)",
+      }}
+    >
+      Saved to Thoughts.
+    </motion.div>
+  )}
+</motion.div>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
