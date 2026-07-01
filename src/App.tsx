@@ -3,6 +3,8 @@ import { Rituals } from "@/pages/Rituals";
 import { RitualPlayer } from "@/pages/RitualPlayer";
 import { Analytics } from "@vercel/analytics/react";
 import { AskPast } from "@/pages/AskPast";
+import { VoiceHistory } from "@/pages/VoiceHistory";
+import { ThoughtHistory } from "@/pages/ThoughtHistory";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -34,6 +36,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+      <Route path="/history/voice" component={VoiceHistory} />
+
+<Route path="/history/thoughts" component={ThoughtHistory} />
       <Route path="/rituals" component={Rituals} />
       <Route path="/rituals/:id" component={RitualPlayer} />
       <Route path="/onboarding" component={Onboarding} />

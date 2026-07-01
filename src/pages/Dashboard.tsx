@@ -751,17 +751,16 @@ export function Dashboard() {
     {
       id: "voice-latest",
       type: "voice",
-      title: user ? "Late night thoughts" : "Voice Capsules",
-      text: user ? "0:42" : "",
-      date: user ? "Today" : "",
-      path: "/memos",
+      title: "Voice Capsules",
+      text: "Your saved voice notes",
+      path: "/history/voice",
     },
     {
       id: "thoughts",
       type: "thought",
       title: "Thoughts",
-      text: "Every written thought",
-      path: "/thoughts",
+      text: "Your saved thoughts",
+      path: "/history/thoughts",
     },
     {
       id: "memories",
