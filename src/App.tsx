@@ -4,6 +4,8 @@ import { RitualPlayer } from "@/pages/RitualPlayer";
 import { Analytics } from "@vercel/analytics/react";
 import { AIPatterns } from "@/pages/AIPatterns";
 import { AskPast } from "@/pages/AskPast";
+import { WeeklyReflection } from "@/pages/WeeklyReflection";
+import { MonthlyReflection } from "@/pages/MonthlyReflection";
 import { VoiceHistory } from "@/pages/VoiceHistory";
 import { ThoughtHistory } from "@/pages/ThoughtHistory";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
@@ -38,7 +40,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/history/voice" component={VoiceHistory} />
-
+      <Route path="/insights/weekly" component={WeeklyReflection} />
+      <Route path="/insights/monthly" component={MonthlyReflection} />
 <Route path="/history/thoughts" component={ThoughtHistory} />
       <Route path="/rituals" component={Rituals} />
       <Route path="/rituals/:id" component={RitualPlayer} />
