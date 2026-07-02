@@ -1,6 +1,12 @@
 import React from "react";
 import type { AIPatternTimeRange } from "@/lib/aiPatternTypes";
-
+const style = document.createElement("style");
+style.innerHTML = `
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+`;
+document.head.appendChild(style);
 function labelForRange(range: AIPatternTimeRange) {
   if (range === "7d") return "Last 7 days";
   if (range === "30d") return "Last 30 days";
@@ -18,7 +24,19 @@ export function TimeRangePicker({
   const ranges: AIPatternTimeRange[] = ["7d", "30d", "90d", "all"];
 
   return (
-    <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 16 }}>
+    <div
+  className="hide-scrollbar"
+  style={{
+    display: "flex",
+    gap: 8,
+    overflowX: "auto",
+    marginBottom: 16,
+    paddingBottom: 2,
+    WebkitOverflowScrolling: "touch",
+    scrollbarWidth: "none",
+    msOverflowStyle: "none",
+  }}
+>
       {ranges.map((item) => (
         <button
           key={item}
