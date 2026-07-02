@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import OneSignal from "react-onesignal";
 import { isStandalonePwa } from "@/lib/pwa";
 import {
   readNotificationPreferences,
@@ -82,17 +83,30 @@ export function NotificationPreferences({
   
     flash?.("Reminder settings saved");
   };
-
   const enableReminders = async () => {
-    console.log("ENABLE CLICKED");
+    let shouldAsk = Notification.permission === "default";
   
-    const granted = await requestNestNotifications();
+    if (!shouldAsk) {
+      try {
+        const push = (OneSignal as any)?.User?.PushSubscription;
+        const optedIn = await push?.optedIn;
+        const id = await push?.id;
   
-    console.log("GRANTED RESULT", granted);
+        if (!optedIn || !id) {
+          shouldAsk = true;
+        }
+      } catch {
+        shouldAsk = true;
+      }
+    }
   
-    if (!granted) {
-      flash?.("Notifications were not enabled");
-      return;
+    if (shouldAsk) {
+      const granted = await requestNestNotifications();
+  
+      if (!granted) {
+        flash?.("Notifications were not enabled");
+        return;
+      }
     }
   
     await update({

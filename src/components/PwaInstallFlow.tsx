@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { track } from "@vercel/analytics";
+import OneSignal from "react-onesignal";
+import { requestNestNotifications } from "@/lib/notifications";
 import {
   canShowPwaPrompt,
   dismissPwaPrompt,
@@ -46,9 +48,30 @@ export function PwaInstallFlow() {
     window.addEventListener("appinstalled", onInstalled);
     window.addEventListener(PWA_PROMPT_EVENT, onEngagement);
 
-    if (isStandalonePwa() && Notification.permission === "default") {
-      setShowNotificationAsk(true);
+    async function checkNotificationState() {
+      if (!isStandalonePwa()) return;
+      if (!("Notification" in window)) return;
+      if (Notification.permission === "denied") return;
+    
+      if (Notification.permission === "default") {
+        setShowNotificationAsk(true);
+        return;
+      }
+    
+      try {
+        const push = (OneSignal as any)?.User?.PushSubscription;
+        const optedIn = await push?.optedIn;
+        const id = await push?.id;
+    
+        if (Notification.permission === "granted" && (!optedIn || !id)) {
+          setShowNotificationAsk(true);
+        }
+      } catch {
+        setShowNotificationAsk(true);
+      }
     }
+    
+    checkNotificationState();
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
@@ -81,13 +104,10 @@ export function PwaInstallFlow() {
     setShowPrompt(false);
     setShowGuide(false);
   };
-
   const enableNotifications = async () => {
-    if (!("Notification" in window)) return;
-
-    const permission = await Notification.requestPermission();
-
-    if (permission === "granted") {
+    const granted = await requestNestNotifications();
+  
+    if (granted) {
       track("Notifications enabled");
       setShowNotificationAsk(false);
     }
