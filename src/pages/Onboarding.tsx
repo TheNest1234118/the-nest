@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import OneSignal from "react-onesignal";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -60,7 +61,6 @@ function getOrCreateDeviceId() {
   return deviceId;
 }
 export function Onboarding() {
-  
   const continueWithReminderPermission = async () => {
     savePartial({
       reminder_enabled: true,
@@ -70,20 +70,42 @@ export function Onboarding() {
         Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Zurich",
     });
   
-    const granted = await requestNestNotifications();
+    let shouldAsk = Notification.permission === "default";
   
-    if (granted) {
-      await writeNotificationPreferences({
-        enabled: true,
-        preset: "custom",
-        reminder_time: reminderTime,
-        reminder_timezone:
-          Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Zurich",
-        reminder_frequency: "selected_days",
-        reminder_days: reminderDays,
-        reminder_message: "A quiet moment, if you want one.",
-      } as any);
+    if (!shouldAsk) {
+      try {
+        const push = (OneSignal as any)?.User?.PushSubscription;
+  
+        const optedIn = await push?.optedIn;
+        const id = await push?.id;
+  
+        if (!optedIn || !id) {
+          shouldAsk = true;
+        }
+      } catch {
+        shouldAsk = true;
+      }
     }
+  
+    if (shouldAsk) {
+      const granted = await requestNestNotifications();
+  
+      if (!granted) {
+        next();
+        return;
+      }
+    }
+  
+    await writeNotificationPreferences({
+      enabled: true,
+      preset: "custom",
+      reminder_time: reminderTime,
+      reminder_timezone:
+        Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Zurich",
+      reminder_frequency: "selected_days",
+      reminder_days: reminderDays,
+      reminder_message: "A quiet moment, if you want one.",
+    } as any);
   
     next();
   };
