@@ -16,14 +16,19 @@ export type AIPatternType =
 
 export type AIPatternEvidence = {
   entry_id: string;
+  entry_type: "thought" | "voice" | "mood" | "reflection";
   date: string;
+  title: string;
   quote: string;
+  mood: string;
 };
 
 export type AIPattern = {
+  id: string;
   title: string;
   type: AIPatternType;
   confidence: "low" | "medium" | "high";
+  confidence_reason: string;
   description: string;
   evidence: AIPatternEvidence[];
   suggestion: string;
@@ -31,7 +36,18 @@ export type AIPattern = {
 
 export type AIPatternResponse = {
   summary: string;
+  hero_themes: string[];
   patterns: AIPattern[];
+};
+
+export type AIPatternGeneration = {
+  id: string;
+  created_at: string;
+  range: AIPatternTimeRange;
+  entry_count: number;
+  voice_count: number;
+  thought_count: number;
+  result: AIPatternResponse;
 };
 
 export type PatternEntry = {

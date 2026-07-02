@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
   Sparkles,
@@ -11,14 +11,15 @@ import {
   Clock3,
   Leaf,
   AlertTriangle,
+  ChevronRight,
 } from "lucide-react";
 import {
   generateAIPatterns,
-  loadPatternEntries,
+  loadAIPatternHistory,
 } from "@/lib/aiPatterns";
 import type {
   AIPattern,
-  AIPatternResponse,
+  AIPatternGeneration,
   AIPatternTimeRange,
 } from "@/lib/aiPatternTypes";
 
@@ -54,8 +55,7 @@ function RainLayer() {
             width: 1,
             height: 46 + (i % 5) * 12,
             borderRadius: 999,
-            background:
-              "linear-gradient(to bottom, transparent, rgba(255,255,255,0.18), transparent)",
+            background: "linear-gradient(to bottom, transparent, rgba(255,255,255,0.18), transparent)",
             transform: "rotate(12deg)",
           }}
         />
@@ -80,17 +80,42 @@ function labelForRange(range: AIPatternTimeRange) {
   return "All time";
 }
 
-function PatternCard({ pattern, index }: { pattern: AIPattern; index: number }) {
+function timeAgo(date: string) {
+  const diff = Date.now() - new Date(date).getTime();
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return `Generated ${sec} seconds ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `Generated ${min} minutes ago`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `Generated ${h} hours ago`;
+  return `Generated ${Math.floor(h / 24)} days ago`;
+}
+
+function PatternCard({
+  pattern,
+  index,
+  onOpen,
+}: {
+  pattern: AIPattern;
+  index: number;
+  onOpen: () => void;
+}) {
+  const [showConfidence, setShowConfidence] = useState(false);
+
   return (
-    <motion.div
+    <motion.button
+      onClick={onOpen}
       initial={{ opacity: 0, y: 10, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay: Math.min(index * 0.05, 0.35), duration: 0.55 }}
       style={{
+        width: "100%",
+        textAlign: "left",
         background: colors.card,
         border: `1px solid ${colors.border}`,
         borderRadius: 20,
         padding: 18,
+        cursor: "pointer",
       }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 13 }}>
@@ -127,6 +152,10 @@ function PatternCard({ pattern, index }: { pattern: AIPattern; index: number }) 
             </h3>
 
             <span
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowConfidence((v) => !v);
+              }}
               style={{
                 fontSize: 9,
                 letterSpacing: "0.14em",
@@ -140,130 +169,269 @@ function PatternCard({ pattern, index }: { pattern: AIPattern; index: number }) 
             </span>
           </div>
 
+          {showConfidence && (
+            <p
+              style={{
+                fontSize: 11,
+                lineHeight: 1.5,
+                color: colors.textSoft,
+                marginBottom: 10,
+              }}
+            >
+              {pattern.confidence_reason}
+            </p>
+          )}
+
           <p
             style={{
               color: "rgba(220,205,182,0.68)",
               fontSize: 13,
-              lineHeight: 1.65,
-              marginBottom: 15,
+              lineHeight: 1.6,
+              marginBottom: 13,
             }}
           >
             {pattern.description}
           </p>
 
-          <p
-            style={{
-              fontSize: 10,
-              letterSpacing: "0.16em",
-              textTransform: "uppercase",
-              color: colors.goldSoft,
-              marginBottom: 8,
-            }}
-          >
-            Evidence
-          </p>
-
-          <div style={{ display: "grid", gap: 8 }}>
-            {pattern.evidence.map((item, i) => (
+          <div style={{ display: "grid", gap: 7, marginBottom: 13 }}>
+            {pattern.evidence.slice(0, 2).map((item, i) => (
               <div
                 key={`${item.entry_id}-${i}`}
                 style={{
                   background: "rgba(255,255,255,0.022)",
                   border: "1px solid rgba(255,255,255,0.052)",
                   borderRadius: 14,
-                  padding: "11px 12px",
+                  padding: "10px 11px",
                 }}
               >
                 <p
                   style={{
                     color: "rgba(225,210,188,0.72)",
                     fontSize: 12,
-                    lineHeight: 1.55,
+                    lineHeight: 1.5,
                     fontStyle: "italic",
                   }}
                 >
                   “{item.quote}”
                 </p>
-                <p
-                  style={{
-                    color: colors.textFaint,
-                    fontSize: 10,
-                    marginTop: 6,
-                  }}
-                >
+                <p style={{ color: colors.textFaint, fontSize: 10, marginTop: 5 }}>
                   {item.date}
                 </p>
               </div>
             ))}
           </div>
 
-          {pattern.suggestion && (
-            <div
-              style={{
-                marginTop: 14,
-                borderTop: "1px solid rgba(255,255,255,0.055)",
-                paddingTop: 13,
-              }}
-            >
-              <p
-                style={{
-                  fontSize: 10,
-                  letterSpacing: "0.16em",
-                  textTransform: "uppercase",
-                  color: colors.goldSoft,
-                  marginBottom: 6,
-                }}
-              >
-                Gentle suggestion
-              </p>
-              <p
-                style={{
-                  color: "rgba(205,170,100,0.68)",
-                  fontSize: 13,
-                  lineHeight: 1.6,
-                }}
-              >
-                {pattern.suggestion}
-              </p>
-            </div>
-          )}
+          <p
+            style={{
+              color: "rgba(205,170,100,0.68)",
+              fontSize: 13,
+              lineHeight: 1.55,
+            }}
+          >
+            {pattern.suggestion}
+          </p>
         </div>
+
+        <ChevronRight size={17} color={colors.goldSoft} />
       </div>
+    </motion.button>
+  );
+}
+
+function PatternDetail({
+  pattern,
+  onBack,
+}: {
+  pattern: AIPattern;
+  onBack: () => void;
+}) {
+  return (
+    <motion.div initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }}>
+      <button
+        onClick={onBack}
+        style={{
+          background: "none",
+          border: "none",
+          color: colors.gold,
+          fontSize: 12,
+          marginBottom: 18,
+          cursor: "pointer",
+        }}
+      >
+        ← Back to patterns
+      </button>
+
+      <h1
+        style={{
+          fontFamily: "Georgia, 'Times New Roman', serif",
+          fontSize: 30,
+          fontWeight: 400,
+          lineHeight: 1.15,
+          color: colors.text,
+          marginBottom: 10,
+        }}
+      >
+        {pattern.title}
+      </h1>
+
+      <p style={{ color: colors.textSoft, fontSize: 13, lineHeight: 1.65, marginBottom: 22 }}>
+        {pattern.description}
+      </p>
+
+      <section
+        style={{
+          background: colors.card,
+          border: `1px solid ${colors.border}`,
+          borderRadius: 20,
+          padding: 18,
+          marginBottom: 16,
+        }}
+      >
+        <p style={{ fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: colors.goldSoft, marginBottom: 16 }}>
+          Timeline
+        </p>
+
+        <div style={{ display: "grid", gap: 14 }}>
+          {pattern.evidence
+            .slice()
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .map((item, i) => (
+              <div key={`${item.entry_id}-${i}`} style={{ display: "flex", gap: 12 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ width: 9, height: 9, borderRadius: 999, background: colors.gold }} />
+                  {i < pattern.evidence.length - 1 && (
+                    <div style={{ width: 1, flex: 1, minHeight: 44, background: "rgba(205,170,100,0.16)", marginTop: 6 }} />
+                  )}
+                </div>
+
+                <div style={{ flex: 1, paddingBottom: 12 }}>
+                  <p style={{ color: colors.goldSoft, fontSize: 11, marginBottom: 6 }}>
+                    {item.date} · {item.entry_type}
+                  </p>
+                  <p style={{ color: "rgba(225,210,188,0.74)", fontSize: 13, lineHeight: 1.6, fontStyle: "italic" }}>
+                    “{item.quote}”
+                  </p>
+                  {item.mood && (
+                    <p style={{ color: colors.textFaint, fontSize: 10, marginTop: 6 }}>
+                      Mood: {item.mood}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+        </div>
+      </section>
+
+      <section
+        style={{
+          background: "linear-gradient(145deg, rgba(205,170,100,0.08), rgba(255,255,255,0.022))",
+          border: "1px solid rgba(205,170,100,0.14)",
+          borderRadius: 20,
+          padding: 18,
+        }}
+      >
+        <p style={{ fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: colors.goldSoft, marginBottom: 10 }}>
+          AI Insight
+        </p>
+        <p style={{ color: colors.text, fontSize: 14, lineHeight: 1.7, marginBottom: 14 }}>
+          {pattern.description}
+        </p>
+        <p style={{ color: colors.gold, fontSize: 13, lineHeight: 1.6 }}>
+          {pattern.suggestion}
+        </p>
+      </section>
     </motion.div>
   );
 }
 
+const loadingSteps = [
+  "Looking through what you’ve left behind…",
+  "Finding recurring thoughts…",
+  "Connecting memories…",
+  "Looking for patterns…",
+];
+
 export function AIPatterns() {
   const [range, setRange] = useState<AIPatternTimeRange>("30d");
-  const [result, setResult] = useState<AIPatternResponse | null>(null);
+  const [generation, setGeneration] = useState<AIPatternGeneration | null>(null);
+  const [history, setHistory] = useState<AIPatternGeneration[]>([]);
   const [loading, setLoading] = useState(false);
-  const [checkedEmpty, setCheckedEmpty] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [showAll, setShowAll] = useState(false);
+  const [selectedPattern, setSelectedPattern] = useState<AIPattern | null>(null);
   const [error, setError] = useState("");
 
-  async function handleGenerate(nextRange = range) {
+  useEffect(() => {
+    const saved = loadAIPatternHistory();
+    setHistory(saved);
+    setGeneration(saved[0] || null);
+  }, []);
+
+  useEffect(() => {
+    if (!loading) return;
+
+    const interval = setInterval(() => {
+      setLoadingStep((current) => (current + 1) % loadingSteps.length);
+    }, 1600);
+
+    return () => clearInterval(interval);
+  }, [loading]);
+
+  async function handleGenerate() {
     setError("");
     setLoading(true);
-    setCheckedEmpty(false);
+    setLoadingStep(0);
+    setShowAll(false);
+    setSelectedPattern(null);
+
+    const started = Date.now();
 
     try {
-      const entries = await loadPatternEntries(nextRange);
+      const next = await generateAIPatterns(range);
+      const elapsed = Date.now() - started;
+      const delay = Math.max(0, 5200 - elapsed);
 
-      if (entries.length < 3) {
-        setResult({ summary: "", patterns: [] });
-        setCheckedEmpty(true);
-        return;
-      }
-
-      const data = await generateAIPatterns(nextRange);
-      setResult(data);
+      setTimeout(() => {
+        setGeneration(next);
+        setHistory(loadAIPatternHistory());
+        setLoading(false);
+      }, delay);
     } catch (err: any) {
       setError(err.message || "Could not generate patterns.");
-    } finally {
       setLoading(false);
     }
   }
 
   const ranges: AIPatternTimeRange[] = ["7d", "30d", "90d", "all"];
+
+  const visiblePatterns = useMemo(() => {
+    const patterns = generation?.result.patterns || [];
+    return showAll ? patterns : patterns.slice(0, 3);
+  }, [generation, showAll]);
+
+  const previous = history[1];
+
+  if (selectedPattern) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{
+          minHeight: "100svh",
+          background: colors.bg,
+          maxWidth: 480,
+          margin: "0 auto",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <RainLayer />
+        <div style={{ position: "relative", zIndex: 1, padding: "calc(env(safe-area-inset-top, 0px) + 52px) 20px 42px" }}>
+          <PatternDetail pattern={selectedPattern} onBack={() => setSelectedPattern(null)} />
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -315,48 +483,38 @@ export function AIPatterns() {
             >
               AI Patterns
             </h1>
-            <p
-              style={{
-                fontSize: 13,
-                color: colors.textSoft,
-                lineHeight: 1.55,
-              }}
-            >
+            <p style={{ fontSize: 13, color: colors.textSoft, lineHeight: 1.55 }}>
               Notice what keeps returning.
             </p>
           </div>
         </header>
 
         <div
-  style={{
-    display: "flex",
-    gap: 8,
-    overflowX: "auto",
-    overflowY: "hidden",
-    marginBottom: 16,
-    paddingBottom: 6,
-
-    scrollbarWidth: "thin", // Firefox
-    scrollbarColor: "rgba(205,170,100,.35) transparent",
-
-    WebkitOverflowScrolling: "touch",
-  }}
->
+          className="ai-pattern-scroll"
+          style={{
+            display: "flex",
+            gap: 8,
+            overflowX: "auto",
+            overflowY: "hidden",
+            marginBottom: 16,
+            paddingBottom: 6,
+            scrollbarWidth: "thin",
+            scrollbarColor: "rgba(205,170,100,.35) transparent",
+          }}
+        >
           {ranges.map((item) => (
             <button
               key={item}
               onClick={() => {
                 setRange(item);
-                setResult(null);
-                setCheckedEmpty(false);
+                setShowAll(false);
               }}
               style={{
                 border:
                   range === item
                     ? "1px solid rgba(205,170,100,0.28)"
                     : `1px solid ${colors.border}`,
-                background:
-                  range === item ? "rgba(205,170,100,0.10)" : colors.card,
+                background: range === item ? "rgba(205,170,100,0.10)" : colors.card,
                 color: range === item ? colors.gold : colors.textSoft,
                 borderRadius: 999,
                 padding: "9px 13px",
@@ -373,18 +531,17 @@ export function AIPatterns() {
         </div>
 
         <button
-          onClick={() => handleGenerate(range)}
+          onClick={handleGenerate}
           disabled={loading}
           style={{
             width: "100%",
             minHeight: 62,
             borderRadius: 18,
             border: "1px solid rgba(205,170,100,0.18)",
-            background:
-              "linear-gradient(145deg, rgba(205,170,100,0.10), rgba(255,255,255,0.026))",
+            background: "linear-gradient(145deg, rgba(205,170,100,0.10), rgba(255,255,255,0.026))",
             color: colors.text,
             cursor: loading ? "default" : "pointer",
-            opacity: loading ? 0.7 : 1,
+            opacity: loading ? 0.78 : 1,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -393,154 +550,189 @@ export function AIPatterns() {
           }}
         >
           <Sparkles size={17} color={colors.gold} />
-          {loading ? "Looking through what you’ve left behind…" : "Generate AI Patterns"}
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={loading ? loadingSteps[loadingStep] : "generate"}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.35 }}
+            >
+              {loading ? loadingSteps[loadingStep] : "Generate AI Patterns"}
+            </motion.span>
+          </AnimatePresence>
         </button>
 
-        {loading && (
-          <motion.div
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2.2, repeat: Infinity }}
-            style={{
-              background: colors.card,
-              border: `1px solid ${colors.border}`,
-              borderRadius: 20,
-              padding: 22,
-              textAlign: "center",
-              marginBottom: 16,
-            }}
-          >
-            <Flame size={20} color={colors.gold} />
-            <p
-              style={{
-                marginTop: 10,
-                color: colors.textSoft,
-                fontSize: 13,
-                lineHeight: 1.6,
-              }}
-            >
-              Listening for patterns…
-            </p>
-          </motion.div>
-        )}
-
         {error && (
-          <p
-            style={{
-              color: "rgba(248,113,113,0.68)",
-              fontSize: 12,
-              lineHeight: 1.5,
-              marginBottom: 14,
-            }}
-          >
+          <p style={{ color: "rgba(248,113,113,0.68)", fontSize: 12, lineHeight: 1.5, marginBottom: 14 }}>
             {error}
           </p>
         )}
 
-        {result?.summary && (
-          <motion.section
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{
-              borderRadius: 24,
-              border: "1px solid rgba(205,170,100,0.16)",
-              background:
-                "linear-gradient(145deg, rgba(205,170,100,0.10), rgba(255,255,255,0.024))",
-              padding: 22,
-              marginBottom: 16,
-            }}
-          >
-            <p
-              style={{
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: colors.goldSoft,
-                marginBottom: 10,
-              }}
-            >
-              What the AI noticed
-            </p>
-            <p
-              style={{
-                fontFamily: "Georgia, 'Times New Roman', serif",
-                color: colors.text,
-                fontSize: 22,
-                lineHeight: 1.35,
-              }}
-            >
-              “{result.summary}”
-            </p>
-          </motion.section>
+        {generation && !loading && (
+          <AnimatePresence>
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+              <p style={{ color: colors.textFaint, fontSize: 11, marginBottom: 14 }}>
+                {timeAgo(generation.created_at)} · Based on {generation.voice_count} voice capsules and {generation.thought_count} thoughts.
+              </p>
+
+              {generation.result.hero_themes.length > 0 && (
+                <section
+                  style={{
+                    borderRadius: 24,
+                    border: "1px solid rgba(205,170,100,0.16)",
+                    background: "linear-gradient(145deg, rgba(205,170,100,0.10), rgba(255,255,255,0.024))",
+                    padding: 22,
+                    marginBottom: 16,
+                  }}
+                >
+                  <p style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: colors.goldSoft, marginBottom: 10 }}>
+                    What the AI noticed
+                  </p>
+
+                  <p style={{ color: colors.text, fontSize: 14, lineHeight: 1.7, marginBottom: 10 }}>
+                    This period your thoughts returned again and again to:
+                  </p>
+
+                  <div style={{ display: "grid", gap: 6 }}>
+                    {generation.result.hero_themes.map((theme) => (
+                      <p key={theme} style={{ color: colors.text, fontFamily: "Georgia,serif", fontSize: 20 }}>
+                        • {theme}
+                      </p>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {previous && (
+                <section
+                  style={{
+                    background: colors.card,
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: 18,
+                    padding: 16,
+                    marginBottom: 16,
+                  }}
+                >
+                  <p style={{ fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: colors.goldSoft, marginBottom: 8 }}>
+                    Compare with previous analysis
+                  </p>
+                  <p style={{ color: colors.textSoft, fontSize: 13, lineHeight: 1.6 }}>
+                    Previous analysis: {new Date(previous.created_at).toLocaleDateString()} · {previous.result.hero_themes.slice(0, 3).join(" · ") || "No strong themes detected."}
+                  </p>
+                </section>
+              )}
+
+              {generation.result.patterns.length === 0 ? (
+                <div
+                  style={{
+                    background: colors.card,
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: 20,
+                    padding: 22,
+                    textAlign: "center",
+                  }}
+                >
+                  <h2 style={{ fontFamily: "Georgia, serif", fontWeight: 400, color: colors.text, fontSize: 23, marginBottom: 10 }}>
+                    Not enough patterns yet.
+                  </h2>
+                  <p style={{ color: colors.textSoft, fontSize: 13, lineHeight: 1.65, marginBottom: 18 }}>
+                    Leave a few more thoughts or voice capsules and The Nest will begin noticing what keeps returning.
+                  </p>
+                  <Link href="/memos">
+                    <button
+                      style={{
+                        width: "100%",
+                        border: "1px solid rgba(205,170,100,0.14)",
+                        background: "rgba(205,170,100,0.06)",
+                        borderRadius: 14,
+                        padding: "13px 14px",
+                        color: "rgba(225,205,176,0.78)",
+                        fontSize: 11,
+                        letterSpacing: "0.14em",
+                        textTransform: "uppercase",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Capture Something
+                    </button>
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <p style={{ fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: colors.goldSoft, marginBottom: 10 }}>
+                    Top 3 Patterns
+                  </p>
+
+                  <div style={{ display: "grid", gap: 12 }}>
+                    {visiblePatterns.map((pattern, index) => (
+                      <PatternCard
+                        key={`${pattern.id}-${index}`}
+                        pattern={pattern}
+                        index={index}
+                        onOpen={() => setSelectedPattern(pattern)}
+                      />
+                    ))}
+                  </div>
+
+                  {!showAll && generation.result.patterns.length > 3 && (
+                    <button
+                      onClick={() => setShowAll(true)}
+                      style={{
+                        width: "100%",
+                        marginTop: 14,
+                        border: "1px solid rgba(205,170,100,0.14)",
+                        background: "rgba(205,170,100,0.06)",
+                        borderRadius: 16,
+                        padding: "14px 16px",
+                        color: colors.gold,
+                        fontSize: 11,
+                        letterSpacing: "0.14em",
+                        textTransform: "uppercase",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Show all patterns
+                    </button>
+                  )}
+                </>
+              )}
+
+              {history.length > 1 && (
+                <section style={{ marginTop: 22 }}>
+                  <p style={{ fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: colors.goldSoft, marginBottom: 10 }}>
+                    Pattern History
+                  </p>
+
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {history.slice(0, 8).map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setGeneration(item);
+                          setShowAll(false);
+                          setSelectedPattern(null);
+                        }}
+                        style={{
+                          background: colors.card,
+                          border: `1px solid ${colors.border}`,
+                          borderRadius: 14,
+                          padding: "13px 14px",
+                          color: colors.textSoft,
+                          textAlign: "left",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {new Date(item.created_at).toLocaleDateString()} · {labelForRange(item.range)}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </motion.div>
+          </AnimatePresence>
         )}
-
-        {checkedEmpty && result?.patterns.length === 0 && (
-          <div
-            style={{
-              background: colors.card,
-              border: `1px solid ${colors.border}`,
-              borderRadius: 20,
-              padding: 22,
-              textAlign: "center",
-            }}
-          >
-            <h2
-              style={{
-                fontFamily: "Georgia, serif",
-                fontWeight: 400,
-                color: colors.text,
-                fontSize: 23,
-                marginBottom: 10,
-              }}
-            >
-              Not enough patterns yet.
-            </h2>
-            <p
-              style={{
-                color: colors.textSoft,
-                fontSize: 13,
-                lineHeight: 1.65,
-                marginBottom: 18,
-              }}
-            >
-              Leave a few more thoughts or voice capsules, and The Nest will start noticing what keeps returning.
-            </p>
-
-            <div style={{ display: "grid", gap: 9 }}>
-              <Link href="/memos">
-                <button style={quickButtonStyle}>Record a voice capsule</button>
-              </Link>
-              <Link href="/thoughts">
-                <button style={quickButtonStyle}>Write a thought</button>
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {result?.patterns?.length ? (
-          <div style={{ display: "grid", gap: 12 }}>
-            {result.patterns.map((pattern, index) => (
-              <PatternCard
-                key={`${pattern.title}-${index}`}
-                pattern={pattern}
-                index={index}
-              />
-            ))}
-          </div>
-        ) : null}
       </div>
     </motion.div>
   );
 }
-
-const quickButtonStyle: React.CSSProperties = {
-  width: "100%",
-  border: "1px solid rgba(205,170,100,0.14)",
-  background: "rgba(205,170,100,0.06)",
-  borderRadius: 14,
-  padding: "13px 14px",
-  color: "rgba(225,205,176,0.78)",
-  fontSize: 11,
-  letterSpacing: "0.14em",
-  textTransform: "uppercase",
-  cursor: "pointer",
-};

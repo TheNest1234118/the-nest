@@ -2,10 +2,13 @@ import { loadThoughts } from "@/lib/userData";
 import { loadMemos } from "@/lib/memos";
 import { loadReflections } from "@/lib/reflections";
 import type {
+  AIPatternGeneration,
   AIPatternResponse,
   AIPatternTimeRange,
   PatternEntry,
 } from "@/lib/aiPatternTypes";
+
+const STORAGE_KEY = "nest_ai_pattern_generations";
 
 function withinRange(date: string, range: AIPatternTimeRange) {
   if (range === "all") return true;
@@ -17,62 +20,65 @@ function withinRange(date: string, range: AIPatternTimeRange) {
   return created >= cutoff;
 }
 
+export function loadAIPatternHistory(): AIPatternGeneration[] {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function saveAIPatternGeneration(
+  generation: AIPatternGeneration
+): AIPatternGeneration[] {
+  const existing = loadAIPatternHistory();
+  const next = [generation, ...existing].slice(0, 20);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  return next;
+}
+
 export async function loadPatternEntries(
   range: AIPatternTimeRange
 ): Promise<PatternEntry[]> {
   const entries: PatternEntry[] = [];
 
-  try {
-    const thoughts = await loadThoughts();
+  const thoughts = await loadThoughts();
+  for (const thought of thoughts || []) {
+    if (!withinRange(thought.created_at, range)) continue;
 
-    for (const thought of thoughts || []) {
-      if (!withinRange(thought.created_at, range)) continue;
-
-      entries.push({
-        id: thought.id,
-        type: "thought",
-        text: thought.text,
-        created_at: thought.created_at,
-      });
-    }
-  } catch (err) {
-    console.error("Could not load thoughts for AI Patterns", err);
+    entries.push({
+      id: thought.id,
+      type: "thought",
+      title: "Thought",
+      text: thought.text,
+      created_at: thought.created_at,
+    });
   }
 
-  try {
-    const memos = await loadMemos();
+  const memos = await loadMemos();
+  for (const memo of memos || []) {
+    if (!withinRange(memo.created_at, range)) continue;
 
-    for (const memo of memos || []) {
-      if (!withinRange(memo.created_at, range)) continue;
-
-      entries.push({
-        id: memo.id,
-        type: "voice",
-        title: memo.title || "Voice capsule",
-        transcript: memo.transcript_text || "",
-        created_at: memo.created_at,
-      });
-    }
-  } catch (err) {
-    console.error("Could not load memos for AI Patterns", err);
+    entries.push({
+      id: memo.id,
+      type: "voice",
+      title: memo.title || "Voice capsule",
+      transcript: memo.transcript_text || "",
+      created_at: memo.created_at,
+    });
   }
 
-  try {
-    const reflections = await loadReflections();
+  const reflections = await loadReflections();
+  for (const reflection of reflections || []) {
+    if (!withinRange(reflection.created_at, range)) continue;
 
-    for (const reflection of reflections || []) {
-      if (!withinRange(reflection.created_at, range)) continue;
-
-      entries.push({
-        id: reflection.id,
-        type: "reflection",
-        title: reflection.type,
-        text: reflection.summary || "",
-        created_at: reflection.created_at,
-      });
-    }
-  } catch (err) {
-    console.error("Could not load reflections for AI Patterns", err);
+    entries.push({
+      id: reflection.id,
+      type: "reflection",
+      title: reflection.type,
+      text: reflection.summary || "",
+      created_at: reflection.created_at,
+    });
   }
 
   return entries
@@ -89,15 +95,29 @@ export async function loadPatternEntries(
 
 export async function generateAIPatterns(
   range: AIPatternTimeRange
-): Promise<AIPatternResponse> {
+): Promise<AIPatternGeneration> {
   const entries = await loadPatternEntries(range);
 
-  if (entries.length < 3) {
+  const thoughtCount = entries.filter((entry) => entry.type === "thought").length;
+  const voiceCount = entries.filter((entry) => entry.type === "voice").length;
+
+  if (entries.length < 4) {
     return {
-      summary: "",
-      patterns: [],
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+      range,
+      entry_count: entries.length,
+      voice_count: voiceCount,
+      thought_count: thoughtCount,
+      result: {
+        summary: "",
+        hero_themes: [],
+        patterns: [],
+      },
     };
   }
+
+  const previousGeneration = loadAIPatternHistory()[0];
 
   const res = await fetch("/api/ai-patterns", {
     method: "POST",
@@ -107,6 +127,7 @@ export async function generateAIPatterns(
     body: JSON.stringify({
       range,
       entries,
+      previousGeneration: previousGeneration?.result || null,
     }),
   });
 
@@ -114,5 +135,19 @@ export async function generateAIPatterns(
     throw new Error("Could not generate AI Patterns.");
   }
 
-  return res.json();
+  const result: AIPatternResponse = await res.json();
+
+  const generation: AIPatternGeneration = {
+    id: crypto.randomUUID(),
+    created_at: new Date().toISOString(),
+    range,
+    entry_count: entries.length,
+    voice_count: voiceCount,
+    thought_count: thoughtCount,
+    result,
+  };
+
+  saveAIPatternGeneration(generation);
+
+  return generation;
 }
