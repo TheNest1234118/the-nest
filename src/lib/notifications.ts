@@ -2,24 +2,32 @@ import { track } from "@vercel/analytics";
 import { supabase } from "@/lib/supabase";
 export type ReminderPreset = "before_bed" | "evening" | "morning" | "custom";
 export type ReminderFrequency = "daily" | "selected_days" | "weekly";
+function getOneSignalDeferred() {
+  if (typeof window === "undefined") return null;
+  return (window as any).OneSignalDeferred as any[] | null;
+}
 async function getOneSignalSubscriptionId(): Promise<string | null> {
-  if (!window.OneSignalDeferred) return null;
+  const deferred = getOneSignalDeferred();
+  if (!deferred) return null;
 
-  let subscriptionId: string | null = null;
+  return new Promise((resolve) => {
+    deferred.push(async (OneSignal: any) => {
+      try {
+        await OneSignal.User.PushSubscription.optIn();
 
-  await window.OneSignalDeferred.push(async (OneSignal: any) => {
-    await OneSignal.User.PushSubscription.optIn();
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    
-    subscriptionId = OneSignal.User.PushSubscription.id;
-    
-    console.log("Saving OneSignal subscription id", subscriptionId);
-    console.log("OptedIn:", OneSignal.User.PushSubscription.optedIn);
+        let subscriptionId = OneSignal.User.PushSubscription.id;
 
-    console.log("Saving OneSignal subscription id", subscriptionId);
+        for (let i = 0; i < 10 && !subscriptionId; i++) {
+          await new Promise((r) => setTimeout(r, 1000));
+          subscriptionId = OneSignal.User.PushSubscription.id;
+        }
+
+        resolve(subscriptionId || null);
+      } catch {
+        resolve(null);
+      }
+    });
   });
-
-  return subscriptionId;
 }
 export interface NestNotificationPreferences {
   enabled: boolean;
@@ -45,11 +53,7 @@ export const LAST_RETURN_AFTER_NOTIFICATION_KEY =
     reminder_frequency: "daily",
     preset: "before_bed",
   };
-declare global {
-  interface Window {
-    OneSignalDeferred?: any[];
-  }
-}
+ 
 
 export function readNotificationPreferences(): NestNotificationPreferences {
   try {
@@ -89,15 +93,15 @@ export async function writeNotificationPreferences(
 }
 export async function requestNestNotifications() {
   console.log("REQUEST FUNCTION START");
-  console.log("OneSignalDeferred", window.OneSignalDeferred);
+  console.log("OneSignalDeferred", getOneSignalDeferred());
   console.log("permission before", Notification.permission);
 
-  if (!window.OneSignalDeferred) {
+  if (typeof window === "undefined" || !getOneSignalDeferred()) {
     console.log("No OneSignalDeferred");
     return false;
   }
 
-  window.OneSignalDeferred.push(async (OneSignal: any) => {
+  getOneSignalDeferred().push(async (OneSignal: any) => {
     try {
       console.log("OneSignal callback start");
 
@@ -123,9 +127,9 @@ export async function requestNestNotifications() {
 export async function syncOneSignalNotificationTags(
   prefs: NestNotificationPreferences
 ) {
-  if (!window.OneSignalDeferred) return;
+  if (!getOneSignalDeferred()) return;
 
-  await window.OneSignalDeferred.push(async (OneSignal: any) => {
+  await getOneSignalDeferred().push(async (OneSignal: any) => {
     const externalId =
       localStorage.getItem("nest_onesignal_external_id") ||
       crypto.randomUUID();
@@ -163,9 +167,9 @@ export function markThoughtSavedForNotifications() {
     localStorage.setItem("nest_last_thought_saved_at", String(Date.now()));
   } catch {}
 
-  if (!window.OneSignalDeferred) return;
+  if (!getOneSignalDeferred()) return;
 
-  window.OneSignalDeferred.push(async (OneSignal: any) => {
+  getOneSignalDeferred().push(async (OneSignal: any) => {
     const externalId =
       localStorage.getItem("nest_onesignal_external_id") ||
       crypto.randomUUID();
