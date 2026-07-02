@@ -677,7 +677,7 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
     { title: "Weekly Reflection", path: "/insights/weekly", stars: "", enabled: true },
     { title: "Topics", path: "/insights/topics", stars: "", enabled: false },
     { title: "Statistics", path: "/insights/statistics", stars: "", enabled: false },
-    { title: "Monthly Reflection", path: "/insights/monthly", stars: "", enabled: true },
+    { title: "Monthly Reflection", path: "/insights/monthly", stars: "", enabled: false },
 
     { title: "Mood Trends", path: "", stars: "Coming Soon", enabled: false },
     { title: "Heatmap", path: "", stars: "Coming Soon", enabled: false },
