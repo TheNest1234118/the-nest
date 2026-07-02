@@ -671,19 +671,59 @@ const filteredItems = items.filter((item) => {
     </>
   );
 }
-
 function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
-  const insights = ["Weekly Reflection", "Monthly Reflection", "Mood Trends", "AI Patterns", "Topics", "Heatmap", "Word Cloud", "Emotional Timeline", "Statistics"];
+  const insights = [
+    { title: "AI Patterns", path: "/insights/ai-patterns", stars: "⭐⭐⭐⭐⭐", enabled: true },
+    { title: "Weekly Reflection", path: "/insights/weekly", stars: "⭐⭐⭐⭐⭐", enabled: true },
+    { title: "Topics", path: "/insights/topics", stars: "⭐⭐⭐⭐☆", enabled: true },
+    { title: "Statistics", path: "/insights/statistics", stars: "⭐⭐⭐⭐☆", enabled: true },
+    { title: "Monthly Reflection", path: "/insights/monthly", stars: "⭐⭐⭐☆☆", enabled: true },
+
+    { title: "Mood Trends", path: "", stars: "Coming Soon", enabled: false },
+    { title: "Heatmap", path: "", stars: "Coming Soon", enabled: false },
+    { title: "Word Cloud", path: "", stars: "Coming Soon", enabled: false },
+    { title: "Emotional Timeline", path: "", stars: "Coming Soon", enabled: false },
+  ];
+
   return (
     <>
-      <PageIntro eyebrow="Understand Yourself" title="A place for reflection." description="All analytics live here now, separate from daily capture, so Home stays calm and effortless." />
+      <PageIntro
+        eyebrow="Understand Yourself"
+        title="A place for reflection."
+        description="Patterns, moods and meaning from everything you have captured."
+      />
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        {insights.map((item, index) => (
-          <SoftCard key={item} onClick={() => navigate("/reflections")}>
-            <div style={{ minHeight: 74, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        {insights.map((item) => (
+          <SoftCard
+            key={item.title}
+            onClick={item.enabled ? () => navigate(item.path) : undefined}
+          >
+            <div
+              style={{
+                minHeight: 82,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                opacity: item.enabled ? 1 : 0.42,
+              }}
+            >
               <BarChart3 size={18} strokeWidth={1.45} color={colors.goldSoft} />
-              <div style={{ color: colors.text, fontSize: 14, lineHeight: 1.35 }}>{item}</div>
-              <div style={{ color: colors.textFaint, fontSize: 11 }}>{index < 2 ? "Reflection" : "Pattern"}</div>
+
+              <div style={{ color: colors.text, fontSize: 14, lineHeight: 1.35 }}>
+                {item.title}
+              </div>
+
+              <div
+                style={{
+                  color: item.enabled ? colors.goldSoft : colors.textFaint,
+                  fontSize: item.enabled ? 11 : 10,
+                  letterSpacing: item.enabled ? "0" : "0.12em",
+                  textTransform: item.enabled ? "none" : "uppercase",
+                }}
+              >
+                {item.stars}
+              </div>
             </div>
           </SoftCard>
         ))}
@@ -880,7 +920,7 @@ export function Dashboard() {
          flex: 1,
          padding: "0 20px 0",
          paddingTop: "calc(env(safe-area-inset-top, 0px) + 46px)",
-         paddingBottom: "170px",
+         paddingBottom: "180px",
          overflowY: "auto",
          position: "relative",
          zIndex: 1,

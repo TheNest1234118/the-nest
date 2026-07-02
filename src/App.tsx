@@ -2,6 +2,7 @@ import React from "react";
 import { Rituals } from "@/pages/Rituals";
 import { RitualPlayer } from "@/pages/RitualPlayer";
 import { Analytics } from "@vercel/analytics/react";
+import { AIPatterns } from "@/pages/AIPatterns";
 import { AskPast } from "@/pages/AskPast";
 import { VoiceHistory } from "@/pages/VoiceHistory";
 import { ThoughtHistory } from "@/pages/ThoughtHistory";
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/rituals/:id" component={RitualPlayer} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/home" component={Dashboard} />
+      <Route path="/insights/ai-patterns" component={AIPatterns} />
       <Route path="/ask-past" component={AskPast} />
       <Route path="/mood-log" component={MoodLog} />
       <Route path="/nest" component={Nest} />
