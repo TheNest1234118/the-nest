@@ -673,11 +673,11 @@ const filteredItems = items.filter((item) => {
 }
 function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
   const insights = [
-    { title: "AI Patterns", path: "/insights/ai-patterns", stars: "⭐⭐⭐⭐⭐", enabled: true },
-    { title: "Weekly Reflection", path: "/insights/weekly", stars: "⭐⭐⭐⭐⭐", enabled: true },
-    { title: "Topics", path: "/insights/topics", stars: "⭐⭐⭐⭐☆", enabled: true },
-    { title: "Statistics", path: "/insights/statistics", stars: "⭐⭐⭐⭐☆", enabled: true },
-    { title: "Monthly Reflection", path: "/insights/monthly", stars: "⭐⭐⭐☆☆", enabled: true },
+    { title: "AI Patterns", path: "/insights/ai-patterns", stars: "", enabled: true },
+    { title: "Weekly Reflection", path: "/insights/weekly", stars: "", enabled: true },
+    { title: "Topics", path: "/insights/topics", stars: "", enabled: true },
+    { title: "Statistics", path: "/insights/statistics", stars: "", enabled: true },
+    { title: "Monthly Reflection", path: "/insights/monthly", stars: "", enabled: true },
 
     { title: "Mood Trends", path: "", stars: "Coming Soon", enabled: false },
     { title: "Heatmap", path: "", stars: "Coming Soon", enabled: false },
