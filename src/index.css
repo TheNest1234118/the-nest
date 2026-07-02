@@ -113,4 +113,19 @@
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
+}.ai-pattern-scroll::-webkit-scrollbar {
+  height: 5px;
+}
+
+.ai-pattern-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ai-pattern-scroll::-webkit-scrollbar-thumb {
+  background: rgba(205,170,100,.28);
+  border-radius: 999px;
+}
+
+.ai-pattern-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(205,170,100,.45);
 }

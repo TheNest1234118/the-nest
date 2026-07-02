@@ -327,7 +327,21 @@ export function AIPatterns() {
           </div>
         </header>
 
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 16 }}>
+        <div
+  style={{
+    display: "flex",
+    gap: 8,
+    overflowX: "auto",
+    overflowY: "hidden",
+    marginBottom: 16,
+    paddingBottom: 6,
+
+    scrollbarWidth: "thin", // Firefox
+    scrollbarColor: "rgba(205,170,100,.35) transparent",
+
+    WebkitOverflowScrolling: "touch",
+  }}
+>
           {ranges.map((item) => (
             <button
               key={item}
