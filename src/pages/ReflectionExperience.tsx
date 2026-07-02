@@ -20,7 +20,7 @@ const c = {
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section style={{ background: c.card, border: `1px solid ${c.border}`, borderRadius: 18, padding: 18 }}>
+    <section style={{ background: c.card, border: `1px solid ${c.border}`, borderRadius: 20, padding: "17px 16px", }}>
       <p style={{ fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", color: c.goldSoft, marginBottom: 10 }}>{title}</p>
       <div style={{ fontSize: 13, lineHeight: 1.7, color: "rgba(220,205,182,.72)" }}>{children}</div>
     </section>
@@ -53,12 +53,28 @@ export function ReflectionExperience({ kind }: { kind: ReflectionKind }) {
   const r = item?.result;
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ minHeight: "100svh", background: c.bg, maxWidth: 480, margin: "0 auto", padding: "calc(env(safe-area-inset-top,0px)+52px) 20px 42px" }}>
-      <header style={{ display: "flex", gap: 14, marginBottom: 28 }}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ minHeight: "100svh", background: c.bg, maxWidth: 480, margin: "0 auto", padding: "calc(env(safe-area-inset-top,0px)+44px) 18px 42px" }}>
+      <header
+  style={{
+    display: "flex",
+    gap: 12,
+    marginBottom: 26,
+    alignItems: "flex-start",
+  }}
+>
         <Link href="/home">
-          <button style={{ background: "none", border: "none", color: "rgba(185,162,128,.32)" }}>
-            <ChevronLeft size={24} />
-          </button>
+        <button
+  style={{
+    background: "none",
+    border: "none",
+    color: "rgba(185,162,128,.38)",
+    padding: "4px 4px 0 0",
+    marginTop: 1,
+    cursor: "pointer",
+  }}
+>
+  <ChevronLeft size={22} strokeWidth={1.4} />
+</button>
         </Link>
         <div>
           <h1 style={{ fontFamily: "Georgia,serif", fontSize: 31, fontWeight: 400, color: c.text }}>
@@ -70,7 +86,8 @@ export function ReflectionExperience({ kind }: { kind: ReflectionKind }) {
         </div>
       </header>
 
-      <button onClick={generate} disabled={loading} style={{ width: "100%", marginBottom: 16, border: "1px solid rgba(205,170,100,.18)", background: "rgba(205,170,100,.08)", borderRadius: 16, padding: 15, color: c.text }}>
+      <button onClick={generate} disabled={loading} style={{ width: "100%", boxSizing: "border-box",
+marginBottom: 14, border: "1px solid rgba(205,170,100,.18)", background: "rgba(205,170,100,.08)", borderRadius: 18, padding: "15px 16px", color: c.text }}>
         <Sparkles size={16} /> {loading ? "Looking back through your entries..." : `Generate ${isWeekly ? "Weekly" : "Monthly"} Reflection`}
       </button>
 
@@ -130,7 +147,7 @@ export function ReflectionExperience({ kind }: { kind: ReflectionKind }) {
           )}
 
           <Link href="/ask-past">
-            <button style={{ width: "100%", border: "1px solid rgba(205,170,100,.18)", background: "rgba(205,170,100,.07)", borderRadius: 16, padding: 15, color: c.gold }}>
+            <button style={{ width: "100%", border: "1px solid rgba(205,170,100,.18)", background: "rgba(205,170,100,.07)", borderRadius: 18, padding: "15px 16px", color: c.gold }}>
               Talk to this reflection
             </button>
           </Link>
