@@ -3,6 +3,11 @@ import { Rituals } from "@/pages/Rituals";
 import { RitualPlayer } from "@/pages/RitualPlayer";
 import { Analytics } from "@vercel/analytics/react";
 import { AIPatterns } from "@/pages/AIPatterns";
+import { ProfilePremium } from "@/pages/ProfilePremium";
+import { ProfileNotifications } from "@/pages/ProfileNotifications";
+import { ProfileHelp } from "@/pages/ProfileHelp";
+import { ProfilePrivacy } from "@/pages/ProfilePrivacy";
+import { ProfileData } from "@/pages/ProfileData";
 import { AskPast } from "@/pages/AskPast";
 import { WeeklyReflection } from "@/pages/WeeklyReflection";
 import { MonthlyReflection } from "@/pages/MonthlyReflection";
@@ -39,6 +44,11 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+      <Route path="/profile/premium" component={ProfilePremium} />
+<Route path="/profile/notifications" component={ProfileNotifications} />
+<Route path="/profile/help" component={ProfileHelp} />
+<Route path="/profile/privacy" component={ProfilePrivacy} />
+<Route path="/profile/data" component={ProfileData} />
       <Route path="/history/voice" component={VoiceHistory} />
       <Route path="/insights/weekly" component={WeeklyReflection} />
       <Route path="/insights/monthly" component={MonthlyReflection} />

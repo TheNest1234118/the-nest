@@ -731,21 +731,64 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
     </>
   );
 }
-
-function ProfilePage({ user, onLogin, onLogout, navigate }: { user: User | null; onLogin: () => void; onLogout: () => void; navigate: (path: string) => void }) {
+function ProfilePage({
+  user,
+  onLogin,
+  onLogout,
+  navigate,
+}: {
+  user: User | null;
+  onLogin: () => void;
+  onLogout: () => void;
+  navigate: (path: string) => void;
+}) {
   const rows = [
-    { label: "Account", icon: <UserRound size={18} />, action: user ? onLogout : onLogin, value: user ? "Logout" : "Login" },
-    { label: "Settings", icon: <Settings size={18} />, action: () => navigate("/settings") },
-    { label: "Notifications", icon: <Bell size={18} />, action: () => navigate("/settings") },
-    { label: "Atmosphere", icon: <CloudRain size={18} />, action: () => navigate("/settings") },
-    { label: "Theme", icon: <Palette size={18} />, action: () => navigate("/settings") },
-    { label: "Privacy", icon: <Shield size={18} />, action: () => navigate("/settings") },
-    { label: "Export Data", icon: <Download size={18} />, action: () => navigate("/settings") },
-    { label: "Premium", icon: <Crown size={18} />, action: () => navigate("/settings") },
+    {
+      label: "Account",
+      icon: <UserRound size={18} />,
+      action: user ? onLogout : onLogin,
+      value: user ? "Logout" : "Login",
+    },
+    {
+      label: "Notifications",
+      icon: <Bell size={18} />,
+      action: () => navigate("/profile/notifications"),
+    },
+    {
+      label: "Atmosphere",
+      icon: <CloudRain size={18} />,
+      action: () => navigate("/atmosphere"),
+    },
+    {
+      label: "Privacy",
+      icon: <Shield size={18} />,
+      action: () => navigate("/profile/privacy"),
+    },
+    {
+      label: "Export Data",
+      icon: <Download size={18} />,
+      action: () => navigate("/profile/data"),
+    },
+    {
+      label: "Premium",
+      icon: <Crown size={18} />,
+      action: () => navigate("/profile/premium"),
+    },
+    {
+      label: "Help & Guide",
+      icon: <BookOpen size={18} />,
+      action: () => navigate("/profile/help"),
+    },
   ];
+
   return (
     <>
-      <PageIntro eyebrow="Profile" title="Your account and settings." description="Technical controls live here, away from journaling content." />
+      <PageIntro
+        eyebrow="Profile"
+        title="Your account and settings."
+        description="Technical controls live here, away from journaling content."
+      />
+
       <div style={{ display: "grid", gap: 10 }}>
         {rows.map((row) => (
           <SoftCard key={row.label} onClick={row.action}>
@@ -754,6 +797,7 @@ function ProfilePage({ user, onLogin, onLogout, navigate }: { user: User | null;
                 <span style={{ color: colors.goldSoft }}>{row.icon}</span>
                 <span style={{ fontSize: 15 }}>{row.label}</span>
               </div>
+
               <div style={{ display: "flex", alignItems: "center", gap: 9, color: colors.textSoft, fontSize: 12 }}>
                 {row.value && <span>{row.value}</span>}
                 <ChevronRight size={17} color={colors.goldSoft} />
@@ -762,6 +806,7 @@ function ProfilePage({ user, onLogin, onLogout, navigate }: { user: User | null;
           </SoftCard>
         ))}
       </div>
+
       <div style={{ display: "flex", alignItems: "center", gap: 8, color: colors.textFaint, fontSize: 12, lineHeight: 1.5 }}>
         <Lock size={14} /> No journaling content is shown on this page.
       </div>
