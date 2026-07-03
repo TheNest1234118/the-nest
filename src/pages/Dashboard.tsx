@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
+import { loadMemos, type SupabaseMemo } from "@/lib/memos";
 import { motion } from "framer-motion";
 import { saveThought } from "@/lib/userData";
 import { registerVisitForPwaPrompt } from "@/lib/pwa";
@@ -160,7 +161,10 @@ function getGreeting() {
 function moodLabel(mood: string | null) {
   return MOODS.find((m) => m.key === mood)?.label.replace(/^.+?\s/, "") ?? mood;
 }
-
+function formatMemoTime(s: number) {
+  const m = Math.floor(s / 60);
+  return `${m}:${(s % 60).toString().padStart(2, "0")}`;
+}
 function cleanMoodLabel(mood: string | null) {
   return (moodLabel(mood) || "").toLowerCase();
 }
@@ -832,6 +836,7 @@ export function Dashboard() {
   const [dailyIntention, setDailyIntention] = useState<string | null>(null);
   const [quickThought, setQuickThought] = useState("");
   const [quickSaving, setQuickSaving] = useState(false);
+  const [latestMemo, setLatestMemo] = useState<SupabaseMemo | null>(null);
   const [quickSaved, setQuickSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<NestTab>("home");
   const [captureOpen, setCaptureOpen] = useState(false);
@@ -892,7 +897,8 @@ export function Dashboard() {
       const today = new Date().toISOString().slice(0, 10);
       const { data } = await supabase.auth.getUser();
       setUser(data.user ?? null);
-
+      const memos = await loadMemos();
+      setLatestMemo((memos || [])[0] ?? null);
       if (localStorage.getItem("nest_welcome_seen") !== "true") {
         setWelcomeOpen(true);
       }
@@ -1214,7 +1220,7 @@ export function Dashboard() {
   description={user ? "Continue your latest recording" : "Sign in to continue your recordings"}
 />
 
-{user ? (
+{user && latestMemo ? (
   <Link href="/memos">
             <div
               style={{
@@ -1247,11 +1253,14 @@ export function Dashboard() {
                   <Mic size={20} strokeWidth={1.5} />
                 </div>
                 <div>
-                  <div style={{ color: colors.text, fontSize: 15, marginBottom: 4 }}>
-                    Late night thoughts
-                  </div>
-                  <div style={{ color: colors.textSoft, fontSize: 12 }}>0:42</div>
-                </div>
+  <div style={{ color: colors.text, fontSize: 15, marginBottom: 4 }}>
+    {latestMemo?.title || "Voice capsule"}
+  </div>
+
+  <div style={{ color: colors.textSoft, fontSize: 12 }}>
+    {latestMemo ? formatMemoTime(latestMemo.duration) : ""}
+  </div>
+</div>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
