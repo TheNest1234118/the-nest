@@ -51,9 +51,6 @@ const routerBase =
 function AnalyticsTracker() {
   const [location] = useLocation();
 
-  React.useEffect(() => {
-    trackPage(location);
-  }, [location]);
 
   return null;
 }
