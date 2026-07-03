@@ -4,7 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
-
+import { AudioProvider } from "@/hooks/use-audio-context";
+import { AtmosphereProvider } from "@/hooks/use-atmosphere";
 import NotFound from "@/pages/not-found";
 import { Landing } from "@/pages/Landing";
 import { Onboarding } from "@/pages/Onboarding";
@@ -79,16 +80,19 @@ function AppRouter() {
     </Switch>
   );
 }
-
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={routerBase}>
-          <AppRouter />
-        </WouterRouter>
+        <AudioProvider>
+          <AtmosphereProvider>
+            <WouterRouter base={routerBase}>
+              <AppRouter />
+            </WouterRouter>
 
-        <Toaster />
+            <Toaster />
+          </AtmosphereProvider>
+        </AudioProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
