@@ -41,8 +41,13 @@ import { WeatherLayer } from "@/components/WeatherLayer";
 import { initAnalytics, trackPage } from "@/lib/analytics";
 import { initClarity } from "@/lib/clarity";
 
-
 const queryClient = new QueryClient();
+
+const routerBase =
+  import.meta.env.BASE_URL === "/"
+    ? undefined
+    : import.meta.env.BASE_URL.replace(/\/$/, "");
+
 function AnalyticsTracker() {
   const [location] = useLocation();
 
@@ -52,25 +57,31 @@ function AnalyticsTracker() {
 
   return null;
 }
+
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+
       <Route path="/profile/premium" component={ProfilePremium} />
-<Route path="/profile/notifications" component={ProfileNotifications} />
-<Route path="/profile/help" component={ProfileHelp} />
-<Route path="/profile/privacy" component={ProfilePrivacy} />
-<Route path="/profile/data" component={ProfileData} />
-<Route path="/profile/voice-prompts" component={ProfileVoicePrompts} />
+      <Route path="/profile/notifications" component={ProfileNotifications} />
+      <Route path="/profile/help" component={ProfileHelp} />
+      <Route path="/profile/privacy" component={ProfilePrivacy} />
+      <Route path="/profile/data" component={ProfileData} />
+      <Route path="/profile/voice-prompts" component={ProfileVoicePrompts} />
+
       <Route path="/history/voice" component={VoiceHistory} />
+      <Route path="/history/thoughts" component={ThoughtHistory} />
+
       <Route path="/insights/weekly" component={WeeklyReflection} />
       <Route path="/insights/monthly" component={MonthlyReflection} />
-<Route path="/history/thoughts" component={ThoughtHistory} />
+      <Route path="/insights/ai-patterns" component={AIPatterns} />
+
       <Route path="/rituals" component={Rituals} />
       <Route path="/rituals/:id" component={RitualPlayer} />
+
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/home" component={Dashboard} />
-      <Route path="/insights/ai-patterns" component={AIPatterns} />
       <Route path="/ask-past" component={AskPast} />
       <Route path="/mood-log" component={MoodLog} />
       <Route path="/nest" component={Nest} />
@@ -81,6 +92,7 @@ function Router() {
       <Route path="/anchors" component={Anchors} />
       <Route path="/atmosphere" component={Atmosphere} />
       <Route path="/settings" component={Settings} />
+
       <Route component={NotFound} />
     </Switch>
   );
@@ -108,12 +120,13 @@ function App() {
     initAnalytics();
     initClarity();
   }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AudioProvider>
           <AtmosphereProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <WouterRouter base={routerBase}>
               <AppLayers />
               <Router />
               <AnalyticsTracker />
