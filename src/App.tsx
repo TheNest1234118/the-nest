@@ -41,10 +41,7 @@ import { WeatherLayer } from "@/components/WeatherLayer";
 import { initAnalytics, trackPage } from "@/lib/analytics";
 import { initClarity } from "@/lib/clarity";
 
-React.useEffect(() => {
-    initAnalytics();
-    initClarity();
-}, []);
+
 const queryClient = new QueryClient();
 function AnalyticsTracker() {
   const [location] = useLocation();
@@ -64,6 +61,7 @@ function Router() {
 <Route path="/profile/help" component={ProfileHelp} />
 <Route path="/profile/privacy" component={ProfilePrivacy} />
 <Route path="/profile/data" component={ProfileData} />
+<Route path="/profile/voice-prompts" component={ProfileVoicePrompts} />
       <Route path="/history/voice" component={VoiceHistory} />
       <Route path="/insights/weekly" component={WeeklyReflection} />
       <Route path="/insights/monthly" component={MonthlyReflection} />
@@ -107,9 +105,8 @@ function AppLayers() {
 function App() {
   React.useEffect(() => {
     trackNotificationOpenFromUrl();
-  }, []);
-  React.useEffect(() => {
     initAnalytics();
+    initClarity();
   }, []);
   return (
     <QueryClientProvider client={queryClient}>
