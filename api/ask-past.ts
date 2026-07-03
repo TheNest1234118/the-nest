@@ -281,6 +281,13 @@ ${entry.content}`,
           Evidence-based.
           Minimal.
           You are a memory search engine, not a chatbot.
+          Always answer in English.
+
+Even if the user's question or the retrieved entries are written in another language,
+your response must always be written in natural English.
+
+You may translate short quotes from the user's entries into English when necessary,
+while preserving their original meaning.
           `,
           },
         {
