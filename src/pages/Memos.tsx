@@ -57,7 +57,7 @@ const [transcriptionCount, setTranscriptionCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const MAX_RECORDING_SECONDS = 15 * 60;
   const [promptIntroOpen, setPromptIntroOpen] = useState(false);
-const [voicePrompts, setVoicePrompts] = useState(getEnabledVoicePrompts(4));
+  const [voicePrompts, setVoicePrompts] = useState<ReturnType<typeof getEnabledVoicePrompts>>([]);
 const [activePromptIndex, setActivePromptIndex] = useState(0);
   const CHUNK_SECONDS = 5 * 60;
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -74,6 +74,9 @@ const [search, setSearch] = useState("");
       setIsLoggedIn(Boolean(data.user));
       if (!data.user) setCreateTranscript(false);
     });
+  }, []);
+  useEffect(() => {
+    setVoicePrompts(getEnabledVoicePrompts(4));
   }, []);
   useEffect(() => {
     return () => {

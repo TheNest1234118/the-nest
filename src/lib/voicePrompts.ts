@@ -60,18 +60,22 @@ export type VoicePrompt = {
   
   export function loadVoicePrompts(): VoicePrompt[] {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      if (typeof window === "undefined") return DEFAULT_VOICE_PROMPTS;
+  
+      const saved = window.localStorage.getItem(STORAGE_KEY);
       if (!saved) return DEFAULT_VOICE_PROMPTS;
+  
       const parsed = JSON.parse(saved);
       if (!Array.isArray(parsed)) return DEFAULT_VOICE_PROMPTS;
+  
       return parsed;
     } catch {
       return DEFAULT_VOICE_PROMPTS;
     }
   }
-  
   export function saveVoicePrompts(prompts: VoicePrompt[]) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(prompts));
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(prompts));
   }
   
   export function resetVoicePrompts() {
