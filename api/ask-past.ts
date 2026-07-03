@@ -2,28 +2,17 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 
-export const config = {
-  maxDuration: 60,
-};
+export const config = { maxDuration: 60 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const authHeader = req.headers.authorization || "";
-    const token = authHeader.replace("Bearer ", "");
-
-    if (!token) {
-      return res.status(401).json({ error: "Please sign in first." });
-    }
+    const token = (req.headers.authorization || "").replace("Bearer ", "");
+    if (!token) return res.status(401).json({ error: "Please sign in first." });
 
     const question = String(req.body?.question || "").trim();
-
-    if (!question) {
-      return res.status(400).json({ error: "Missing question" });
-    }
+    if (!question) return res.status(400).json({ error: "Missing question" });
 
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
     const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -39,14 +28,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       global: { headers: { Authorization: `Bearer ${token}` } },
     });
 
-    const {
-      data: { user },
-      error: userError,
-    } = await authClient.auth.getUser(token);
-
-    if (userError || !user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+    const { data: { user }, error: userError } = await authClient.auth.getUser(token);
+    if (userError || !user) return res.status(401).json({ error: "Unauthorized" });
 
     const supabase = createClient(supabaseUrl, serviceKey);
     const openai = new OpenAI({ apiKey: openaiKey });
@@ -139,19 +122,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (finalEntries.length === 0) {
       return res.status(200).json({
-        answer: "I couldn’t find any saved thoughts, text anchors, or voice transcripts yet.",
+        answer: "I couldn’t find any saved memories yet.",
+        main_answer: "I couldn’t find any saved memories yet.",
+        reasons: [],
+        sources: [],
+        confidence: "low",
+        memory_count: 0,
         entries: [],
       });
     }
 
     const context = finalEntries
       .map((entry: any, index: number) => {
-        return `Entry ${index + 1}
-
-Source: ${entry.source_type}
+        return `Memory ${index + 1}
+Type: ${entry.source_type}
 Date: ${entry.content_created_at || "unknown"}
 Similarity: ${Math.round((entry.similarity ?? 0) * 100)}%
-
 Content:
 ${entry.content}`;
       })
@@ -159,109 +145,87 @@ ${entry.content}`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.35,
+      temperature: 0.25,
+      response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
           content: `
 You are Ask Your Past, a personal memory retrieval system.
 
-Your only job is to answer questions using the retrieved personal entries.
+Return valid JSON only.
 
-Never use outside knowledge.
+Goal:
+Make the answer instantly understandable for mobile users.
+Do not sound like a research report.
 
 Rules:
 - Always answer in English.
-- If retrieved entries are in another language, translate all excerpts and quotes into English.
-- Do not show original-language quotes unless the user explicitly asks for original wording.
-- Preserve the meaning of translated quotes.
-- Answer ONLY from the retrieved entries.
+- Translate all non-English quotes/excerpts into English.
+- Use only the retrieved memories.
 - Never invent facts.
-- Never guess.
-- Never hallucinate.
 - Never diagnose.
-- Never provide emotional support.
-- Never provide therapy.
-- Never provide motivational advice.
-- Never end answers with suggestions like "If you'd like to reflect more...", "I'm here for you.", or "Let me know if..."
-- If the retrieved evidence is insufficient, explicitly say so.
+- Never give therapy or motivational advice.
+- Keep everything short and visual.
+- Main answer must be maximum 1–2 short sentences.
+- Reasons must be 2–3 short bullets.
+- Sources must be short.
+- Do not use labels like "Answer:", "Found:", "Supporting entries:" inside text.
+- Confidence must be "high", "medium", or "low".
+- Confidence should depend on number and quality of matching memories.
 
-Your goal is to help the user find memories, not to behave like a therapist.
-
-Always use exactly this structure:
-
-Answer:
-A direct answer in 1–3 sentences.
-
-Found:
-Use bullet points.
-Mention concrete findings.
-Prefer:
-- counts
-- dates
-- source types
-- names
-- recurring patterns
-Only include findings supported by the retrieved entries.
-
-Supporting entries:
-List every retrieved entry you relied on.
-
-Each entry should contain:
-- source type
-- date
-- short excerpt translated into English, maximum 120 characters
-
-Uncertainty:
-Include ONLY if the evidence is weak, incomplete or conflicting.
-
-Sensitive topics:
-If sensitive topics exist inside the retrieved entries, summarize them factually.
-
-Never refuse because a topic is sensitive.
-Do not provide instructions.
-Do not provide advice.
-Do not encourage harmful behaviour.
-
-If there is no evidence, say:
-"I couldn't find evidence for this in your saved entries."
-
-Your personality:
-Precise.
-Grounded.
-Evidence-based.
-Minimal.
-You are a memory search engine, not a chatbot.
+Return exactly this JSON:
+{
+  "main_answer": "1-2 short sentences",
+  "reasons": ["short bullet", "short bullet"],
+  "sources": [
+    {
+      "date": "YYYY-MM-DD",
+      "type": "thought | memo | anchor",
+      "quote": "short translated quote"
+    }
+  ],
+  "confidence": "high | medium | low",
+  "memory_count": 2
+}
 `,
         },
         {
           role: "user",
           content: `
-Answer in English.
-
-If the saved entries are not English, translate any quoted evidence or excerpts into English.
-
 Question:
 ${question}
 
-Relevant saved entries:
+Retrieved memories:
 ${context}
 `,
         },
       ],
     });
 
-    const answer =
-      completion.choices[0]?.message?.content ||
-      "I found related entries, but couldn’t form a clear answer.";
+    const raw = completion.choices[0]?.message?.content || "{}";
+    const parsed = JSON.parse(raw);
+
+    const mainAnswer = parsed.main_answer || "I couldn’t find clear evidence for this.";
+    const reasons = Array.isArray(parsed.reasons) ? parsed.reasons.slice(0, 3) : [];
+    const sources = Array.isArray(parsed.sources) ? parsed.sources.slice(0, 5) : [];
+    const confidence = ["high", "medium", "low"].includes(parsed.confidence)
+      ? parsed.confidence
+      : finalEntries.length >= 4
+        ? "medium"
+        : "low";
 
     return res.status(200).json({
-      answer,
+      answer: mainAnswer,
+      main_answer: mainAnswer,
+      reasons,
+      sources,
+      confidence,
+      memory_count: parsed.memory_count || finalEntries.length,
       entries: finalEntries,
     });
   } catch (error: any) {
     console.error("ASK PAST ERROR:", error);
-
     return res.status(500).json({
       error: error.message || "Could not ask your past.",
     });
