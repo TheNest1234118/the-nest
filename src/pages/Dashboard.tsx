@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { saveThought } from "@/lib/userData";
-const [isInstalledApp, setIsInstalledApp] = useState(false);
 import { registerVisitForPwaPrompt } from "@/lib/pwa";
 import { AuthModal } from "@/components/AuthModal";
 import { supabase } from "@/lib/supabase";
@@ -888,11 +887,6 @@ export function Dashboard() {
 
   useEffect(() => {
     async function init() {
-      const standalone =
-  window.matchMedia("(display-mode: standalone)").matches ||
-  (window.navigator as any).standalone === true;
-
-setIsInstalledApp(standalone);
       registerVisitForPwaPrompt();
 
       const today = new Date().toISOString().slice(0, 10);
@@ -1052,48 +1046,20 @@ setIsInstalledApp(standalone);
   animate={{ opacity: 1, y: 0 }}
   transition={{ delay: 0.1, duration: 0.6 }}
 >
-{!isInstalledApp && (
-  <motion.section
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0.1, duration: 0.6 }}
-  >
-    <SoftCard onClick={() => setInstallGuideOpen(true)}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 14,
-        }}
-      >
-        <div>
-          <div
-            style={{
-              color: colors.text,
-              fontSize: 15,
-              marginBottom: 5,
-            }}
-          >
-            Add The Nest to your Home Screen
-          </div>
-
-          <div
-            style={{
-              color: colors.textSoft,
-              fontSize: 12,
-              lineHeight: 1.5,
-            }}
-          >
-            Install the app on iPhone, Android or Windows.
-          </div>
+  <SoftCard onClick={() => setInstallGuideOpen(true)}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+      <div>
+        <div style={{ color: colors.text, fontSize: 15, marginBottom: 5 }}>
+          Add The Nest to your Home Screen
         </div>
-
-        <ChevronRight size={18} color={colors.goldSoft} />
+        <div style={{ color: colors.textSoft, fontSize: 12, lineHeight: 1.5 }}>
+          Install the app on iPhone, Android or Windows.
+        </div>
       </div>
-    </SoftCard>
-  </motion.section>
-)}
+
+      <ChevronRight size={18} color={colors.goldSoft} />
+    </div>
+  </SoftCard>
 </motion.section>
         <motion.section
           initial={{ opacity: 0, y: 12 }}
