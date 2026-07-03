@@ -744,6 +744,11 @@ function ProfilePage({
 }) {
   const rows = [
     {
+      label: "Voice Prompts",
+      icon: <Mic size={18} />,
+      action: () => navigate("/profile/voice-prompts"),
+    },
+    {
       label: "Account",
       icon: <UserRound size={18} />,
       action: user ? onLogout : onLogin,

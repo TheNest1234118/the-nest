@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "wouter";
 import { getProfile } from "@/lib/subscription";
 import { motion } from "framer-motion";
+import { getEnabledVoicePrompts } from "@/lib/voicePrompts";
 import { supabase } from "@/lib/supabase";
 import {
   loadMemos,
@@ -55,6 +56,9 @@ const [transcriptionCount, setTranscriptionCount] = useState(0);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const MAX_RECORDING_SECONDS = 15 * 60;
+  const [promptIntroOpen, setPromptIntroOpen] = useState(false);
+const [voicePrompts, setVoicePrompts] = useState(getEnabledVoicePrompts(4));
+const [activePromptIndex, setActivePromptIndex] = useState(0);
   const CHUNK_SECONDS = 5 * 60;
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -509,6 +513,91 @@ const transcriptionLimitReached =
             justifyContent: "center",
           }}
         >
+          {promptIntroOpen && !isRecording && (
+  <div
+    style={{
+      marginBottom: 24,
+      background: "rgba(255,255,255,0.026)",
+      border: "1px solid rgba(255,255,255,0.065)",
+      borderRadius: 22,
+      padding: 22,
+    }}
+  >
+    <p
+      style={{
+        color: "rgba(205,170,100,0.46)",
+        fontSize: 10,
+        letterSpacing: ".16em",
+        textTransform: "uppercase",
+        marginBottom: 8,
+      }}
+    >
+      Guided Voice Prompts
+    </p>
+
+    <h2
+      style={{
+        fontFamily: "Georgia, serif",
+        color: "rgba(235,215,180,.92)",
+        fontWeight: 400,
+        fontSize: 24,
+        marginBottom: 8,
+      }}
+    >
+      Need a starting point?
+    </h2>
+
+    <p
+      style={{
+        color: "rgba(185,162,128,.52)",
+        fontSize: 13,
+        lineHeight: 1.6,
+        marginBottom: 18,
+      }}
+    >
+      These prompts are optional. They're simply here to help you capture what matters.
+    </p>
+
+    <div style={{ display: "grid", gap: 10 }}>
+      {voicePrompts.map((prompt) => (
+        <div
+          key={prompt.id}
+          style={{
+            background: "rgba(255,255,255,.025)",
+            border: "1px solid rgba(255,255,255,.055)",
+            borderRadius: 14,
+            padding: "12px 14px",
+            color: "rgba(225,210,188,.8)",
+            fontSize: 13,
+          }}
+        >
+          • {prompt.text}
+        </div>
+      ))}
+    </div>
+
+    <button
+      onClick={() => {
+        setPromptIntroOpen(false);
+        startRecording();
+      }}
+      style={{
+        width: "100%",
+        marginTop: 20,
+        border: "1px solid rgba(205,170,100,.18)",
+        background: "rgba(205,170,100,.08)",
+        borderRadius: 16,
+        padding: "14px",
+        color: "rgba(225,205,176,.82)",
+        letterSpacing: ".14em",
+        textTransform: "uppercase",
+        cursor: "pointer",
+      }}
+    >
+      Start Recording
+    </button>
+  </div>
+)}
           <input
   value={memoTitle}
   onChange={(e) => setMemoTitle(e.target.value)}
@@ -614,9 +703,83 @@ const transcriptionLimitReached =
   <br />
   For longer voice capsules, recording in ~10 minute parts helps keep your memories safe if your connection is interrupted.
 </p>
+{isRecording && voicePrompts.length > 0 && (
+  <div
+    style={{
+      marginBottom: 18,
+      textAlign: "center",
+    }}
+  >
+    <p
+      style={{
+        color: "rgba(205,170,100,.46)",
+        fontSize: 10,
+        letterSpacing: ".16em",
+        textTransform: "uppercase",
+      }}
+    >
+      Prompt
+    </p>
+
+    <h3
+      style={{
+        marginTop: 8,
+        color: "rgba(235,215,180,.88)",
+        fontWeight: 400,
+        fontSize: 20,
+        fontFamily: "Georgia, serif",
+      }}
+    >
+      {voicePrompts[activePromptIndex]?.text}
+    </h3>
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        gap: 10,
+        marginTop: 18,
+      }}
+    >
+      <button
+        onClick={() =>
+          setActivePromptIndex((i) =>
+            Math.min(i + 1, voicePrompts.length - 1)
+          )
+        }
+      >
+        Next Prompt
+      </button>
+
+      <button
+        onClick={() =>
+          setActivePromptIndex((i) =>
+            Math.min(i + 1, voicePrompts.length - 1)
+          )
+        }
+      >
+        Skip
+      </button>
+    </div>
+  </div>
+)}
           <button
             data-testid="button-record-toggle"
-            onClick={isSaving ? undefined : isRecording ? stopRecording : startRecording}
+            onClick={() => {
+              if (isSaving) return;
+            
+              if (isRecording) {
+                stopRecording();
+                return;
+              }
+            
+              if (voicePrompts.length > 0) {
+                setPromptIntroOpen(true);
+                return;
+              }
+            
+              startRecording();
+            }}
             style={{
               width: 82,
               height: 82,
