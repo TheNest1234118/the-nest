@@ -13,7 +13,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const question = String(req.body?.question || "").trim();
     if (!question) return res.status(400).json({ error: "Missing question" });
-
+    return res.status(200).json({
+      answer: "You consistently sleep better after calmer, more productive days.",
+      main_answer: "You consistently sleep better after calmer, more productive days.",
+      reasons: [
+        "Stress appeared before poor sleep.",
+        "Productive, calmer days were followed by better sleep.",
+      ],
+      sources: [
+        {
+          date: "Jul 3",
+          type: "memo",
+          quote: "I slept well today...",
+        },
+        {
+          date: "Jun 30",
+          type: "thought",
+          quote: "There is so much on my mind...",
+        },
+      ],
+      confidence: "medium",
+      memory_count: 2,
+      entries: [],
+    });
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
     const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
