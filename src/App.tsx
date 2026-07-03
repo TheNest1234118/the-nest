@@ -64,7 +64,6 @@ function Router() {
 <Route path="/profile/help" component={ProfileHelp} />
 <Route path="/profile/privacy" component={ProfilePrivacy} />
 <Route path="/profile/data" component={ProfileData} />
-<Route path="/profile/voice-prompts" component={ProfileVoicePrompts} />
       <Route path="/history/voice" component={VoiceHistory} />
       <Route path="/insights/weekly" component={WeeklyReflection} />
       <Route path="/insights/monthly" component={MonthlyReflection} />
