@@ -37,9 +37,23 @@ import { AtmosphereProvider } from "@/hooks/use-atmosphere";
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { HeartBackground } from "@/components/HeartBackground";
 import { WeatherLayer } from "@/components/WeatherLayer";
+import { initAnalytics, trackPage } from "@/lib/analytics";
+import { initClarity } from "@/lib/clarity";
 
+React.useEffect(() => {
+    initAnalytics();
+    initClarity();
+}, []);
 const queryClient = new QueryClient();
+function AnalyticsTracker() {
+  const [location] = useLocation();
 
+  React.useEffect(() => {
+    trackPage(location);
+  }, [location]);
+
+  return null;
+}
 function Router() {
   return (
     <Switch>
@@ -93,7 +107,9 @@ function App() {
   React.useEffect(() => {
     trackNotificationOpenFromUrl();
   }, []);
-
+  React.useEffect(() => {
+    initAnalytics();
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -102,6 +118,7 @@ function App() {
             <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
               <AppLayers />
               <Router />
+              <AnalyticsTracker />
               <MiniPlayer />
               <PwaInstallFlow />
             </WouterRouter>

@@ -82,10 +82,12 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@microsoft/clarity": "^1.0.2",
     "@supabase/supabase-js": "^2.108.1",
     "@vercel/analytics": "^2.0.1",
     "@vercel/node": "^5.8.14",
     "openai": "^6.42.0",
+    "react-ga4": "^3.0.1",
     "react-onesignal": "^3.5.5",
     "stripe": "^22.2.2",
     "ws": "^8.21.0"

@@ -98,8 +98,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       {
         query_embedding: queryEmbedding,
         match_user_id: user.id,
-        match_count: 12,
-        match_threshold: 0.2,
+        match_count: 20,
+        match_threshold: 0.05,
       }
     );
 
@@ -205,7 +205,10 @@ ${entry.content}`,
           Never use outside knowledge.
           
           Rules:
-          
+          - Always answer in the same language as the user's question.
+- This applies to every language.
+- Do not force English.
+- Translate section labels like "Answer", "Found", "Supporting entries" and "Uncertainty" into the user's language.
           - Answer ONLY from the retrieved entries.
           - Never invent facts.
           - Never guess.
@@ -269,11 +272,7 @@ ${entry.content}`,
           Do not provide instructions.
           Do not provide advice.
           Do not encourage harmful behaviour.
-          
-          If there is no evidence,
-          say:
-          
-          "I couldn't find evidence for this in your saved entries."
+          If there is no evidence, say this in the same language as the user's question.
           
           Your personality:
           
@@ -286,14 +285,22 @@ ${entry.content}`,
           },
         {
           role: "user",
-          content: `Question:\n${question}\n\nRelevant saved entries:\n${context}`,
+          content: `
+          Answer in the same language as the question.
+          
+          Question:
+          ${question}
+          
+          Relevant saved entries:
+          ${context}
+          `,
         },
       ],
     });
 
     const answer =
-      completion.choices[0]?.message?.content ||
-      "I found related entries, but couldn’t form a clear answer.";
+    completion.choices[0]?.message?.content ||
+    "I found related entries, but couldn’t form a clear answer.";
 
     return res.status(200).json({
       answer,

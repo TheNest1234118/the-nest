@@ -832,6 +832,7 @@ export function Dashboard() {
   const [captureOpen, setCaptureOpen] = useState(false);
   const [historySearch, setHistorySearch] = useState("");
   const [historyFilter, setHistoryFilter] = useState("");
+  const [installGuideOpen, setInstallGuideOpen] = useState(false);
   const historyItems: HistoryItem[] = [
     {
       id: "voice-latest",
@@ -1033,7 +1034,28 @@ export function Dashboard() {
         </motion.header>
 
         {activeTab === "home" && (
+          
           <>
+          <motion.section
+  initial={{ opacity: 0, y: 10 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.1, duration: 0.6 }}
+>
+  <SoftCard onClick={() => setInstallGuideOpen(true)}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+      <div>
+        <div style={{ color: colors.text, fontSize: 15, marginBottom: 5 }}>
+          Add The Nest to your Home Screen
+        </div>
+        <div style={{ color: colors.textSoft, fontSize: 12, lineHeight: 1.5 }}>
+          Install the app on iPhone, Android or Windows.
+        </div>
+      </div>
+
+      <ChevronRight size={18} color={colors.goldSoft} />
+    </div>
+  </SoftCard>
+</motion.section>
         <motion.section
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1596,11 +1618,41 @@ export function Dashboard() {
         </CalmModal>
       )}
 
-      <AuthModal
-        open={authOpen}
-        onClose={() => setAuthOpen(false)}
-        onSuccess={() => setAuthOpen(false)}
-      />
+{installGuideOpen && (
+  <CalmModal>
+    <p style={modalEyebrow}>Install The Nest</p>
+    <h2 style={modalTitle}>Add it to your Home Screen.</h2>
+
+    <p style={modalText}>
+      <strong>iPhone</strong>
+      <br />
+      Open The Nest in Safari → tap Share → Add to Home Screen.
+      <br />
+      <br />
+      <strong>Android</strong>
+      <br />
+      Open The Nest in Chrome → tap ⋮ → Add to Home screen or Install app.
+      <br />
+      <br />
+      <strong>Windows</strong>
+      <br />
+      Open The Nest in Edge or Chrome → tap install icon in the address bar → Install.
+    </p>
+
+    <button
+      onClick={() => setInstallGuideOpen(false)}
+      style={{ ...modalButton, color: "rgba(205,170,100,0.76)" }}
+    >
+      Done
+    </button>
+  </CalmModal>
+)}
+
+<AuthModal
+  open={authOpen}
+  onClose={() => setAuthOpen(false)}
+  onSuccess={() => setAuthOpen(false)}
+/>
     </motion.div>
   );
 }
