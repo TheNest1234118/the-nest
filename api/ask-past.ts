@@ -2,40 +2,29 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 
-export const config = { maxDuration: 60 };
+export const config = {
+  maxDuration: 60,
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
   try {
-    const token = (req.headers.authorization || "").replace("Bearer ", "");
-    if (!token) return res.status(401).json({ error: "Please sign in first." });
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.replace("Bearer ", "");
+
+    if (!token) {
+      return res.status(401).json({ error: "Please sign in first." });
+    }
 
     const question = String(req.body?.question || "").trim();
-    if (!question) return res.status(400).json({ error: "Missing question" });
-    return res.status(200).json({
-      answer: "You consistently sleep better after calmer, more productive days.",
-      main_answer: "You consistently sleep better after calmer, more productive days.",
-      reasons: [
-        "Stress appeared before poor sleep.",
-        "Productive, calmer days were followed by better sleep.",
-      ],
-      sources: [
-        {
-          date: "Jul 3",
-          type: "memo",
-          quote: "I slept well today...",
-        },
-        {
-          date: "Jun 30",
-          type: "thought",
-          quote: "There is so much on my mind...",
-        },
-      ],
-      confidence: "medium",
-      memory_count: 2,
-      entries: [],
-    });
+
+    if (!question) {
+      return res.status(400).json({ error: "Missing question" });
+    }
+
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
     const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -47,11 +36,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!openaiKey) return res.status(500).json({ error: "OPENAI_API_KEY missing" });
 
     const authClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
     });
 
-    const { data: { user }, error: userError } = await authClient.auth.getUser(token);
-    if (userError || !user) return res.status(401).json({ error: "Unauthorized" });
+    const {
+      data: { user },
+      error: userError,
+    } = await authClient.auth.getUser(token);
+
+    if (userError || !user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
     const supabase = createClient(supabaseUrl, serviceKey);
     const openai = new OpenAI({ apiKey: openaiKey });
@@ -74,7 +73,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     const queryEmbedding = embeddingResponse.data[0]?.embedding;
-    if (!queryEmbedding) throw new Error("Could not create question embedding");
+
+    if (!queryEmbedding) {
+      throw new Error("Could not create question embedding");
+    }
 
     const { data: matches, error: matchError } = await supabase.rpc(
       "match_memory_embeddings",
@@ -96,7 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .select("id, text, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(60);
+        .limit(20);
 
       const { data: anchors } = await supabase
         .from("anchors")
@@ -104,7 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq("user_id", user.id)
         .eq("type", "text")
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(10);
 
       const { data: memos } = await supabase
         .from("memos")
@@ -112,7 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq("user_id", user.id)
         .not("transcript_text", "is", null)
         .order("created_at", { ascending: false })
-        .limit(30);
+        .limit(10);
 
       finalEntries = [
         ...(thoughts || []).map((t: any) => ({
@@ -144,22 +146,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (finalEntries.length === 0) {
       return res.status(200).json({
-        answer: "I couldn’t find any saved memories yet.",
-        main_answer: "I couldn’t find any saved memories yet.",
-        reasons: [],
-        sources: [],
-        confidence: "low",
-        memory_count: 0,
+        answer: "I couldn’t find any saved thoughts, text anchors, or voice transcripts yet.",
         entries: [],
       });
     }
 
     const context = finalEntries
       .map((entry: any, index: number) => {
-        return `Memory ${index + 1}
-Type: ${entry.source_type}
+        return `Entry ${index + 1}
+
+Source: ${entry.source_type}
 Date: ${entry.content_created_at || "unknown"}
 Similarity: ${Math.round((entry.similarity ?? 0) * 100)}%
+
 Content:
 ${entry.content}`;
       })
@@ -167,87 +166,106 @@ ${entry.content}`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.25,
-      response_format: { type: "json_object" },
+      temperature: 0.35,
       messages: [
         {
           role: "system",
           content: `
 You are Ask Your Past, a personal memory retrieval system.
 
-Return valid JSON only.
+Your only job is to answer questions using the retrieved personal entries.
 
-Goal:
-Make the answer instantly understandable for mobile users.
-Do not sound like a research report.
+Never use outside knowledge.
 
 Rules:
-- Always answer in English.
-- Translate all non-English quotes/excerpts into English.
-- Use only the retrieved memories.
+- Always answer in the same language as the user's question.
+- This applies to every language.
+- Do not force English.
+- Translate section labels like "Answer", "Found", "Supporting entries" and "Uncertainty" into the user's language.
+- Answer ONLY from the retrieved entries.
 - Never invent facts.
+- Never guess.
+- Never hallucinate.
 - Never diagnose.
-- Never give therapy or motivational advice.
-- Keep everything short and visual.
-- Main answer must be maximum 1–2 short sentences.
-- Reasons must be 2–3 short bullets.
-- Sources must be short.
-- Do not use labels like "Answer:", "Found:", "Supporting entries:" inside text.
-- Confidence must be "high", "medium", or "low".
-- Confidence should depend on number and quality of matching memories.
+- Never provide emotional support.
+- Never provide therapy.
+- Never provide motivational advice.
+- Never end answers with suggestions like "If you'd like to reflect more...", "I'm here for you.", or "Let me know if..."
+- If the retrieved evidence is insufficient, explicitly say so.
 
-Return exactly this JSON:
-{
-  "main_answer": "1-2 short sentences",
-  "reasons": ["short bullet", "short bullet"],
-  "sources": [
-    {
-      "date": "YYYY-MM-DD",
-      "type": "thought | memo | anchor",
-      "quote": "short translated quote"
-    }
-  ],
-  "confidence": "high | medium | low",
-  "memory_count": 2
-}
+Your goal is to help the user find memories, not to behave like a therapist.
+
+Always use exactly this structure:
+
+Answer:
+A direct answer in 1–3 sentences.
+
+Found:
+Use bullet points.
+Mention concrete findings.
+Prefer:
+- counts
+- dates
+- source types
+- names
+- recurring patterns
+Only include findings supported by the retrieved entries.
+
+Supporting entries:
+List every retrieved entry you relied on.
+
+Each entry should contain:
+- source type
+- date
+- short excerpt maximum 120 characters
+
+Uncertainty:
+Include ONLY if the evidence is weak, incomplete or conflicting.
+
+Sensitive topics:
+If sensitive topics exist inside the retrieved entries, summarize them factually.
+
+Never refuse because a topic is sensitive.
+Do not provide instructions.
+Do not provide advice.
+Do not encourage harmful behaviour.
+
+If there is no evidence, say this in the same language as the user's question.
+
+Your personality:
+Precise.
+Grounded.
+Evidence-based.
+Minimal.
+You are a memory search engine, not a chatbot.
 `,
         },
         {
           role: "user",
           content: `
+Answer in the same language as the question.
+
 Question:
 ${question}
 
-Retrieved memories:
+Relevant saved entries:
 ${context}
 `,
         },
       ],
     });
 
-    const raw = completion.choices[0]?.message?.content || "{}";
-    const parsed = JSON.parse(raw);
-
-    const mainAnswer = parsed.main_answer || "I couldn’t find clear evidence for this.";
-    const reasons = Array.isArray(parsed.reasons) ? parsed.reasons.slice(0, 3) : [];
-    const sources = Array.isArray(parsed.sources) ? parsed.sources.slice(0, 5) : [];
-    const confidence = ["high", "medium", "low"].includes(parsed.confidence)
-      ? parsed.confidence
-      : finalEntries.length >= 4
-        ? "medium"
-        : "low";
+    const answer =
+      completion.choices[0]?.message?.content ||
+      "I found related entries, but couldn’t form a clear answer.";
 
     return res.status(200).json({
-      answer: mainAnswer,
-      main_answer: mainAnswer,
-      reasons,
-      sources,
-      confidence,
-      memory_count: parsed.memory_count || finalEntries.length,
+      answer,
       entries: finalEntries,
     });
   } catch (error: any) {
     console.error("ASK PAST ERROR:", error);
+
     return res.status(500).json({
       error: error.message || "Could not ask your past.",
     });
