@@ -1,30 +1,30 @@
 import React from "react";
+import { Switch, Route, Router as WouterRouter } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
+
+import NotFound from "@/pages/not-found";
+import { Landing } from "@/pages/Landing";
+import { Onboarding } from "@/pages/Onboarding";
+import { Dashboard } from "@/pages/Dashboard";
 import { Rituals } from "@/pages/Rituals";
 import { RitualPlayer } from "@/pages/RitualPlayer";
-import { Analytics } from "@vercel/analytics/react";
 import { AIPatterns } from "@/pages/AIPatterns";
 import { ProfilePremium } from "@/pages/ProfilePremium";
 import { ProfileNotifications } from "@/pages/ProfileNotifications";
 import { ProfileHelp } from "@/pages/ProfileHelp";
 import { ProfilePrivacy } from "@/pages/ProfilePrivacy";
 import { ProfileData } from "@/pages/ProfileData";
+import { ProfileVoicePrompts } from "@/pages/ProfileVoicePrompts";
 import { AskPast } from "@/pages/AskPast";
 import { WeeklyReflection } from "@/pages/WeeklyReflection";
 import { MonthlyReflection } from "@/pages/MonthlyReflection";
 import { VoiceHistory } from "@/pages/VoiceHistory";
 import { ThoughtHistory } from "@/pages/ThoughtHistory";
-import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
 import { Reflections } from "@/pages/Reflections";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { MoodLog } from "@/pages/MoodLog";
-import { trackNotificationOpenFromUrl } from "@/lib/notifications";
-import NotFound from "@/pages/not-found";
-import { Landing } from "@/pages/Landing";
-import { PwaInstallFlow } from "@/components/PwaInstallFlow";
-import { Onboarding } from "@/pages/Onboarding";
-import { Dashboard } from "@/pages/Dashboard";
 import { Nest } from "@/pages/Nest";
 import { Thoughts } from "@/pages/Thoughts";
 import { Reset } from "@/pages/Reset";
@@ -32,14 +32,6 @@ import { Anchors } from "@/pages/Anchors";
 import { Memos } from "@/pages/Memos";
 import { Atmosphere } from "@/pages/Atmosphere";
 import { Settings } from "@/pages/Settings";
-import { AudioProvider } from "@/hooks/use-audio-context";
-import { AtmosphereProvider } from "@/hooks/use-atmosphere";
-import { MiniPlayer } from "@/components/MiniPlayer";
-import { HeartBackground } from "@/components/HeartBackground";
-import { ProfileVoicePrompts } from "@/pages/ProfileVoicePrompts";
-import { WeatherLayer } from "@/components/WeatherLayer";
-import { initAnalytics, trackPage } from "@/lib/analytics";
-import { initClarity } from "@/lib/clarity";
 
 const queryClient = new QueryClient();
 
@@ -48,17 +40,12 @@ const routerBase =
     ? undefined
     : import.meta.env.BASE_URL.replace(/\/$/, "");
 
-function AnalyticsTracker() {
-  const [location] = useLocation();
-
-
-  return null;
-}
-
-function Router() {
+function AppRouter() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+      <Route path="/onboarding" component={Onboarding} />
+      <Route path="/home" component={Dashboard} />
 
       <Route path="/profile/premium" component={ProfilePremium} />
       <Route path="/profile/notifications" component={ProfileNotifications} />
@@ -77,8 +64,6 @@ function Router() {
       <Route path="/rituals" component={Rituals} />
       <Route path="/rituals/:id" component={RitualPlayer} />
 
-      <Route path="/onboarding" component={Onboarding} />
-      <Route path="/home" component={Dashboard} />
       <Route path="/ask-past" component={AskPast} />
       <Route path="/mood-log" component={MoodLog} />
       <Route path="/nest" component={Nest} />
@@ -95,46 +80,15 @@ function Router() {
   );
 }
 
-function AppLayers() {
-  const [location] = useLocation();
-
-  const heavyEffectsAllowed =
-    location !== "/" && location !== "/onboarding";
-
-  if (!heavyEffectsAllowed) return null;
-
-  return (
-    <>
-      <HeartBackground />
-      <WeatherLayer />
-    </>
-  );
-}
-
 function App() {
-  React.useEffect(() => {
-    trackNotificationOpenFromUrl();
-    initAnalytics();
-    initClarity();
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AudioProvider>
-          <AtmosphereProvider>
-            <WouterRouter base={routerBase}>
-              <AppLayers />
-              <Router />
-              <AnalyticsTracker />
-              <MiniPlayer />
-              <PwaInstallFlow />
-            </WouterRouter>
+        <WouterRouter base={routerBase}>
+          <AppRouter />
+        </WouterRouter>
 
-            <Toaster />
-            <Analytics />
-          </AtmosphereProvider>
-        </AudioProvider>
+        <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
   );
