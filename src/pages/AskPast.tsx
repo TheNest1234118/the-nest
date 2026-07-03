@@ -13,13 +13,46 @@ const EXAMPLES = [
   "What did I say about work?",
   "What patterns do you notice in my past thoughts?",
 ];
+const heroAnswerStyle: React.CSSProperties = {
+  fontFamily: "Georgia, 'Times New Roman', serif",
+  fontSize: 24,
+  lineHeight: 1.25,
+  fontWeight: 400,
+  color: "rgba(235,215,180,0.94)",
+  margin: "8px 0 10px",
+};
 
+const basedOnStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: "rgba(185,162,128,0.48)",
+  marginBottom: 0,
+};
+
+const bulletStyle: React.CSSProperties = {
+  fontSize: 13,
+  lineHeight: 1.55,
+  color: "rgba(220,205,182,0.72)",
+  margin: "6px 0",
+};
+
+const sourceToggleStyle: React.CSSProperties = {
+  marginTop: 16,
+  background: "none",
+  border: "1px solid rgba(205,170,100,0.14)",
+  borderRadius: 999,
+  padding: "10px 14px",
+  color: "rgba(205,170,100,0.72)",
+  fontSize: 11,
+  letterSpacing: "0.12em",
+  textTransform: "uppercase",
+  cursor: "pointer",
+};
 export function AskPast() {
   const [question, setQuestion] = useState("");
   const [plan, setPlan] = useState<"free" | "supporter">("free");
   const [checkingPlan, setCheckingPlan] = useState(true);
-  const [answer, setAnswer] = useState<string | null>(null);
-  const [entries, setEntries] = useState<AskPastEntry[]>([]);
+  const [result, setResult] = useState<any | null>(null);
+  const [showSources, setShowSources] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,13 +81,12 @@ export function AskPast() {
     setQuestion(finalQuestion);
     setLoading(true);
     setError(null);
-    setAnswer(null);
-    setEntries([]);
+    setResult(null);
+    setShowSources(false);
 
     try {
       const result = await askPast(finalQuestion);
-      setAnswer(result.answer);
-      setEntries(result.entries || []);
+      setResult(result);
 
       const {
         data: { user },
@@ -142,40 +174,45 @@ export function AskPast() {
 
       {error && <p style={errorStyle}>{error}</p>}
 
-      {answer && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={answerCardStyle}>
-          <p style={sectionLabelStyle}>Answer</p>
-          <p style={answerTextStyle}>{answer}</p>
-        </motion.div>
-      )}
+      {result && (
+  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={answerCardStyle}>
+    <p style={sectionLabelStyle}>Answer Found</p>
 
-      {entries.length > 0 && (
-        <div style={{ marginTop: 22 }}>
-          <p style={sectionLabelStyle}>Supporting entries</p>
+    <h2 style={heroAnswerStyle}>{result.main_answer || result.answer}</h2>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {entries.map((entry) => (
-              <div key={entry.id} style={entryCardStyle}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
-                  <span style={entryTypeStyle}>{entry.source_type}</span>
-                  <span style={entryDateStyle}>
-                    {entry.content_created_at
-                      ? new Date(entry.content_created_at).toLocaleDateString()
-                      : ""}
-                  </span>
-                </div>
+    <p style={basedOnStyle}>
+      Based on {result.memory_count || 0} memories · {result.confidence || "medium"} confidence
+    </p>
 
-                <p style={entryContentStyle}>
-                  {entry.content.length > 320
-                    ? `${entry.content.slice(0, 320)}...`
-                    : entry.content}
-                </p>
+    {result.reasons?.length > 0 && (
+      <>
+        <p style={{ ...sectionLabelStyle, marginTop: 18 }}>Evidence</p>
+        {result.reasons.map((reason: string) => (
+          <p key={reason} style={bulletStyle}>• {reason}</p>
+        ))}
+      </>
+    )}
+
+    {result.sources?.length > 0 && (
+      <>
+        <button onClick={() => setShowSources((v) => !v)} style={sourceToggleStyle}>
+          {showSources ? "Hide sources" : "Show sources"}
+        </button>
+
+        {showSources && (
+          <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+            {result.sources.map((source: any, i: number) => (
+              <div key={i} style={entryCardStyle}>
+                <div style={entryDateStyle}>{source.date} — {source.type}</div>
+                <p style={entryContentStyle}>“{source.quote}”</p>
               </div>
             ))}
           </div>
-        </div>
-      )}
-
+        )}
+      </>
+    )}
+  </motion.div>
+)}
       {history.length > 0 && (
         <div style={{ marginTop: 34 }}>
           <p style={sectionLabelStyle}>History</p>
