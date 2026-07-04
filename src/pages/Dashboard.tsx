@@ -46,7 +46,6 @@ type DashboardMoodKey =
   | "frustrated"
   | "foggy"
   | "motivated";
-  const [isStandalone, setIsStandalone] = useState(false);
 
   
 const MOODS: { key: DashboardMoodKey; label: string }[] = [
@@ -828,6 +827,8 @@ function ProfilePage({
 export function Dashboard() {
   const [, navigate] = useLocation();
   const [authOpen, setAuthOpen] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
   const [user, setUser] = useState<User | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
@@ -891,6 +892,7 @@ export function Dashboard() {
       setQuickSaving(false);
     }
   };
+
   useEffect(() => {
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
