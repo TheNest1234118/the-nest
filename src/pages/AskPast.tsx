@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { getProfile } from "@/lib/subscription";
 import { supabase } from "@/lib/supabase";
+import { trackNestEvent, events } from "@/lib/analyticsEvents";
 import { UpgradeScreen } from "@/components/UpgradeScreen";
 import { ChevronLeft, Search } from "lucide-react";
 import { askPast, type AskPastEntry } from "@/lib/askPast";
@@ -34,17 +35,21 @@ export function AskPast() {
   };
 
   useEffect(() => {
+
+    trackNestEvent(events.opened_ask_past);
+  
     getProfile()
       .then((profile) => setPlan(profile?.plan || "free"))
       .finally(() => setCheckingPlan(false));
-
+  
     loadHistory().catch(console.error);
+  
   }, []);
 
   const submit = async (q?: string) => {
     const finalQuestion = (q || question).trim();
     if (!finalQuestion) return;
-
+    trackNestEvent(events.asked_past_question);
     setQuestion(finalQuestion);
     setLoading(true);
     setError(null);
@@ -133,7 +138,10 @@ export function AskPast() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {EXAMPLES.map((example) => (
-            <button key={example} onClick={() => submit(example)} style={exampleButtonStyle}>
+            <button key={example} onClick={() => {
+              trackNestEvent(events.clicked_ask_past_example);
+              submit(example);
+            }} style={exampleButtonStyle}>
               {example}
             </button>
           ))}

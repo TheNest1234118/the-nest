@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
+import { trackNestEvent, events } from "@/lib/analyticsEvents";
 
 const REASONS = [
   { emoji: "🧠", label: "My mind feels constantly busy" },
@@ -34,11 +35,17 @@ export function Onboarding() {
   const [reasons, setReasons] = useState<string[]>([]);
 
   useEffect(() => {
-    const completed = localStorage.getItem(DONE_KEY) === "true";
 
+    trackNestEvent(events.onboarding_step, {
+      step: "welcome",
+    });
+  
+    const completed = localStorage.getItem(DONE_KEY) === "true";
+  
     if (completed) {
       navigate("/home");
     }
+  
   }, [navigate]);
 
   const progress = useMemo(() => ((index + 1) / 2) * 100, [index]);
@@ -53,6 +60,7 @@ export function Onboarding() {
   };
 
   const finishGuide = async () => {
+    trackNestEvent(events.completed_onboarding);
     const deviceId = getOrCreateDeviceId();
 
     savePartial({
@@ -86,11 +94,20 @@ export function Onboarding() {
   };
 
   const next = () => {
-    savePartial();
-    setIndex((current) => current + 1);
-  };
 
+    trackNestEvent(events.onboarding_step, {
+      step: "why_are_you_here",
+    });
+  
+    savePartial();
+  
+    setIndex((current) => current + 1);
+  
+  };
   const toggleReason = (reason: string) => {
+    trackNestEvent(events.onboarding_step, {
+      selected_reason: reason,
+    });
     setReasons((current) => {
       const nextReasons = current.includes(reason)
         ? current.filter((item) => item !== reason)

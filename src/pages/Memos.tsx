@@ -130,7 +130,9 @@ const [search, setSearch] = useState("");
   }, [memos]);
   const startRecording = async () => {
     setError(null);
-
+    trackNestEvent(events.started_recording, {
+      prompt_enabled: voicePrompts.length > 0,
+    });
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -262,7 +264,10 @@ setIsRecording(false);
     try {
       recorder.requestData();
     } catch (_) {}
-  
+    trackNestEvent(events.finished_recording, {
+      seconds: recordingTime,
+      prompt_enabled: voicePrompts.length > 0,
+    });
     recorder.stop();
   }, []);
 
@@ -311,6 +316,9 @@ setIsRecording(false);
   );
 
   const deleteMemo = async (id: string) => {
+
+    trackNestEvent(events.deleted_recording);
+  
     if (playingId === id) {
       audioRef.current?.pause();
       setPlayingId(null);
@@ -745,25 +753,29 @@ const transcriptionLimitReached =
         marginTop: 18,
       }}
     >
-      <button
-        onClick={() =>
-          setActivePromptIndex((i) =>
-            Math.min(i + 1, voicePrompts.length - 1)
-          )
-        }
-      >
-        Next Prompt
-      </button>
+     <button
+  onClick={() => {
+    trackNestEvent(events.changed_voice_prompt);
 
-      <button
-        onClick={() =>
-          setActivePromptIndex((i) =>
-            Math.min(i + 1, voicePrompts.length - 1)
-          )
-        }
-      >
-        Skip
-      </button>
+    setActivePromptIndex((i) =>
+      Math.min(i + 1, voicePrompts.length - 1)
+    );
+  }}
+>
+  Next Prompt
+</button>
+
+<button
+  onClick={() => {
+    trackNestEvent(events.changed_voice_prompt);
+
+    setActivePromptIndex((i) =>
+      Math.min(i + 1, voicePrompts.length - 1)
+    );
+  }}
+>
+  Skip
+</button>
     </div>
   </div>
 )}

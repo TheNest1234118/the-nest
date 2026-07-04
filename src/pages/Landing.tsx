@@ -2,17 +2,22 @@
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import React, { useEffect } from "react";
+import { trackNestEvent, events } from "@/lib/analyticsEvents";
 
 
 export function Landing() {
   const [, navigate] = useLocation();
   useEffect(() => {
+
+    trackNestEvent(events.landing_view);
+  
     const completed =
       localStorage.getItem("nest_guide_completed") === "true";
   
     if (completed) {
       navigate("/home");
     }
+  
   }, [navigate]);
 
   return (
@@ -110,7 +115,13 @@ export function Landing() {
         </p>
 
         <motion.button
-         onClick={() => navigate("/onboarding")}
+        onClick={() => {
+
+          trackNestEvent(events.landing_enter_clicked);
+        
+          navigate("/onboarding");
+        
+        }}
           whileHover={{ opacity: 1 }}
           whileTap={{ scale: 0.97 }}
           style={{

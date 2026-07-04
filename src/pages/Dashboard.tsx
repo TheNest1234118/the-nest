@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { loadMemos, type SupabaseMemo } from "@/lib/memos";
 import { motion } from "framer-motion";
+import { trackNestEvent, events } from "@/lib/analyticsEvents";
 import { saveThought } from "@/lib/userData";
 import { registerVisitForPwaPrompt } from "@/lib/pwa";
 import { AuthModal } from "@/components/AuthModal";
@@ -425,7 +426,16 @@ function BottomNav({
         <Plus size={31} strokeWidth={1.55} />
       </motion.button>
 
-      <button onClick={() => setActiveTab("insights")} style={itemStyle(activeTab === "insights")}>
+      <button
+  onClick={() => {
+
+    trackNestEvent(events.opened_insights);
+
+    setActiveTab("insights");
+
+  }}
+  style={itemStyle(activeTab === "insights")}
+>
         <BarChart3 size={20} strokeWidth={1.45} />
         <span>Insights</span>
       </button>
@@ -700,10 +710,26 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         {insights.map((item) => (
-          <SoftCard
-            key={item.title}
-            onClick={item.enabled ? () => navigate(item.path) : undefined}
-          >
+         <SoftCard
+         key={item.title}
+         onClick={
+           item.enabled
+             ? () => {
+     
+                 if (item.title === "AI Patterns") {
+                   trackNestEvent(events.opened_ai_patterns);
+                 }
+     
+                 if (item.title === "Weekly Reflection") {
+                   trackNestEvent(events.opened_weekly_reflection);
+                 }
+     
+                 navigate(item.path);
+     
+               }
+             : undefined
+         }
+     >
             <div
               style={{
                 minHeight: 82,
@@ -1473,7 +1499,7 @@ export function Dashboard() {
         {activeTab === "profile" && (
           <ProfilePage
             user={user}
-            onLogin={() => setAuthOpen(true)}
+            onLogin={() =>  setAuthOpen(true)}
             onLogout={handleLogout}
             navigate={navigate}
           />
@@ -1516,6 +1542,8 @@ export function Dashboard() {
             onClick={() => {
               localStorage.setItem("nest_welcome_seen", "true");
               setWelcomeOpen(false);
+              trackNestEvent(events.opened_signup);
+
               setAuthOpen(true);
             }}
             style={{ ...modalButton, color: "rgba(205,170,100,0.76)" }}
@@ -1677,7 +1705,10 @@ export function Dashboard() {
 <AuthModal
   open={authOpen}
   onClose={() => setAuthOpen(false)}
-  onSuccess={() => setAuthOpen(false)}
+  onSuccess={() => {
+    trackNestEvent(events.created_account);
+    setAuthOpen(false);
+  }}
 />
     </motion.div>
   );
