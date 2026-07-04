@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { AudioProvider } from "@/hooks/use-audio-context";
+import { initClarity } from "@/lib/clarity";
 import { AtmosphereProvider } from "@/hooks/use-atmosphere";
 import NotFound from "@/pages/not-found";
 import { Landing } from "@/pages/Landing";
@@ -81,6 +82,10 @@ function AppRouter() {
   );
 }
 function App() {
+  React.useEffect(() => {
+    initClarity();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

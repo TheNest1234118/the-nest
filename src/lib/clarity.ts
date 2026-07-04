@@ -1,5 +1,12 @@
-import clarity from "@microsoft/clarity";
+import Clarity from "@microsoft/clarity";
 
 export function initClarity() {
-  clarity.init(import.meta.env.VITE_CLARITY_ID);
+  const id = import.meta.env.VITE_CLARITY_ID;
+
+  console.log("CLARITY ID:", id);
+
+  if (!id) return;
+  if (typeof window === "undefined") return;
+
+  Clarity.init(id);
 }
