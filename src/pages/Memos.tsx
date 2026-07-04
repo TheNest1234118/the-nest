@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "wouter";
 import { getProfile } from "@/lib/subscription";
+import { trackNestEvent, events } from "@/lib/analyticsEvents";
 import { motion } from "framer-motion";
 import { getEnabledVoicePrompts } from "@/lib/voicePrompts";
 import { supabase } from "@/lib/supabase";
