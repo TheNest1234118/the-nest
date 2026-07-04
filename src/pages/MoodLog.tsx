@@ -1,7 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { ChevronLeft } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  BarChart3,
+  Sparkles,
+  Moon,
+  Sun,
+  Cloud,
+  Zap,
+  Square,
+} from "lucide-react";
 import { loadMoodLog } from "@/lib/dailyNest";
 
 interface MoodEntry {
@@ -11,21 +21,262 @@ interface MoodEntry {
   created_at: string;
 }
 
-const MOOD_LABELS: Record<string, string> = {
-  calm: "🌙 Calm",
-  good: "🌤 Good",
-  neutral: "🌫 Neutral",
-  overstimulated: "⚡ Overstimulated",
-  anxious: "🌧 Anxious",
-  sad: "🖤 Sad",
+type MoodKey =
+  | "calm"
+  | "good"
+  | "neutral"
+  | "overstimulated"
+  | "anxious"
+  | "sad"
+  | "tired"
+  | "foggy"
+  | "stressed";
+
+const MOODS: Record<
+  string,
+  {
+    label: string;
+    icon: React.ReactNode;
+    color: string;
+    glow: string;
+    note: string;
+    tag: string;
+  }
+> = {
+  calm: {
+    label: "Calm",
+    icon: <Moon size={34} fill="currentColor" />,
+    color: "#FFD86B",
+    glow: "rgba(255,216,107,.32)",
+    note: "A peaceful end to a productive day.",
+    tag: "Evening reflection",
+  },
+  good: {
+    label: "Good",
+    icon: <Sun size={34} fill="currentColor" />,
+    color: "#FF9B2F",
+    glow: "rgba(255,155,47,.32)",
+    note: "Great conversations and good energy.",
+    tag: "Grateful",
+  },
+  tired: {
+    label: "Tired",
+    icon: <Cloud size={34} fill="currentColor" />,
+    color: "#9C86FF",
+    glow: "rgba(156,134,255,.34)",
+    note: "Mentally drained but still showing up.",
+    tag: "Long day",
+  },
+  foggy: {
+    label: "Foggy",
+    icon: <Cloud size={34} fill="currentColor" />,
+    color: "#FF83CA",
+    glow: "rgba(255,131,202,.34)",
+    note: "Brain’s all over the place.",
+    tag: "Low clarity",
+  },
+  neutral: {
+    label: "Neutral",
+    icon: <Square size={31} fill="currentColor" />,
+    color: "#9EADFF",
+    glow: "rgba(158,173,255,.30)",
+    note: "Not bad, not great. Just a regular day.",
+    tag: "Just okay",
+  },
+  overstimulated: {
+    label: "Overstimulated",
+    icon: <Zap size={36} fill="currentColor" />,
+    color: "#FFE05C",
+    glow: "rgba(255,224,92,.35)",
+    note: "Everything feels a bit too loud.",
+    tag: "Too much",
+  },
+  stressed: {
+    label: "Stressed",
+    icon: <Zap size={36} fill="currentColor" />,
+    color: "#FFE05C",
+    glow: "rgba(255,224,92,.35)",
+    note: "Everything feels a bit too loud.",
+    tag: "Too much",
+  },
+  anxious: {
+    label: "Foggy",
+    icon: <Cloud size={34} fill="currentColor" />,
+    color: "#FF83CA",
+    glow: "rgba(255,131,202,.34)",
+    note: "Brain’s all over the place.",
+    tag: "Low clarity",
+  },
+  sad: {
+    label: "Tired",
+    icon: <Cloud size={34} fill="currentColor" />,
+    color: "#9C86FF",
+    glow: "rgba(156,134,255,.34)",
+    note: "A heavy day, but still moving.",
+    tag: "Soft day",
+  },
 };
+
+const FILTERS = [
+  { key: "all", label: "All", icon: <Sparkles size={15} /> },
+  { key: "calm", label: "Calm", icon: <Moon size={15} /> },
+  { key: "good", label: "Good", icon: <Sun size={15} /> },
+  { key: "tired", label: "Tired", icon: <Cloud size={15} /> },
+  { key: "stressed", label: "Stressed", icon: <Zap size={15} /> },
+];
+
+function formatDate(date: string) {
+  const d = new Date(date);
+  const today = new Date();
+
+  const isToday =
+    d.getDate() === today.getDate() &&
+    d.getMonth() === today.getMonth() &&
+    d.getFullYear() === today.getFullYear();
+
+  const time = d.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  if (isToday) return `Today • ${time}`;
+
+  return `${d.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })} • ${time}`;
+}
+
+function MiniTrend({ color }: { color: string }) {
+  return (
+    <svg width="62" height="42" viewBox="0 0 62 42" fill="none">
+      <path
+        d="M4 24 C12 12 18 30 26 28 C36 26 38 13 48 13 C54 13 56 8 58 6"
+        stroke="rgba(255,255,255,.18)"
+        strokeWidth="8"
+        strokeLinecap="round"
+      />
+      <path
+        d="M4 24 C12 12 18 30 26 28 C36 26 38 13 48 13 C54 13 56 8 58 6"
+        stroke={color}
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
+      <circle cx="58" cy="6" r="4" fill={color} />
+    </svg>
+  );
+}
+
+function ProgressRing() {
+  return (
+    <div style={{ position: "relative", width: 82, height: 82 }}>
+      <svg width="82" height="82" viewBox="0 0 82 82">
+        <circle
+          cx="41"
+          cy="41"
+          r="33"
+          stroke="rgba(255,255,255,.06)"
+          strokeWidth="7"
+          fill="none"
+        />
+        <circle
+          cx="41"
+          cy="41"
+          r="33"
+          stroke="#FFD86B"
+          strokeWidth="7"
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray="207"
+          strokeDashoffset="66"
+          transform="rotate(-90 41 41)"
+        />
+      </svg>
+
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "grid",
+          placeItems: "center",
+          fontSize: 22,
+          color: "rgba(244,225,190,.92)",
+          fontWeight: 600,
+        }}
+      >
+        68%
+      </div>
+    </div>
+  );
+}
 
 export function MoodLog() {
   const [entries, setEntries] = useState<MoodEntry[]>([]);
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
     loadMoodLog().then(setEntries).catch(console.error);
   }, []);
+
+  const displayEntries = useMemo(() => {
+    const fallback: MoodEntry[] = [
+      {
+        id: "demo-1",
+        mood: "calm",
+        mood_date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "demo-2",
+        mood: "good",
+        mood_date: "2026-07-03T21:18:00",
+        created_at: "2026-07-03T21:18:00",
+      },
+      {
+        id: "demo-3",
+        mood: "calm",
+        mood_date: "2026-07-02T22:07:00",
+        created_at: "2026-07-02T22:07:00",
+      },
+      {
+        id: "demo-4",
+        mood: "tired",
+        mood_date: "2026-07-01T20:55:00",
+        created_at: "2026-07-01T20:55:00",
+      },
+      {
+        id: "demo-5",
+        mood: "foggy",
+        mood_date: "2026-06-30T09:31:00",
+        created_at: "2026-06-30T09:31:00",
+      },
+      {
+        id: "demo-6",
+        mood: "neutral",
+        mood_date: "2026-06-29T16:12:00",
+        created_at: "2026-06-29T16:12:00",
+      },
+      {
+        id: "demo-7",
+        mood: "overstimulated",
+        mood_date: "2026-06-28T18:47:00",
+        created_at: "2026-06-28T18:47:00",
+      },
+    ];
+
+    const source = entries.length ? entries : fallback;
+
+    if (filter === "all") return source;
+
+    if (filter === "stressed") {
+      return source.filter(
+        (e) => e.mood === "stressed" || e.mood === "overstimulated"
+      );
+    }
+
+    return source.filter((e) => e.mood === filter);
+  }, [entries, filter]);
 
   return (
     <motion.div
@@ -33,103 +284,422 @@ export function MoodLog() {
       animate={{ opacity: 1 }}
       style={{
         minHeight: "100svh",
-        background: "#09090d",
+        background:
+          "radial-gradient(circle at top left, rgba(255,216,107,.07), transparent 28%), radial-gradient(circle at 90% 20%, rgba(122,102,255,.06), transparent 28%), #07080d",
         maxWidth: 480,
         margin: "0 auto",
-        padding: "calc(env(safe-area-inset-top, 0px) + 52px) 20px 80px",
+        padding: "calc(env(safe-area-inset-top, 0px) + 26px) 24px 70px",
+        color: "rgba(240,224,196,.9)",
       }}
     >
-      <Link href="/nest">
-        <button style={{
-          background: "none",
-          border: "none",
-          color: "rgba(185,162,128,0.42)",
-          marginBottom: 26,
-          cursor: "pointer",
-        }}>
-          <ChevronLeft size={24} strokeWidth={1.3} />
-        </button>
-      </Link>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 24,
+        }}
+      >
+        <Link href="/nest">
+          <button
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,.05)",
+              background: "rgba(255,255,255,.055)",
+              color: "rgba(235,215,180,.82)",
+              display: "grid",
+              placeItems: "center",
+              cursor: "pointer",
+            }}
+          >
+            <ChevronLeft size={25} strokeWidth={1.6} />
+          </button>
+        </Link>
 
-      <p style={{
-        fontSize: 10,
-        letterSpacing: "0.22em",
-        textTransform: "uppercase",
-        color: "rgba(205,170,100,0.38)",
-        marginBottom: 10,
-      }}>
+        <button
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 999,
+            border: "1px solid rgba(255,255,255,.08)",
+            background: "rgba(255,255,255,.035)",
+            color: "rgba(235,215,180,.8)",
+            display: "grid",
+            placeItems: "center",
+          }}
+        >
+          <BarChart3 size={21} strokeWidth={1.6} />
+        </button>
+      </div>
+
+      <p
+        style={{
+          fontSize: 12,
+          letterSpacing: "0.36em",
+          textTransform: "uppercase",
+          color: "rgba(232,190,108,.78)",
+          marginBottom: 14,
+        }}
+      >
         Mood Log
       </p>
 
-      <h1 style={{
-        fontFamily: "Georgia, serif",
-        fontSize: 28,
-        fontWeight: 400,
-        color: "rgba(235,215,180,0.90)",
-        marginBottom: 8,
-      }}>
+      <h1
+        style={{
+          fontFamily: "Georgia, serif",
+          fontSize: 42,
+          lineHeight: 1.02,
+          fontWeight: 400,
+          color: "rgba(250,230,194,.96)",
+          margin: 0,
+          marginBottom: 12,
+          textShadow: "0 0 28px rgba(255,216,107,.08)",
+        }}
+      >
         How your days felt.
       </h1>
 
-      <p style={{
-        fontSize: 13,
-        lineHeight: 1.6,
-        color: "rgba(185,162,128,0.48)",
-        marginBottom: 28,
-      }}>
+      <p
+        style={{
+          fontSize: 17,
+          lineHeight: 1.55,
+          color: "rgba(190,172,143,.58)",
+          marginBottom: 26,
+        }}
+      >
         A quiet record of how you arrived each day.
       </p>
 
-      {entries.length === 0 ? (
-        <div style={{
-          background: "rgba(255,255,255,0.024)",
-          border: "1px solid rgba(255,255,255,0.055)",
-          borderRadius: 18,
+      <section
+        style={{
+          borderRadius: 30,
           padding: 22,
-          color: "rgba(175,158,132,0.42)",
-          fontSize: 13,
-          lineHeight: 1.6,
-        }}>
-          Your mood log will appear here after your first daily check-in.
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {entries.map((entry) => (
+          marginBottom: 16,
+          border: "1px solid rgba(255,255,255,.075)",
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,.065), rgba(255,255,255,.022))",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,.04)",
+          display: "grid",
+          gridTemplateColumns: "1.2fr .9fr 1.2fr",
+          gap: 14,
+          alignItems: "center",
+        }}
+      >
+        <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+          <div
+            style={{
+              width: 62,
+              height: 62,
+              borderRadius: 999,
+              display: "grid",
+              placeItems: "center",
+              color: "#FFD86B",
+              background:
+                "radial-gradient(circle, rgba(255,216,107,.26), rgba(255,216,107,.05) 58%, transparent 72%)",
+              boxShadow: "0 0 28px rgba(255,216,107,.18)",
+            }}
+          >
+            <Moon size={34} fill="currentColor" />
+          </div>
+
+          <div>
+            <div style={{ fontSize: 15, color: "rgba(244,225,190,.84)" }}>
+              This week
+            </div>
             <div
-              key={entry.id}
               style={{
-                background: "rgba(255,255,255,0.024)",
-                border: "1px solid rgba(255,255,255,0.055)",
-                borderRadius: 16,
-                padding: "15px 16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 14,
+                fontSize: 24,
+                fontWeight: 600,
+                marginTop: 5,
+                color: "rgba(255,239,210,.96)",
               }}
             >
-              <div style={{
-                fontSize: 14,
-                color: "rgba(225,210,188,0.82)",
-              }}>
-                {MOOD_LABELS[entry.mood] ?? entry.mood}
+              Calm
+            </div>
+            <div
+              style={{
+                fontSize: 13,
+                color: "rgba(190,172,143,.55)",
+                marginTop: 3,
+              }}
+            >
+              most common mood
+            </div>
+          </div>
+        </div>
+
+        <div style={{ textAlign: "center" }}>
+          <ProgressRing />
+          <div
+            style={{
+              fontSize: 13,
+              color: "rgba(190,172,143,.72)",
+              marginTop: 3,
+            }}
+          >
+            Calm days
+          </div>
+        </div>
+
+        <div
+          style={{
+            borderLeft: "1px solid rgba(255,255,255,.055)",
+            paddingLeft: 18,
+          }}
+        >
+          <div style={{ fontSize: 15, color: "rgba(244,225,190,.86)" }}>
+            Mood trend
+          </div>
+          <MiniTrend color="#FFD86B" />
+          <div
+            style={{
+              fontSize: 16,
+              color: "#64DE77",
+              fontWeight: 600,
+              marginTop: 2,
+            }}
+          >
+            +12% calmer
+          </div>
+          <div style={{ fontSize: 13, color: "rgba(190,172,143,.52)" }}>
+            than last week
+          </div>
+        </div>
+      </section>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          overflowX: "auto",
+          padding: "8px 0 18px",
+          marginBottom: 4,
+        }}
+      >
+        {FILTERS.map((item) => {
+          const active = filter === item.key;
+
+          return (
+            <button
+              key={item.key}
+              onClick={() => setFilter(item.key)}
+              style={{
+                border: "1px solid rgba(255,255,255,.07)",
+                borderRadius: 999,
+                padding: "12px 17px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                whiteSpace: "nowrap",
+                background: active
+                  ? "rgba(255,216,107,.115)"
+                  : "rgba(255,255,255,.03)",
+                color: active
+                  ? "rgba(255,239,210,.96)"
+                  : "rgba(218,199,170,.70)",
+                boxShadow: active
+                  ? "0 0 24px rgba(255,216,107,.12), inset 0 0 18px rgba(255,216,107,.05)"
+                  : "none",
+                cursor: "pointer",
+              }}
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {displayEntries.map((entry, index) => {
+          const mood = MOODS[entry.mood] ?? MOODS.calm;
+
+          return (
+            <motion.article
+              key={entry.id}
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.045, duration: 0.38 }}
+              style={{
+                borderRadius: 28,
+                padding: 18,
+                minHeight: 104,
+                border: "1px solid rgba(255,255,255,.07)",
+                background:
+                  "linear-gradient(135deg, rgba(255,255,255,.055), rgba(255,255,255,.018))",
+                display: "grid",
+                gridTemplateColumns: "76px 1.2fr 1.1fr 34px",
+                gap: 10,
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{
+                  width: 66,
+                  height: 66,
+                  borderRadius: 999,
+                  display: "grid",
+                  placeItems: "center",
+                  color: mood.color,
+                  background: `radial-gradient(circle, ${mood.glow}, rgba(255,255,255,.035) 58%, transparent 74%)`,
+                  boxShadow: `0 0 30px ${mood.glow}`,
+                }}
+              >
+                {mood.icon}
               </div>
 
-              <time style={{
-                fontSize: 11,
-                color: "rgba(175,158,132,0.38)",
-                letterSpacing: "0.06em",
-              }}>
-                {new Date(entry.mood_date).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </time>
-            </div>
-          ))}
+              <div>
+                <div
+                  style={{
+                    fontSize: 23,
+                    fontWeight: 600,
+                    color: mood.color,
+                    marginBottom: 6,
+                  }}
+                >
+                  {mood.label}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 14,
+                    color: "rgba(190,172,143,.52)",
+                    marginBottom: 9,
+                  }}
+                >
+                  {formatDate(entry.mood_date || entry.created_at)}
+                </div>
+
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    borderRadius: 999,
+                    padding: "5px 10px",
+                    background: `${mood.glow.replace(".32", ".13").replace(".34", ".13").replace(".30", ".13").replace(".35", ".13")}`,
+                    color: mood.color,
+                    fontSize: 11,
+                  }}
+                >
+                  <span>{mood.label === "Good" ? "🧡" : mood.label === "Neutral" ? "◻️" : mood.label === "Tired" ? "💼" : mood.label === "Foggy" ? "☁️" : mood.label === "Overstimulated" ? "⚡" : "🌙"}</span>
+                  {mood.tag}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  fontSize: 16,
+                  lineHeight: 1.55,
+                  color: "rgba(224,211,194,.76)",
+                }}
+              >
+                {mood.note}
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                  gap: 16,
+                }}
+              >
+                <span
+                  style={{
+                    width: 9,
+                    height: 9,
+                    borderRadius: 999,
+                    background: mood.color,
+                    boxShadow: `0 0 15px ${mood.color}`,
+                  }}
+                />
+                <ChevronRight
+                  size={21}
+                  strokeWidth={1.5}
+                  color="rgba(190,172,143,.35)"
+                />
+              </div>
+            </motion.article>
+          );
+        })}
+      </div>
+
+      <motion.section
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+        style={{
+          marginTop: 16,
+          borderRadius: 30,
+          padding: 20,
+          border: "1px solid rgba(255,255,255,.08)",
+          background:
+            "linear-gradient(135deg, rgba(156,84,255,.18), rgba(255,255,255,.025))",
+          display: "grid",
+          gridTemplateColumns: "72px 1fr auto",
+          gap: 14,
+          alignItems: "center",
+          boxShadow: "0 0 32px rgba(156,84,255,.08)",
+        }}
+      >
+        <div
+          style={{
+            width: 66,
+            height: 66,
+            borderRadius: 999,
+            display: "grid",
+            placeItems: "center",
+            color: "#C68BFF",
+            background:
+              "radial-gradient(circle, rgba(198,139,255,.30), rgba(198,139,255,.06) 60%, transparent 74%)",
+            boxShadow: "0 0 28px rgba(198,139,255,.2)",
+          }}
+        >
+          <Sparkles size={32} fill="currentColor" />
         </div>
-      )}
+
+        <div>
+          <div
+            style={{
+              fontSize: 20,
+              color: "rgba(255,239,210,.94)",
+              marginBottom: 7,
+            }}
+          >
+            Notice a pattern?
+          </div>
+          <div
+            style={{
+              fontSize: 14,
+              lineHeight: 1.5,
+              color: "rgba(215,196,174,.60)",
+            }}
+          >
+            You felt most calm on evenings. Maybe that’s your time to reset.
+          </div>
+        </div>
+
+        <button
+          style={{
+            borderRadius: 999,
+            border: "1px solid rgba(255,255,255,.08)",
+            background: "rgba(255,255,255,.045)",
+            color: "rgba(255,239,210,.9)",
+            padding: "12px 16px",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 14,
+            cursor: "pointer",
+          }}
+        >
+          View insights
+          <ChevronRight size={18} />
+        </button>
+      </motion.section>
     </motion.div>
   );
 }

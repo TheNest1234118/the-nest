@@ -196,7 +196,7 @@ export function Onboarding() {
                   <TinyLabel>Recovery space</TinyLabel>
                   <Title>The Nest</Title>
                   <Subtitle>
-                    For when your brain won't slow down after the internet.
+                    Remember less. Understand more.
                   </Subtitle>
 
                   <PrimaryButton onClick={next}>Enter</PrimaryButton>
