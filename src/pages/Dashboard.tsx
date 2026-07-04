@@ -48,13 +48,7 @@ type DashboardMoodKey =
   | "motivated";
   const [isStandalone, setIsStandalone] = useState(false);
 
-  useEffect(() => {
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone === true;
   
-    setIsStandalone(standalone);
-  }, []);
 const MOODS: { key: DashboardMoodKey; label: string }[] = [
   { key: "calm", label: "🌙 Calm" },
   { key: "good", label: "🌤 Good" },
@@ -897,7 +891,13 @@ export function Dashboard() {
       setQuickSaving(false);
     }
   };
-
+  useEffect(() => {
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true;
+  
+    setIsStandalone(standalone);
+  }, []);
   useEffect(() => {
     async function init() {
       registerVisitForPwaPrompt();
