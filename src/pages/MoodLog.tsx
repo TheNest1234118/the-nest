@@ -19,6 +19,7 @@ interface MoodEntry {
   mood: string;
   mood_date: string;
   created_at: string;
+  note?: string;
 }
 
 type MoodKey =
@@ -167,50 +168,66 @@ function MiniTrend({ color }: { color: string }) {
     </svg>
   );
 }
+function ProgressRing({ percent }: { percent: number }) {
+  const radius = 33;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percent / 100) * circumference;
 
-function ProgressRing() {
   return (
     <div style={{ position: "relative", width: 82, height: 82 }}>
       <svg width="82" height="82" viewBox="0 0 82 82">
+        <circle cx="41" cy="41" r={radius} stroke="rgba(255,255,255,.06)" strokeWidth="7" fill="none" />
         <circle
           cx="41"
           cy="41"
-          r="33"
-          stroke="rgba(255,255,255,.06)"
-          strokeWidth="7"
-          fill="none"
-        />
-        <circle
-          cx="41"
-          cy="41"
-          r="33"
+          r={radius}
           stroke="#FFD86B"
           strokeWidth="7"
           fill="none"
           strokeLinecap="round"
-          strokeDasharray="207"
-          strokeDashoffset="66"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
           transform="rotate(-90 41 41)"
         />
       </svg>
 
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "grid",
-          placeItems: "center",
-          fontSize: 22,
-          color: "rgba(244,225,190,.92)",
-          fontWeight: 600,
-        }}
-      >
-        68%
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        display: "grid",
+        placeItems: "center",
+        fontSize: 22,
+        color: "rgba(244,225,190,.92)",
+        fontWeight: 600,
+      }}>
+        {percent}%
       </div>
     </div>
   );
 }
+function getWeekStart(date: Date) {
+  const d = new Date(date);
+  const day = d.getDay() || 7;
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - day + 1);
+  return d;
+}
 
+function isSameOrAfter(a: Date, b: Date) {
+  return a.getTime() >= b.getTime();
+}
+
+function mostCommonMood(entries: MoodEntry[]) {
+  const counts: Record<string, number> = {};
+
+  entries.forEach((entry) => {
+    counts[entry.mood] = (counts[entry.mood] || 0) + 1;
+  });
+
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+
+  return top?.[0] ?? "neutral";
+}
 export function MoodLog() {
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [filter, setFilter] = useState("all");
@@ -219,53 +236,60 @@ export function MoodLog() {
     loadMoodLog().then(setEntries).catch(console.error);
   }, []);
 
-  const displayEntries = useMemo(() => {
-    const fallback: MoodEntry[] = [
-      {
-        id: "demo-1",
-        mood: "calm",
-        mood_date: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "demo-2",
-        mood: "good",
-        mood_date: "2026-07-03T21:18:00",
-        created_at: "2026-07-03T21:18:00",
-      },
-      {
-        id: "demo-3",
-        mood: "calm",
-        mood_date: "2026-07-02T22:07:00",
-        created_at: "2026-07-02T22:07:00",
-      },
-      {
-        id: "demo-4",
-        mood: "tired",
-        mood_date: "2026-07-01T20:55:00",
-        created_at: "2026-07-01T20:55:00",
-      },
-      {
-        id: "demo-5",
-        mood: "foggy",
-        mood_date: "2026-06-30T09:31:00",
-        created_at: "2026-06-30T09:31:00",
-      },
-      {
-        id: "demo-6",
-        mood: "neutral",
-        mood_date: "2026-06-29T16:12:00",
-        created_at: "2026-06-29T16:12:00",
-      },
-      {
-        id: "demo-7",
-        mood: "overstimulated",
-        mood_date: "2026-06-28T18:47:00",
-        created_at: "2026-06-28T18:47:00",
-      },
-    ];
+  const stats = useMemo(() => {
+    if (!entries.length) {
+      return {
+        topMood: "neutral",
+        topMoodPercent: 0,
+        trendPercent: 0,
+        insight: "Your patterns will appear after a few check-ins.",
+      };
+    }
 
-    const source = entries.length ? entries : fallback;
+    const now = new Date();
+    const thisWeekStart = getWeekStart(now);
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+    const thisWeek = entries.filter((entry) => {
+      const d = new Date(entry.mood_date || entry.created_at);
+      return d >= thisWeekStart;
+    });
+
+    const lastWeek = entries.filter((entry) => {
+      const d = new Date(entry.mood_date || entry.created_at);
+      return d >= lastWeekStart && d < thisWeekStart;
+    });
+
+    const topMood = mostCommonMood(thisWeek.length ? thisWeek : entries);
+
+    const topMoodCount = thisWeek.filter((entry) => entry.mood === topMood).length;
+
+    const topMoodPercent = thisWeek.length
+      ? Math.round((topMoodCount / thisWeek.length) * 100)
+      : 0;
+
+    const calmThisWeek = thisWeek.filter((entry) => entry.mood === "calm").length;
+    const calmLastWeek = lastWeek.filter((entry) => entry.mood === "calm").length;
+
+    const calmThisPercent = thisWeek.length ? (calmThisWeek / thisWeek.length) * 100 : 0;
+    const calmLastPercent = lastWeek.length ? (calmLastWeek / lastWeek.length) * 100 : 0;
+
+    const trendPercent = Math.round(calmThisPercent - calmLastPercent);
+
+    return {
+      topMood,
+      topMoodPercent,
+      trendPercent,
+      insight:
+        topMoodPercent >= 50
+          ? `You felt mostly ${MOODS[topMood]?.label ?? topMood} this week.`
+          : "Your mood was mixed this week.",
+    };
+  }, [entries]);
+
+  const displayEntries = useMemo(() => {
+    const source = entries;
 
     if (filter === "all") return source;
 
@@ -416,7 +440,7 @@ export function MoodLog() {
                 color: "rgba(255,239,210,.96)",
               }}
             >
-              Calm
+              {MOODS[stats.topMood]?.label ?? stats.topMood}
             </div>
             <div
               style={{
@@ -431,7 +455,7 @@ export function MoodLog() {
         </div>
 
         <div style={{ textAlign: "center" }}>
-          <ProgressRing />
+        <ProgressRing percent={stats.topMoodPercent} />
           <div
             style={{
               fontSize: 13,
@@ -461,7 +485,8 @@ export function MoodLog() {
               marginTop: 2,
             }}
           >
-            +12% calmer
+           {stats.trendPercent >= 0 ? "+" : ""}
+           {stats.trendPercent}% calmer
           </div>
           <div style={{ fontSize: 13, color: "rgba(190,172,143,.52)" }}>
             than last week
@@ -596,7 +621,7 @@ export function MoodLog() {
                   color: "rgba(224,211,194,.76)",
                 }}
               >
-                {mood.note}
+                {entry.note || "No note added for this check-in."}
               </div>
 
               <div
@@ -678,7 +703,7 @@ export function MoodLog() {
               color: "rgba(215,196,174,.60)",
             }}
           >
-            You felt most calm on evenings. Maybe that’s your time to reset.
+           {stats.insight}
           </div>
         </div>
 
