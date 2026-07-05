@@ -8,7 +8,6 @@ import {
   MoreVertical,
   Search,
   Send,
-  SlidersHorizontal,
   Sparkles,
   Trash2,
 } from "lucide-react";
