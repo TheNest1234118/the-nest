@@ -935,12 +935,16 @@ export function Dashboard() {
       setUser(data.user ?? null);
       const memos = await loadMemos();
       setLatestMemo((memos || [])[0] ?? null);
-      if (localStorage.getItem("nest_welcome_seen") !== "true") {
-        setWelcomeOpen(true);
-      }
-
       const hasFirstVoiceMemo =
       localStorage.getItem("nest_first_voice_memo_saved") === "true";
+    
+    if (
+      hasFirstVoiceMemo &&
+      localStorage.getItem("nest_welcome_seen") !== "true"
+    ) {
+      setWelcomeOpen(true);
+    }
+
     
       const shouldShowMoodAfterFirstMemo =
       localStorage.getItem("nest_show_mood_after_first_memo") === "true";
