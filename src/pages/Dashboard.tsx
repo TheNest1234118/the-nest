@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { loadMemos, type SupabaseMemo } from "@/lib/memos";
 import { motion } from "framer-motion";
 import { trackNestEvent, events } from "@/lib/analyticsEvents";
-import { saveThought } from "@/lib/userData";
+import { loadThoughts, saveThought } from "@/lib/userData";
 import { registerVisitForPwaPrompt } from "@/lib/pwa";
 import { AuthModal } from "@/components/AuthModal";
 import { supabase } from "@/lib/supabase";
@@ -301,6 +301,139 @@ const modalButton: React.CSSProperties = {
   cursor: "pointer",
   textAlign: "left",
 };
+
+
+function formatFloatingThoughtDate(value?: string) {
+  if (!value) return "Last thought";
+
+  try {
+    return new Date(value).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+  } catch (_) {
+    return "Last thought";
+  }
+}
+
+function LastThoughtFlight({
+  thought,
+  onDone,
+}: {
+  thought: { text: string; created_at?: string } | null;
+  onDone: () => void;
+}) {
+  if (!thought?.text?.trim()) return null;
+
+  const text =
+    thought.text.trim().length > 92
+      ? `${thought.text.trim().slice(0, 92)}…`
+      : thought.text.trim();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 12000,
+        pointerEvents: "none",
+        overflow: "hidden",
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, x: -260, y: -110, rotate: -9, scale: 0.88 }}
+        animate={{
+          opacity: [0, 1, 1, 0.92, 0],
+          x: ["-42vw", "8vw", "24vw", "46vw", "92vw"],
+          y: ["-9vh", "14vh", "28vh", "47vh", "78vh"],
+          rotate: [-9, -4, 2, 7, 13],
+          scale: [0.88, 1, 1.04, 0.98, 0.86],
+        }}
+        transition={{
+          duration: 5.2,
+          times: [0, 0.18, 0.46, 0.72, 1],
+          ease: [0.22, 1, 0.36, 1],
+        }}
+        onAnimationComplete={onDone}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "min(330px, 74vw)",
+          borderRadius: 24,
+          padding: "18px 18px 17px",
+          background:
+            "linear-gradient(145deg, rgba(31,25,18,0.86), rgba(11,10,13,0.82))",
+          border: "1px solid rgba(205,170,100,0.22)",
+          boxShadow:
+            "0 0 0 1px rgba(255,255,255,0.035), 0 24px 90px rgba(0,0,0,0.55), 0 0 58px rgba(205,145,45,0.20)",
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
+          transformOrigin: "50% 50%",
+        }}
+      >
+        <motion.div
+          animate={{ opacity: [0.35, 0.9, 0.35], scale: [0.96, 1.08, 0.96] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            position: "absolute",
+            inset: -2,
+            borderRadius: 24,
+            background:
+              "radial-gradient(circle at 50% 0%, rgba(255,220,150,0.18), transparent 62%)",
+            pointerEvents: "none",
+          }}
+        />
+
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              color: "rgba(205,170,100,0.74)",
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              marginBottom: 10,
+              fontWeight: 700,
+            }}
+          >
+            <Sparkles size={13} strokeWidth={1.5} /> Last thought
+          </div>
+
+          <div
+            style={{
+              ...serif,
+              color: "rgba(245,232,210,0.94)",
+              fontSize: 22,
+              lineHeight: 1.25,
+              letterSpacing: "-0.025em",
+              textShadow: "0 8px 28px rgba(0,0,0,0.4)",
+            }}
+          >
+            “{text}”
+          </div>
+
+          <div
+            style={{
+              marginTop: 13,
+              color: "rgba(198,178,150,0.52)",
+              fontSize: 10,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+            }}
+          >
+            {formatFloatingThoughtDate(thought.created_at)}
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
 
 function RainLayer() {
   return (
@@ -872,6 +1005,8 @@ export function Dashboard() {
   const [historySearch, setHistorySearch] = useState("");
   const [historyFilter, setHistoryFilter] = useState("");
   const [installGuideOpen, setInstallGuideOpen] = useState(false);
+  const [floatingThought, setFloatingThought] = useState<{ text: string; created_at?: string } | null>(null);
+  const [showFloatingThought, setShowFloatingThought] = useState(false);
   const historyItems: HistoryItem[] = [
     {
       id: "voice-latest",
@@ -935,6 +1070,23 @@ export function Dashboard() {
       setUser(data.user ?? null);
       const memos = await loadMemos();
       setLatestMemo((memos || [])[0] ?? null);
+
+      try {
+        const thoughtData = await loadThoughts();
+        const latestThought = (thoughtData || [])[0];
+        const alreadyPlayed = sessionStorage.getItem("nest_last_thought_flight_seen") === "true";
+
+        if (latestThought?.text && !alreadyPlayed) {
+          setFloatingThought({
+            text: latestThought.text,
+            created_at: latestThought.created_at,
+          });
+          sessionStorage.setItem("nest_last_thought_flight_seen", "true");
+          setTimeout(() => setShowFloatingThought(true), 650);
+        }
+      } catch (err) {
+        console.error("Could not load latest thought for flight", err);
+      }
       const hasFirstVoiceMemo =
       localStorage.getItem("nest_first_voice_memo_saved") === "true";
     
@@ -1030,6 +1182,13 @@ export function Dashboard() {
           zIndex: 0,
         }}
       />
+
+      {showFloatingThought && (
+        <LastThoughtFlight
+          thought={floatingThought}
+          onDone={() => setShowFloatingThought(false)}
+        />
+      )}
 
       <div
       
