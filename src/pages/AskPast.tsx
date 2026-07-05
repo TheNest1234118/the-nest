@@ -35,22 +35,26 @@ const formatDate = (value?: string | null) => {
   });
 };
 const showMoreButtonStyle: React.CSSProperties = {
-  marginTop: 10,
-  background: "none",
-  border: "none",
-  color: "rgba(205,170,100,0.85)",
-  fontSize: 12,
-  fontWeight: 700,
+  marginTop: 12,
+  width: "100%",
+  border: "1px solid rgba(255,255,255,0.07)",
+  background: "rgba(255,255,255,0.035)",
+  color: "rgba(238,244,240,0.82)",
+  borderRadius: 14,
+  padding: "12px 14px",
+  fontSize: 13,
+  fontWeight: 800,
   cursor: "pointer",
-  padding: 0,
+  textAlign: "center",
 };
+
 export function AskPast() {
   
   const [question, setQuestion] = useState("");
   const [plan, setPlan] = useState<"free" | "supporter">("free");
   const [checkingPlan, setCheckingPlan] = useState(true);
-  const [openHistoryId, setOpenHistoryId] = useState<string | null>(null);
-
+  
+  const [selectedHistory, setSelectedHistory] = useState<any | null>(null);
   const [answer, setAnswer] = useState<string | null>(null);
   const [entries, setEntries] = useState<AskPastEntry[]>([]);
   const [history, setHistory] = useState<any[]>([]);
@@ -122,7 +126,38 @@ export function AskPast() {
       setLoading(false);
     }
   };
-
+  if (selectedHistory) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={pageStyle}>
+        <header style={topHeaderStyle}>
+          <button style={backButtonStyle} onClick={() => setSelectedHistory(null)}>
+            <ChevronLeft size={24} strokeWidth={1.3} />
+          </button>
+  
+          <div>
+            <h1 style={titleStyle}>Past Answer</h1>
+            <p style={subtitleStyle}>{new Date(selectedHistory.created_at).toLocaleString()}</p>
+          </div>
+        </header>
+  
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={answerShellStyle}
+        >
+          <div style={answerTopRowStyle}>
+            <div style={answerLabelStyle}>
+              <Sparkles size={13} />
+              Answer
+            </div>
+          </div>
+  
+          <p style={historyQuestionStyle}>{selectedHistory.question}</p>
+          <p style={answerTextStyle}>{selectedHistory.answer}</p>
+        </motion.div>
+      </motion.div>
+    );
+  }
   if (!checkingPlan && plan !== "supporter") {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={pageStyle}>
@@ -254,30 +289,28 @@ export function AskPast() {
         </div>
       )}
 
-      {history.length > 0 && !answer && (
-        <div style={{ marginTop: 34 }}>
-          <p style={sectionLabelStyle}>History</p>
+{history.length > 0 && !answer && (
+  <div style={{ marginTop: 34 }}>
+    <p style={sectionLabelStyle}>History</p>
 
-          {history.map((item) => (
-            <div key={item.id} style={historyCardStyle}>
-             <button
-  onClick={() =>
-    setOpenHistoryId(openHistoryId === item.id ? null : item.id)
-  }
-  style={showMoreButtonStyle}
->
-  {openHistoryId === item.id ? "Show less" : "Show more"}
-</button>
+    {history.map((item) => (
+      <div key={item.id} style={historyCardStyle}>
+        <div style={historyQuestionStyle}>{item.question}</div>
 
-{openHistoryId === item.id && (
-  <div style={historyAnswerStyle}>{item.answer}</div>
-)}
-              <div style={historyAnswerStyle}>{item.answer}</div>
-              <div style={historyDateStyle}>{new Date(item.created_at).toLocaleString()}</div>
-            </div>
-          ))}
+        <div style={historyDateStyle}>
+          {new Date(item.created_at).toLocaleString()}
         </div>
-      )}
+
+        <button
+          onClick={() => setSelectedHistory(item)}
+          style={showMoreButtonStyle}
+        >
+          Show more →
+        </button>
+      </div>
+    ))}
+  </div>
+)}
 
       <div style={composerWrapStyle}>
         <textarea
