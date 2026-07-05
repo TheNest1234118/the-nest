@@ -724,11 +724,71 @@ const errorStyle: React.CSSProperties = {
 };
 
 const historyCardStyle: React.CSSProperties = {
-  background: "rgba(255,255,255,0.024)",
-  border: "1px solid rgba(255,255,255,0.055)",
-  borderRadius: 18,
-  padding: 16,
-  marginBottom: 14,
+  position: "relative",
+  background:
+    "radial-gradient(circle at 88% 18%, rgba(241,189,66,0.08), transparent 26%), rgba(255,255,255,0.024)",
+  border: "1px solid rgba(255,255,255,0.075)",
+  borderRadius: 26,
+  padding: "24px 20px 20px",
+  marginBottom: 16,
+  boxShadow:
+    "0 24px 70px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.035)",
+};
+
+const historyCardTopStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: 18,
+};
+
+const historyEyebrowStyle: React.CSSProperties = {
+  margin: "0 0 12px",
+  color: "rgba(205,170,100,0.78)",
+  fontSize: 11,
+  fontWeight: 900,
+  letterSpacing: "0.22em",
+  textTransform: "uppercase",
+};
+
+const historyTitleBigStyle: React.CSSProperties = {
+  margin: 0,
+  color: "rgba(235,218,192,0.94)",
+  fontFamily: "Georgia, 'Times New Roman', serif",
+  fontSize: 25,
+  fontWeight: 500,
+  lineHeight: 1.18,
+  letterSpacing: "-0.035em",
+};
+
+const historySparkleBoxStyle: React.CSSProperties = {
+  width: 64,
+  height: 64,
+  borderRadius: 22,
+  display: "grid",
+  placeItems: "center",
+  flex: "0 0 auto",
+  color: "#f1bd42",
+  background: "rgba(241,189,66,0.065)",
+  border: "1px solid rgba(241,189,66,0.12)",
+};
+
+const historyMetaStyle: React.CSSProperties = {
+  margin: "14px 0 0",
+  color: "rgba(190,201,198,0.45)",
+  fontSize: 13,
+  fontWeight: 650,
+};
+
+const historyBulletWrapStyle: React.CSSProperties = {
+  marginTop: 18,
+};
+
+const historyBulletStyle: React.CSSProperties = {
+  margin: "0 0 7px",
+  color: "rgba(224,233,230,0.62)",
+  fontSize: 14,
+  lineHeight: 1.45,
 };
 
 const historyQuestionStyle: React.CSSProperties = {
