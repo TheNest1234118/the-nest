@@ -5,7 +5,15 @@ import { getProfile } from "@/lib/subscription";
 import { supabase } from "@/lib/supabase";
 import { trackNestEvent, events } from "@/lib/analyticsEvents";
 import { UpgradeScreen } from "@/components/UpgradeScreen";
-import { ArrowUp, CheckCircle2, ChevronLeft, FileText, Search, Sparkles } from "lucide-react";
+
+import {
+  ArrowUp,
+  CheckCircle2,
+  ChevronLeft,
+  FileText,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
 import { askPast, type AskPastEntry } from "@/lib/askPast";
 
 const EXAMPLES = [
@@ -269,7 +277,16 @@ export function AskPast() {
           style={sendButtonStyle(loading || !question.trim())}
           aria-label="Ask"
         >
-          {loading ? <Search size={16} /> : <ArrowUp size={17} />}
+          {loading ? (
+  <Loader2
+    size={17}
+    style={{
+      animation: "spin 1s linear infinite",
+    }}
+  />
+) : (
+  <ArrowUp size={17} />
+)}
         </button>
       </div>
     </motion.div>

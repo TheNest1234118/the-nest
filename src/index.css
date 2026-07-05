@@ -129,3 +129,11 @@
 .ai-pattern-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(205,170,100,.45);
 }
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
