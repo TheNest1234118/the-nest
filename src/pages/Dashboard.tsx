@@ -942,8 +942,12 @@ export function Dashboard() {
       const hasFirstVoiceMemo =
       localStorage.getItem("nest_first_voice_memo_saved") === "true";
     
+      const shouldShowMoodAfterFirstMemo =
+      localStorage.getItem("nest_show_mood_after_first_memo") === "true";
+    
     if (
       hasFirstVoiceMemo &&
+      shouldShowMoodAfterFirstMemo &&
       localStorage.getItem("nest_daily_checkin_date") !== today
     ) {
       setDailyOpen(true);
@@ -1609,8 +1613,13 @@ export function Dashboard() {
 
               setTodayMood(selectedDailyMood);
               localStorage.setItem("nest_daily_checkin_date", today);
+              localStorage.removeItem("nest_show_mood_after_first_memo");
               setSelectedDailyMood(null);
               setDailyOpen(false);
+              
+              if (!user && localStorage.getItem("nest_welcome_seen") !== "true") {
+                setWelcomeOpen(true);
+              }
             }}
             style={{
               width: "100%",

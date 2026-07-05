@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { getProfile } from "@/lib/subscription";
 import { trackNestEvent, events } from "@/lib/analyticsEvents";
 import { motion } from "framer-motion";
@@ -44,6 +44,7 @@ function isIOS(): boolean {
 }
 
 export function Memos() {
+  const [, navigate] = useLocation();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [memos, setMemos] = useState<Memo[]>([]);
   const [plan, setPlan] = useState<"free" | "supporter">("free");
@@ -202,7 +203,14 @@ recorder.onstop = async () => {
     // 4. UI updaten
 if (saved) {
   setMemos((prev) => [saved, ...prev]);
-  localStorage.setItem("nest_first_voice_memo_saved", "true");
+  const wasFirstVoiceMemo =
+  localStorage.getItem("nest_first_voice_memo_saved") !== "true";
+
+localStorage.setItem("nest_first_voice_memo_saved", "true");
+
+if (wasFirstVoiceMemo) {
+  localStorage.setItem("nest_show_mood_after_first_memo", "true");
+}
   if (createTranscript && plan !== "supporter") {
     setTranscriptionCount((current) => Math.min(current + 1, 30));
   }
@@ -213,7 +221,11 @@ if (saved) {
 
   setTimeout(() => {
     setIsSaving(false);
-  }, 3000);
+  
+    if (wasFirstVoiceMemo) {
+      navigate("/home");
+    }
+  }, 1200);
 } else {
   setIsSaving(false);
 }
