@@ -190,7 +190,7 @@ function getDailyCheckin(todayMood: string | null, yesterdayMood: string | null)
     yesterday: yesterdayMood
       ? `Yesterday you checked in as ${cleanMoodLabel(yesterdayMood)}.`
       : "",
-    question: "How does your mind feel today?",
+    question: "How does your mind feel right now?",
     invitation: pickDailyItem(variants.invitations, moodForTone),
   };
 }
@@ -994,7 +994,10 @@ export function Dashboard() {
   const openAccountAfterMood = () => {
     localStorage.removeItem("nest_show_mood_after_first_memo");
   
-    if (!user) {
+    const continueWithoutAccount =
+      localStorage.getItem("nest_continue_without_account") === "true";
+  
+    if (!user && !continueWithoutAccount) {
       trackNestEvent(events.opened_signup);
       setAuthOpen(true);
     }
@@ -1157,7 +1160,7 @@ export function Dashboard() {
               value={quickThought}
               onChange={(e) => setQuickThought(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (e.key === "Begin" && !e.shiftKey) {
                   e.preventDefault();
                   saveQuickThought();
                 }
@@ -1551,10 +1554,12 @@ export function Dashboard() {
             voice capsules, anchors and reflections across devices.
           </p>
           <button
-            onClick={() => {
-              localStorage.setItem("nest_welcome_seen", "true");
-              setWelcomeOpen(false);
-            }}
+          onClick={() => {
+            localStorage.setItem("nest_welcome_seen", "true");
+            localStorage.setItem("nest_continue_without_account", "true");
+            setWelcomeOpen(false);
+            setAuthOpen(false);
+          }}
             style={modalButton}
           >
             Continue without account
