@@ -34,7 +34,12 @@ function getSupportedMimeType(): string {
 
   return "";
 }
-
+<style>{`
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+`}</style>
 
 export function Memos() {
   const [, navigate] = useLocation();
@@ -1269,9 +1274,48 @@ opacity: isSaving ? 0.45 : 1,
       </h2>
 
       {titleLoading ? (
-  <p style={{ color: "rgba(185,162,128,0.52)", fontSize: 13 }}>
-    Transcribing and creating title ideas…
-  </p>
+ <div
+ style={{
+   display: "flex",
+   flexDirection: "column",
+   alignItems: "center",
+   gap: 14,
+   padding: "28px 0",
+ }}
+>
+ <div
+   style={{
+     width: 34,
+     height: 34,
+     borderRadius: "50%",
+     border: "3px solid rgba(205,170,100,0.18)",
+     borderTop: "3px solid rgba(205,170,100,0.9)",
+     animation: "spin 1s linear infinite",
+   }}
+ />
+
+ <div
+   style={{
+     color: "rgba(235,215,180,0.82)",
+     fontSize: 15,
+     fontWeight: 500,
+   }}
+ >
+   Creating title ideas…
+ </div>
+
+ <div
+   style={{
+     color: "rgba(185,162,128,0.55)",
+     fontSize: 12,
+     textAlign: "center",
+     lineHeight: 1.5,
+     maxWidth: 220,
+   }}
+ >
+   We're transcribing your recording and generating a few title suggestions.
+ </div>
+</div>
 ) : titleOptions.length > 0 ? (
   <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
     {titleOptions.map((title) => (
