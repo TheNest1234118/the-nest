@@ -987,7 +987,14 @@ export function Dashboard() {
     setYesterdayMood(null);
     setDailyIntention(null);
   };
-
+  const openAccountAfterMood = () => {
+    localStorage.removeItem("nest_show_mood_after_first_memo");
+  
+    if (!user) {
+      trackNestEvent(events.opened_signup);
+      setAuthOpen(true);
+    }
+  };
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -1616,10 +1623,9 @@ export function Dashboard() {
               localStorage.removeItem("nest_show_mood_after_first_memo");
               setSelectedDailyMood(null);
               setDailyOpen(false);
+              openAccountAfterMood();
               
-              if (!user && localStorage.getItem("nest_welcome_seen") !== "true") {
-                setWelcomeOpen(true);
-              }
+        
             }}
             style={{
               width: "100%",
@@ -1650,7 +1656,12 @@ export function Dashboard() {
                 "nest_daily_checkin_date",
                 new Date().toISOString().slice(0, 10)
               );
+            
+              localStorage.removeItem("nest_show_mood_after_first_memo");
+            
               setDailyOpen(false);
+            
+              openAccountAfterMood();
             }}
             style={{ ...modalButton, color: "rgba(175,158,132,0.44)" }}
           >
