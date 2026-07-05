@@ -202,6 +202,7 @@ recorder.onstop = async () => {
     // 4. UI updaten
 if (saved) {
   setMemos((prev) => [saved, ...prev]);
+  localStorage.setItem("nest_first_voice_memo_saved", "true");
   if (createTranscript && plan !== "supporter") {
     setTranscriptionCount((current) => Math.min(current + 1, 30));
   }

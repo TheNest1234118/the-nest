@@ -94,15 +94,7 @@ export function Onboarding() {
   };
 
   const next = () => {
-
-    trackNestEvent(events.onboarding_step, {
-      step: "why_are_you_here",
-    });
-  
-    savePartial();
-  
-    setIndex((current) => current + 1);
-  
+    finishGuide().catch(console.error);
   };
   const toggleReason = (reason: string) => {
     trackNestEvent(events.onboarding_step, {

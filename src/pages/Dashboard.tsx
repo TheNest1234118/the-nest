@@ -939,9 +939,15 @@ export function Dashboard() {
         setWelcomeOpen(true);
       }
 
-      if (localStorage.getItem("nest_daily_checkin_date") !== today) {
-        setDailyOpen(true);
-      }
+      const hasFirstVoiceMemo =
+      localStorage.getItem("nest_first_voice_memo_saved") === "true";
+    
+    if (
+      hasFirstVoiceMemo &&
+      localStorage.getItem("nest_daily_checkin_date") !== today
+    ) {
+      setDailyOpen(true);
+    }
 
       if (localStorage.getItem("nest_guide_completed") !== "true") {
         setTimeout(() => setGuideOpen(true), 450);
