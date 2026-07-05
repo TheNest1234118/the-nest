@@ -200,45 +200,8 @@ export function Onboarding() {
                 backdropFilter: "blur(12px)",
               }}
             >
-              {index === 0 && (
-                <Step center>
-                  <TinyLabel>Recovery space</TinyLabel>
-                  <Title>The Nest</Title>
-                  <Subtitle>
-                    Remember less. Understand more.
-                  </Subtitle>
-
-                  <PrimaryButton onClick={next}>Enter</PrimaryButton>
-                </Step>
-              )}
-
-              {index === 1 && (
-                <Step>
-                  <TinyLabel>Welcome</TinyLabel>
-                  <Title>Why are you here?</Title>
-                  <Subtitle>Choose everything that feels right.</Subtitle>
-
-                  <div style={{ display: "grid", gap: 10, marginTop: 24 }}>
-                    {REASONS.map((reason) => (
-                      <OptionCard
-                        key={reason.label}
-                        active={reasons.includes(reason.label)}
-                        onClick={() => toggleReason(reason.label)}
-                      >
-                        <span style={{ fontSize: 18 }}>{reason.emoji}</span>
-                        <span>{reason.label}</span>
-                      </OptionCard>
-                    ))}
-                  </div>
-
-                  <PrimaryButton
-                    onClick={() => finishGuide().catch(console.error)}
-                    disabled={reasons.length === 0}
-                  >
-                    Start journaling
-                  </PrimaryButton>
-                </Step>
-              )}
+              
+           
             </motion.div>
           </AnimatePresence>
         </div>
