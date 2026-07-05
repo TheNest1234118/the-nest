@@ -111,7 +111,7 @@ export function Landing() {
             letterSpacing: "0.01em",
           }}
         >
-          For when your brain won't slow down after the internet.
+          For when your brain won't slow down.
         </p>
 
         <motion.button
