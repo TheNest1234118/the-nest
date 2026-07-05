@@ -405,6 +405,7 @@ const transcriptionLimitReached =
   plan !== "supporter" && transcriptionCount >= 30;
   return (
     <motion.div
+    
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -420,6 +421,12 @@ const transcriptionLimitReached =
         flexDirection: "column",
       }}
     >
+      <style>{`
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    `}</style>
       <div
         style={{
           position: "absolute",
@@ -1322,8 +1329,20 @@ opacity: isSaving ? 0.45 : 1,
             <button
               key={title}
               onClick={async () => {
-                await supabase.from("memos").update({ title }).eq("id", pendingMemo.id);
-                setMemos((prev) => prev.map((m) => m.id === pendingMemo.id ? { ...m, title } : m));
+                const { error } = await supabase
+  .from("memos")
+  .update({ title })
+  .eq("id", pendingMemo.id);
+
+if (error) {
+  console.error("Could not update memo title", error);
+  setError("Could not update title.");
+  return;
+}
+
+setMemos((prev) =>
+  prev.map((m) => (m.id === pendingMemo.id ? { ...m, title } : m))
+);
                 setTitleModalOpen(false);
                 setPendingMemo(null);
                 setCustomTitle("");
@@ -1369,8 +1388,20 @@ opacity: isSaving ? 0.45 : 1,
         disabled={!customTitle.trim()}
         onClick={async () => {
           const title = customTitle.trim();
-          await supabase.from("memos").update({ title }).eq("id", pendingMemo.id);
-          setMemos((prev) => prev.map((m) => m.id === pendingMemo.id ? { ...m, title } : m));
+          const { error } = await supabase
+          .from("memos")
+          .update({ title })
+          .eq("id", pendingMemo.id);
+        
+        if (error) {
+          console.error("Could not update memo title", error);
+          setError("Could not update title.");
+          return;
+        }
+        
+        setMemos((prev) =>
+          prev.map((m) => (m.id === pendingMemo.id ? { ...m, title } : m))
+        );
           setTitleModalOpen(false);
           setPendingMemo(null);
           setCustomTitle("");
