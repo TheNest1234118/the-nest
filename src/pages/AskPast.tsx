@@ -252,7 +252,7 @@ export function AskPast() {
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Stelle eine Frage an deine Vergangenheit..."
+          placeholder="Ask your past a question..."
           style={composerTextareaStyle}
           rows={1}
           onKeyDown={(e) => {
