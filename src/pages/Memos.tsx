@@ -189,33 +189,9 @@ recorder.onstop = async () => {
     // 4. UI updaten
     // 4. UI updaten
     setPendingMemo(saved);
-    setTitleModalOpen(true);
-    setTitleLoading(true);
-    
-    if (saved.transcript_text) {
-      try {
-        const res = await fetch("/api/generate-memo-title", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            text: saved.transcript_text,
-          }),
-        });
-    
-        const json = await res.json();
-    
-        setTitleOptions(json.titles || []);
-      } catch (err) {
-        console.error("Could not generate title options", err);
-        setTitleOptions([]);
-      } finally {
-        setTitleLoading(false);
-      }
-    } else {
-      setTitleLoading(false);
-    }
+setTitleModalOpen(true);
+setTitleOptions([]);
+waitForTranscriptAndGenerateTitles(saved.id);
   const wasFirstVoiceMemo =
   localStorage.getItem("nest_first_voice_memo_saved") !== "true";
 
@@ -387,6 +363,34 @@ setIsRecording(false);
       .toLowerCase()
       .includes(search.toLowerCase())
   );
+  async function waitForTranscriptAndGenerateTitles(memoId: string) {
+    setTitleLoading(true);
+  
+    for (let i = 0; i < 12; i++) {
+      const data = await loadMemos();
+      const freshMemo = (data as Memo[]).find((m) => m.id === memoId);
+  
+      if (freshMemo?.transcript_text) {
+        setPendingMemo(freshMemo);
+  
+        const res = await fetch("/api/generate-memo-title", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: freshMemo.transcript_text }),
+        });
+  
+        const json = await res.json();
+        setTitleOptions(json.titles || []);
+        setTitleLoading(false);
+        return;
+      }
+  
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+  
+    setTitleOptions([]);
+    setTitleLoading(false);
+  }
   const transcriptionLimitLabel =
   plan === "supporter"
     ? `${transcriptionCount} / ∞`
@@ -1265,12 +1269,12 @@ opacity: isSaving ? 0.45 : 1,
       </h2>
 
       {titleLoading ? (
-        <p style={{ color: "rgba(185,162,128,0.52)", fontSize: 13 }}>
-          Creating title ideas…
-        </p>
-      ) : (
-        <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
-          {titleOptions.map((title) => (
+  <p style={{ color: "rgba(185,162,128,0.52)", fontSize: 13 }}>
+    Transcribing and creating title ideas…
+  </p>
+) : titleOptions.length > 0 ? (
+  <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
+    {titleOptions.map((title) => (
             <button
               key={title}
               onClick={async () => {
@@ -1294,7 +1298,11 @@ opacity: isSaving ? 0.45 : 1,
               {title}
             </button>
           ))}
-        </div>
+              </div>
+      ) : (
+        <p style={{ color: "rgba(185,162,128,0.52)", fontSize: 13, marginTop: 14 }}>
+          No AI titles yet. Write your own title below.
+        </p>
       )}
 
       <input
