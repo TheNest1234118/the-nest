@@ -115,30 +115,27 @@ export function Landing() {
         </p>
 
         <motion.button
-        onClick={() => {
-
-          trackNestEvent(events.landing_enter_clicked);
-        
-          navigate("/onboarding");
-        
-        }}
-          whileHover={{ opacity: 1 }}
-          whileTap={{ scale: 0.97 }}
-          style={{
-            background: "none",
-            border: "none",
-            borderBottom: "1px solid rgba(205, 170, 100, 0.28)",
-            cursor: "pointer",
-            color: "rgba(205, 170, 100, 0.65)",
-            fontSize: 11,
-            letterSpacing: "0.30em",
-            textTransform: "uppercase",
-            fontWeight: 500,
-            padding: "10px 4px 11px",
-          }}
-        >
-          Enter
-        </motion.button>
+  onClick={() => {
+    trackNestEvent(events.landing_enter_clicked);
+    navigate("/onboarding");
+  }}
+  whileHover={{ opacity: 1 }}
+  whileTap={{ scale: 0.97 }}
+  style={{
+    background: "none",
+    border: "none",
+    borderBottom: "1px solid rgba(205, 170, 100, 0.28)",
+    cursor: "pointer",
+    color: "rgba(205, 170, 100, 0.65)",
+    fontSize: 11,
+    letterSpacing: "0.30em",
+    textTransform: "uppercase",
+    fontWeight: 500,
+    padding: "10px 4px 11px",
+  }}
+>
+  Beginn
+</motion.button>
       </motion.div>
 
   
