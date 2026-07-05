@@ -186,8 +186,7 @@ recorder.onstop = async () => {
     });
 
     // 2. optional: Titel fallback
-    const finalTitle =
-      memoTitle.trim().length > 0 ? memoTitle : "Voice capsule";
+    const finalTitle = "Generating title...";
       console.log("chunks:", audioChunksRef.current.length);
       console.log("blob size:", blob.size);
     // 3. SPEICHERN (Supabase + Storage)
@@ -203,6 +202,41 @@ recorder.onstop = async () => {
     // 4. UI updaten
 if (saved) {
   setMemos((prev) => [saved, ...prev]);
+  // AI-Titel generieren
+if (saved.transcript_text) {
+  try {
+    const res = await fetch("/api/generate-memo-title", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text: saved.transcript_text,
+      }),
+    });
+
+    const json = await res.json();
+
+    if (json.title) {
+      await supabase
+        .from("memos")
+        .update({
+          title: json.title,
+        })
+        .eq("id", saved.id);
+
+      setMemos((prev) =>
+        prev.map((memo) =>
+          memo.id === saved.id
+            ? { ...memo, title: json.title }
+            : memo
+        )
+      );
+    }
+  } catch (e) {
+    console.error("Could not generate AI title", e);
+  }
+}
   const wasFirstVoiceMemo =
   localStorage.getItem("nest_first_voice_memo_saved") !== "true";
 
@@ -623,22 +657,7 @@ const transcriptionLimitReached =
     </button>
   </div>
 )}
-          <input
-  value={memoTitle}
-  onChange={(e) => setMemoTitle(e.target.value)}
-  placeholder="title this capsule..."
-  style={{
-    width: "100%",
-    marginBottom: 18,
-    background: "rgba(255,255,255,0.035)",
-    border: "1px solid rgba(255,255,255,0.075)",
-    borderRadius: 13,
-    padding: "13px 14px",
-    color: "rgba(235,218,192,0.88)",
-    outline: "none",
-    fontSize: 13,
-  }}
-/>
+         
 <button
   type="button"
   onClick={() => {
