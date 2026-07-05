@@ -32,7 +32,7 @@ export function Home() {
             }}
             className="text-foreground/80 hover:text-primary transition-colors duration-700 uppercase tracking-[0.3em] text-sm border-b border-transparent hover:border-primary/50 pb-2 pb-1"
           >
-            Enter Nest
+            Begin
           </button>
         </Link>
       </motion.div>
