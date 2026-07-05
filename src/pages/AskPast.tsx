@@ -13,6 +13,7 @@ import {
   FileText,
   Loader2,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { askPast, type AskPastEntry } from "@/lib/askPast";
 
@@ -47,7 +48,41 @@ const showMoreButtonStyle: React.CSSProperties = {
   cursor: "pointer",
   textAlign: "center",
 };
+const deleteHistoryButtonStyle: React.CSSProperties = {
+  marginTop: 8,
+  width: "100%",
+  border: "1px solid rgba(248,113,113,0.14)",
+  background: "rgba(248,113,113,0.06)",
+  color: "rgba(248,113,113,0.82)",
+  borderRadius: 14,
+  padding: "11px 14px",
+  fontSize: 12,
+  fontWeight: 800,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 7,
+};
 
+const getHistoryTitle = (answer: string) => {
+  const clean = answer
+    .replace(/Antwort:/gi, "")
+    .replace(/Answer:/gi, "")
+    .replace(/Gefunden:/gi, "")
+    .replace(/Found:/gi, "")
+    .trim();
+
+  return truncate(clean.split("\n").find(Boolean) || "Past answer found.", 95);
+};
+
+const getHistoryBullets = (answer: string) => {
+  return answer
+    .split("\n")
+    .map((line) => line.replace(/^[-•]\s*/, "").trim())
+    .filter((line) => line.length > 25)
+    .slice(0, 2);
+};
 export function AskPast() {
   
   const [question, setQuestion] = useState("");
@@ -90,7 +125,15 @@ export function AskPast() {
 
     loadHistory().catch(console.error);
   }, []);
-
+  const deleteHistoryItem = async (id: string) => {
+    await supabase.from("ask_past_history").delete().eq("id", id);
+  
+    setHistory((prev) => prev.filter((item) => item.id !== id));
+  
+    if (selectedHistory?.id === id) {
+      setSelectedHistory(null);
+    }
+  };
   const submit = async (q?: string) => {
     const finalQuestion = (q || question).trim();
     if (!finalQuestion) return;
@@ -293,22 +336,55 @@ export function AskPast() {
   <div style={{ marginTop: 34 }}>
     <p style={sectionLabelStyle}>History</p>
 
-    {history.map((item) => (
-      <div key={item.id} style={historyCardStyle}>
-        <div style={historyQuestionStyle}>{item.question}</div>
+    {history.map((item) => {
+      const title = getHistoryTitle(item.answer || "");
+      const bullets = getHistoryBullets(item.answer || "");
 
-        <div style={historyDateStyle}>
-          {new Date(item.created_at).toLocaleString()}
-        </div>
+      return (
+        <motion.div key={item.id} style={historyCardStyle}>
+          <div style={historyCardTopStyle}>
+            <div>
+              <p style={historyEyebrowStyle}>Answer found</p>
+              <h3 style={historyTitleBigStyle}>{title}</h3>
+            </div>
 
-        <button
-          onClick={() => setSelectedHistory(item)}
-          style={showMoreButtonStyle}
-        >
-          Show more →
-        </button>
-      </div>
-    ))}
+            <div style={historySparkleBoxStyle}>
+              <Sparkles size={24} />
+            </div>
+          </div>
+
+          <p style={historyMetaStyle}>
+            Based on previous search •{" "}
+            {new Date(item.created_at).toLocaleString()}
+          </p>
+
+          {bullets.length > 0 && (
+            <div style={historyBulletWrapStyle}>
+              {bullets.map((bullet, index) => (
+                <p key={index} style={historyBulletStyle}>
+                  • {truncate(bullet, 90)}
+                </p>
+              ))}
+            </div>
+          )}
+
+          <button
+            onClick={() => setSelectedHistory(item)}
+            style={showMoreButtonStyle}
+          >
+            Show more →
+          </button>
+
+          <button
+            onClick={() => deleteHistoryItem(item.id)}
+            style={deleteHistoryButtonStyle}
+          >
+            <Trash2 size={14} />
+            Delete
+          </button>
+        </motion.div>
+      );
+    })}
   </div>
 )}
 
