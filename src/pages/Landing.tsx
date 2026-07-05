@@ -134,7 +134,7 @@ export function Landing() {
     padding: "10px 4px 11px",
   }}
 >
-  Beginn
+  Begin
 </motion.button>
       </motion.div>
 
