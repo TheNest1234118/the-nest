@@ -39,6 +39,7 @@ export function Thoughts() {
   const [search, setSearch] = useState("");
   const [activePromptIndex, setActivePromptIndex] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -79,10 +80,18 @@ export function Thoughts() {
     }
   };
 
-  const visibleThoughts = useMemo(
-    () => thoughts.filter((thought) => thought.text.toLowerCase().includes(search.toLowerCase())),
-    [thoughts, search]
-  );
+  const visibleThoughts = useMemo(() => {
+    return thoughts
+      .filter((thought) =>
+        thought.text.toLowerCase().includes(search.toLowerCase())
+      )
+      .sort((a, b) => {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+  
+        return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+      });
+  }, [thoughts, search, sortOrder]);
 
   const activePrompt = prompts[activePromptIndex];
 
@@ -563,22 +572,7 @@ export function Thoughts() {
             />
           </div>
 
-          <motion.button
-            whileTap={{ scale: 0.94 }}
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 18,
-              background: "rgba(255,255,255,.026)",
-              border: "1px solid rgba(255,255,255,.068)",
-              color: "rgba(185,162,128,.68)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <SlidersHorizontal size={19} strokeWidth={1.45} />
-          </motion.button>
+        
         </motion.div>
 
         <motion.div
@@ -606,18 +600,22 @@ export function Thoughts() {
           </p>
 
           <button
-            style={{
-              border: "none",
-              background: "transparent",
-              color: "rgba(185,162,128,.60)",
-              fontSize: 13,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            Newest⌄
-          </button>
+  onClick={() =>
+    setSortOrder((current) => (current === "newest" ? "oldest" : "newest"))
+  }
+  style={{
+    border: "none",
+    background: "transparent",
+    color: "rgba(185,162,128,.60)",
+    fontSize: 13,
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    cursor: "pointer",
+  }}
+>
+  {sortOrder === "newest" ? "Newest⌄" : "Oldest⌃"}
+</button>
         </motion.div>
 
         {visibleThoughts.length > 0 ? (
@@ -706,7 +704,7 @@ export function Thoughts() {
                     >
                       <Trash2 size={15} strokeWidth={1.45} />
                     </button>
-                    <MoreVertical size={18} strokeWidth={1.35} color="rgba(185,162,128,.38)" />
+                   
                   </div>
                 </div>
               </motion.div>
