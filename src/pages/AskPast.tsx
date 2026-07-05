@@ -140,16 +140,16 @@ export function AskPast() {
       </header>
 
       {!answer && (
-        <>
-          <div style={heroCardStyle}>
-            <div style={heroIconStyle}>
-              <Sparkles size={17} />
-            </div>
-            <h2 style={heroTitleStyle}>Frag deine Vergangenheit</h2>
-            <p style={heroTextStyle}>
-              Stell eine Frage und Nest sucht passende Erinnerungen, Muster und Einträge.
-            </p>
-          </div>
+  <>
+    <div style={heroCardStyle}>
+      <div style={heroIconStyle}>
+        <Sparkles size={17} />
+      </div>
+      <h2 style={heroTitleStyle}>Ask Your Past</h2>
+      <p style={heroTextStyle}>
+        Ask a question and Nest will search your memories, patterns, and journal entries for answers.
+      </p>
+    </div>
 
           <div style={{ marginTop: 18 }}>
             <p style={sectionLabelStyle}>Examples</p>
