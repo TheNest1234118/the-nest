@@ -39,11 +39,11 @@ export function AskPast() {
 
   const foundItems = useMemo(() => {
     if (entries.length === 0) return [];
-
+  
     const firstSources = entries.slice(0, 3).map((entry) => truncate(entry.content, 110));
-
+  
     return [
-      `${entries.length} ${entries.length === 1 ? "Eintrag passt" : "Einträge passen"} zu deiner Frage und wurden als Kontext genutzt.`,
+      `${entries.length} ${entries.length === 1 ? "entry matches" : "entries match"} your question and were used as context.`,
       ...firstSources,
     ].slice(0, 4);
   }, [entries]);
@@ -192,7 +192,7 @@ export function AskPast() {
 
           {foundItems.length > 0 && (
             <div style={{ marginTop: 28 }}>
-              <p style={greenSectionLabelStyle}>Gefunden</p>
+            <p style={greenSectionLabelStyle}>Found</p>
               <div style={foundBoxStyle}>
                 {foundItems.map((item, index) => (
                   <div key={`${item}-${index}`} style={foundRowStyle(index === foundItems.length - 1)}>
@@ -208,7 +208,7 @@ export function AskPast() {
 
       {entries.length > 0 && (
         <div style={{ marginTop: 24 }}>
-          <p style={blueSectionLabelStyle}>Unterstützende Einträge</p>
+         <p style={blueSectionLabelStyle}>Supporting Entries</p>
 
           <div style={entriesBoxStyle}>
             {entries.map((entry, index) => (
