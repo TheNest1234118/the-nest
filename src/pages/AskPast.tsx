@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { getProfile } from "@/lib/subscription";
-const [openHistoryId, setOpenHistoryId] = useState<string | null>(null);
 import { supabase } from "@/lib/supabase";
 import { trackNestEvent, events } from "@/lib/analyticsEvents";
 import { UpgradeScreen } from "@/components/UpgradeScreen";
@@ -50,6 +49,8 @@ export function AskPast() {
   const [question, setQuestion] = useState("");
   const [plan, setPlan] = useState<"free" | "supporter">("free");
   const [checkingPlan, setCheckingPlan] = useState(true);
+  const [openHistoryId, setOpenHistoryId] = useState<string | null>(null);
+
   const [answer, setAnswer] = useState<string | null>(null);
   const [entries, setEntries] = useState<AskPastEntry[]>([]);
   const [history, setHistory] = useState<any[]>([]);
