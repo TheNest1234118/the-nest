@@ -21,7 +21,6 @@ function getSupportedMimeType(): string {
     "audio/webm;codecs=opus",
     "audio/mp4",
     "audio/aac",
-    "audio/webm;codecs=opus",
     "audio/webm",
     "audio/ogg;codecs=opus",
     "audio/ogg",
@@ -36,48 +35,36 @@ function getSupportedMimeType(): string {
   return "";
 }
 
-function isIOS(): boolean {
-  return (
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  );
-}
 
 export function Memos() {
   const [, navigate] = useLocation();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [memos, setMemos] = useState<Memo[]>([]);
   const [plan, setPlan] = useState<"free" | "supporter">("free");
 const [transcriptionCount, setTranscriptionCount] = useState(0);
     const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [selectedTranscript, setSelectedTranscript] = useState<Memo | null>(null);
-  const [memoTitle, setMemoTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [createTranscript, setCreateTranscript] = useState(true);
   const [titleModalOpen, setTitleModalOpen] = useState(false);
 const [titleOptions, setTitleOptions] = useState<string[]>([]);
 const [pendingMemo, setPendingMemo] = useState<Memo | null>(null);
 const [customTitle, setCustomTitle] = useState("");
+const [titleLoading, setTitleLoading] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const MAX_RECORDING_SECONDS = 15 * 60;
   const [promptIntroOpen, setPromptIntroOpen] = useState(false);
   const [voicePrompts, setVoicePrompts] = useState<ReturnType<typeof getEnabledVoicePrompts>>([]);
 const [activePromptIndex, setActivePromptIndex] = useState(0);
-  const CHUNK_SECONDS = 5 * 60;
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
-  const chunkIndexRef = useRef(0);
-const lastChunkTimeRef = useRef(0);
-const [search, setSearch] = useState("");
+const search = "";
   const streamRef = useRef<MediaStream | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      setIsLoggedIn(Boolean(data.user));
       if (!data.user) setCreateTranscript(false);
     });
   }, []);
@@ -164,9 +151,6 @@ const [search, setSearch] = useState("");
       mediaRecorderRef.current = recorder;
       audioChunksRef.current = [];
       startTimeRef.current = Date.now();
-      chunkIndexRef.current = 0;
-lastChunkTimeRef.current = Date.now();
-
 recorder.ondataavailable = (e) => {
   if (!e.data || e.data.size === 0) return;
   audioChunksRef.current.push(e.data);
@@ -204,43 +188,34 @@ recorder.onstop = async () => {
   
     // 4. UI updaten
     // 4. UI updaten
-if (saved) {
-  setMemos((prev) => [saved, ...prev]);
-  // AI-Titel generieren
-if (saved.transcript_text) {
-  try {
-    const res = await fetch("/api/generate-memo-title", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text: saved.transcript_text,
-      }),
-    });
-
-    const json = await res.json();
-
-    if (json.title) {
-      await supabase
-        .from("memos")
-        .update({
-          title: json.title,
-        })
-        .eq("id", saved.id);
-
-      setMemos((prev) =>
-        prev.map((memo) =>
-          memo.id === saved.id
-            ? { ...memo, title: json.title }
-            : memo
-        )
-      );
+    setPendingMemo(saved);
+    setTitleModalOpen(true);
+    setTitleLoading(true);
+    
+    if (saved.transcript_text) {
+      try {
+        const res = await fetch("/api/generate-memo-title", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: saved.transcript_text,
+          }),
+        });
+    
+        const json = await res.json();
+    
+        setTitleOptions(json.titles || []);
+      } catch (err) {
+        console.error("Could not generate title options", err);
+        setTitleOptions([]);
+      } finally {
+        setTitleLoading(false);
+      }
+    } else {
+      setTitleLoading(false);
     }
-  } catch (e) {
-    console.error("Could not generate AI title", e);
-  }
-}
   const wasFirstVoiceMemo =
   localStorage.getItem("nest_first_voice_memo_saved") !== "true";
 
@@ -257,20 +232,18 @@ if (wasFirstVoiceMemo) {
     setTranscriptionCount((current) => current + 1);
   }
 
+  setMemos((prev) => [saved, ...prev]);
+
   setTimeout(() => {
     setIsSaving(false);
-  
+
     if (wasFirstVoiceMemo) {
       navigate("/home");
     }
   }, 1200);
-} else {
-  setIsSaving(false);
-}
 
 // 5. cleanup
 audioChunksRef.current = [];
-setMemoTitle("");
 setCreateTranscript(true);
 setRecordingTime(0);
 
@@ -320,7 +293,7 @@ setIsRecording(false);
       prompt_enabled: voicePrompts.length > 0,
     });
     recorder.stop();
-  }, []);
+  }, [recordingTime, voicePrompts.length]);
 
   const togglePlay = useCallback(
     async (memo: Memo) => {
@@ -1255,6 +1228,113 @@ opacity: isSaving ? 0.45 : 1,
         }}
       >
         Close
+      </button>
+    </div>
+  </div>
+)}
+{titleModalOpen && pendingMemo && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      zIndex: 1200,
+      background: "rgba(6,5,8,0.88)",
+      backdropFilter: "blur(10px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+    }}
+  >
+    <div
+      style={{
+        width: "100%",
+        maxWidth: 360,
+        background: "rgba(18,15,12,0.96)",
+        border: "1px solid rgba(205,170,100,0.12)",
+        borderRadius: 24,
+        padding: 22,
+      }}
+    >
+      <p style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(205,170,100,0.42)" }}>
+        AI Title
+      </p>
+
+      <h2 style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 400, color: "rgba(235,215,180,0.92)" }}>
+        Choose a title
+      </h2>
+
+      {titleLoading ? (
+        <p style={{ color: "rgba(185,162,128,0.52)", fontSize: 13 }}>
+          Creating title ideas…
+        </p>
+      ) : (
+        <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
+          {titleOptions.map((title) => (
+            <button
+              key={title}
+              onClick={async () => {
+                await supabase.from("memos").update({ title }).eq("id", pendingMemo.id);
+                setMemos((prev) => prev.map((m) => m.id === pendingMemo.id ? { ...m, title } : m));
+                setTitleModalOpen(false);
+                setPendingMemo(null);
+                setCustomTitle("");
+              }}
+              style={{
+                width: "100%",
+                textAlign: "left",
+                background: "rgba(255,255,255,0.026)",
+                border: "1px solid rgba(255,255,255,0.065)",
+                borderRadius: 14,
+                padding: "13px 14px",
+                color: "rgba(225,210,188,0.82)",
+                fontSize: 13,
+              }}
+            >
+              {title}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <input
+        value={customTitle}
+        onChange={(e) => setCustomTitle(e.target.value)}
+        placeholder="Write your own title..."
+        style={{
+          width: "100%",
+          marginTop: 14,
+          background: "rgba(255,255,255,0.026)",
+          border: "1px solid rgba(255,255,255,0.065)",
+          borderRadius: 14,
+          padding: "13px 14px",
+          color: "rgba(225,210,188,0.82)",
+          outline: "none",
+        }}
+      />
+
+      <button
+        disabled={!customTitle.trim()}
+        onClick={async () => {
+          const title = customTitle.trim();
+          await supabase.from("memos").update({ title }).eq("id", pendingMemo.id);
+          setMemos((prev) => prev.map((m) => m.id === pendingMemo.id ? { ...m, title } : m));
+          setTitleModalOpen(false);
+          setPendingMemo(null);
+          setCustomTitle("");
+        }}
+        style={{
+          width: "100%",
+          marginTop: 12,
+          border: "1px solid rgba(205,170,100,0.16)",
+          background: "rgba(205,170,100,0.07)",
+          borderRadius: 14,
+          padding: "13px 14px",
+          color: "rgba(225,205,176,0.78)",
+          opacity: customTitle.trim() ? 1 : 0.45,
+        }}
+      >
+        Save custom title
       </button>
     </div>
   </div>
