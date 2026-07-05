@@ -6,6 +6,72 @@ export const config = {
   maxDuration: 60,
 };
 
+function detectQuestionLanguage(question: string): string {
+  const q = ` ${question.toLowerCase().trim()} `;
+
+  const germanHints = [
+    " ich ",
+    " du ",
+    " der ",
+    " die ",
+    " das ",
+    " ein ",
+    " eine ",
+    " und ",
+    " oder ",
+    " warum ",
+    " wieso ",
+    " weshalb ",
+    " wie ",
+    " was ",
+    " wann ",
+    " wo ",
+    " nicht ",
+    " keine ",
+    " mein ",
+    " meine ",
+    " mir ",
+    " mich ",
+    " habe ",
+    " bin ",
+    " war ",
+    " hatte ",
+  ];
+
+  const englishHints = [
+    " i ",
+    " you ",
+    " the ",
+    " a ",
+    " an ",
+    " and ",
+    " or ",
+    " why ",
+    " how ",
+    " what ",
+    " when ",
+    " where ",
+    " not ",
+    " no ",
+    " my ",
+    " me ",
+    " have ",
+    " am ",
+    " was ",
+    " did ",
+    " do ",
+    " does ",
+  ];
+
+  const germanScore = germanHints.filter((word) => q.includes(word)).length;
+  const englishScore = englishHints.filter((word) => q.includes(word)).length;
+
+  if (englishScore > germanScore) return "English";
+  if (germanScore > englishScore) return "German";
+
+  return "English";
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -24,6 +90,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!question) {
       return res.status(400).json({ error: "Missing question" });
     }
+
+    const questionLanguage = detectQuestionLanguage(question);
 
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
     const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -145,8 +213,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (finalEntries.length === 0) {
+      const emptyAnswer =
+        questionLanguage === "German"
+          ? "Ich konnte noch keine gespeicherten Gedanken, Text-Anker oder Sprachtranskripte finden."
+          : "I couldn’t find any saved thoughts, text anchors, or voice transcripts yet.";
+
       return res.status(200).json({
-        answer: "I couldn’t find any saved thoughts, text anchors, or voice transcripts yet.",
+        answer: emptyAnswer,
         entries: [],
       });
     }
@@ -165,8 +238,8 @@ ${entry.content}`;
       .join("\n\n---\n\n");
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.35,
+      model: "gpt-4.1-mini",
+      temperature: 0.2,
       messages: [
         {
           role: "system",
@@ -176,22 +249,16 @@ You are Ask Your Past, a personal memory retrieval system.
 Your only job is to answer questions using the retrieved personal entries.
 
 Never use outside knowledge.
-RESPONSE LANGUAGE (STRICT):
 
-Determine the language ONLY from the user's question.
+CRITICAL LANGUAGE RULE:
+You must answer ONLY in this language: ${questionLanguage}.
 
-The language of the retrieved memories MUST NEVER determine the response language.
-
-Write the entire answer in the user's language.
-
+Do not infer the answer language from the retrieved memories.
+The retrieved memories may be in any language.
 Memory excerpts must remain in their original language.
+All section labels must be translated into ${questionLanguage}.
 
-Never switch to the language of the memories.
 Rules:
-- Always answer in the same language as the user's question.
-- This applies to every language.
-- Do not force English.
-- Translate section labels like "Answer", "Found", "Supporting entries" and "Uncertainty" into the user's language.
 - Answer ONLY from the retrieved entries.
 - Never invent facts.
 - Never guess.
@@ -200,12 +267,12 @@ Rules:
 - Never provide emotional support.
 - Never provide therapy.
 - Never provide motivational advice.
-- Never end answers with suggestions like "If you'd like to reflect more...", "I'm here for you.", or "Let me know if..."
-- If the retrieved evidence is insufficient, explicitly say so.
+- Never end answers with suggestions.
+- If the retrieved evidence is insufficient, explicitly say so in ${questionLanguage}.
 
 Your goal is to help the user find memories, not to behave like a therapist.
 
-Always use exactly this structure:
+Always use exactly this structure, translated into ${questionLanguage}:
 
 Answer:
 A direct answer in 1–3 sentences.
@@ -240,8 +307,6 @@ Do not provide instructions.
 Do not provide advice.
 Do not encourage harmful behaviour.
 
-If there is no evidence, say this in the same language as the user's question.
-
 Your personality:
 Precise.
 Grounded.
@@ -253,30 +318,34 @@ You are a memory search engine, not a chatbot.
         {
           role: "user",
           content: `
-The user's question is:
+Question language: ${questionLanguage}
 
+User question:
 ${question}
 
-IMPORTANT:
-Your answer MUST be written entirely in the language of the question.
-The memories below may be written in different languages.
-Do NOT change your response language because of them.
+Important:
+Answer only in ${questionLanguage}.
+Do not switch language because of the memories.
 Keep quoted excerpts exactly as written.
 
-Relevant memories:
+Retrieved memories:
 ${context}
 `,
         },
       ],
     });
 
-    const answer =
-      completion.choices[0]?.message?.content ||
-      "I found related entries, but couldn’t form a clear answer.";
+    const fallbackAnswer =
+      questionLanguage === "German"
+        ? "Ich habe passende Einträge gefunden, konnte daraus aber keine klare Antwort bilden."
+        : "I found related entries, but couldn’t form a clear answer.";
+
+    const answer = completion.choices[0]?.message?.content || fallbackAnswer;
 
     return res.status(200).json({
       answer,
       entries: finalEntries,
+      questionLanguage,
     });
   } catch (error: any) {
     console.error("ASK PAST ERROR:", error);

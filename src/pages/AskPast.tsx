@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { getProfile } from "@/lib/subscription";
+const [openHistoryId, setOpenHistoryId] = useState<string | null>(null);
 import { supabase } from "@/lib/supabase";
 import { trackNestEvent, events } from "@/lib/analyticsEvents";
 import { UpgradeScreen } from "@/components/UpgradeScreen";
@@ -34,8 +35,18 @@ const formatDate = (value?: string | null) => {
     year: "numeric",
   });
 };
-
+const showMoreButtonStyle: React.CSSProperties = {
+  marginTop: 10,
+  background: "none",
+  border: "none",
+  color: "rgba(205,170,100,0.85)",
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+  padding: 0,
+};
 export function AskPast() {
+  
   const [question, setQuestion] = useState("");
   const [plan, setPlan] = useState<"free" | "supporter">("free");
   const [checkingPlan, setCheckingPlan] = useState(true);
@@ -248,7 +259,18 @@ export function AskPast() {
 
           {history.map((item) => (
             <div key={item.id} style={historyCardStyle}>
-              <div style={historyQuestionStyle}>{item.question}</div>
+             <button
+  onClick={() =>
+    setOpenHistoryId(openHistoryId === item.id ? null : item.id)
+  }
+  style={showMoreButtonStyle}
+>
+  {openHistoryId === item.id ? "Show less" : "Show more"}
+</button>
+
+{openHistoryId === item.id && (
+  <div style={historyAnswerStyle}>{item.answer}</div>
+)}
               <div style={historyAnswerStyle}>{item.answer}</div>
               <div style={historyDateStyle}>{new Date(item.created_at).toLocaleString()}</div>
             </div>
