@@ -353,8 +353,8 @@ function LastThoughtFlight({
           scale: [0.88, 1, 1.04, 0.98, 0.86],
         }}
         transition={{
-          duration: 5.2,
-          times: [0, 0.18, 0.46, 0.72, 1],
+          duration: 8.5,
+          times: [0, 0.22, 0.55, 0.82, 1],
           ease: [0.22, 1, 0.36, 1],
         }}
         onAnimationComplete={onDone}
