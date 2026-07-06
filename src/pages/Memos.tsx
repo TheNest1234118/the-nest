@@ -1747,21 +1747,23 @@ export function Memos() {
                   <button
                     key={title}
                     onClick={async () => {
-                      const { error } = await supabase
+                      const { data, error } = await supabase
                         .from("memos")
                         .update({ title })
-                        .eq("id", pendingMemo.id);
-
+                        .eq("id", pendingMemo.id)
+                        .select()
+                        .single();
+                    
                       if (error) {
                         console.error("Could not update memo title", error);
                         setError("Could not update title.");
                         return;
                       }
-
+                    
                       setMemos((prev) =>
-                        prev.map((m) => (m.id === pendingMemo.id ? { ...m, title } : m))
+                        prev.map((m) => (m.id === pendingMemo.id ? data : m))
                       );
-
+                    
                       finishTitleFlow();
                     }}
                     style={{
