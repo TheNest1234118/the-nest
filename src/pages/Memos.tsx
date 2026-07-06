@@ -1747,12 +1747,10 @@ export function Memos() {
                   <button
                     key={title}
                     onClick={async () => {
-                      const { data, error } = await supabase
+                      const { error } = await supabase
                         .from("memos")
                         .update({ title })
-                        .eq("id", pendingMemo.id)
-                        .select()
-                        .single();
+                        .eq("id", pendingMemo.id);
                     
                       if (error) {
                         console.error("Could not update memo title", error);
@@ -1760,9 +1758,8 @@ export function Memos() {
                         return;
                       }
                     
-                      setMemos((prev) =>
-                        prev.map((m) => (m.id === pendingMemo.id ? data : m))
-                      );
+                      const fresh = await loadMemos();
+                      setMemos(fresh as Memo[]);
                     
                       finishTitleFlow();
                     }}
@@ -1807,23 +1804,22 @@ export function Memos() {
   disabled={!customTitle.trim()}
   onClick={async () => {
     const title = customTitle.trim();
-
-    const { data, error } = await supabase
+    if (!title) return;
+  
+    const { error } = await supabase
       .from("memos")
       .update({ title })
-      .eq("id", pendingMemo.id)
-      .select()
-      .single();
-
+      .eq("id", pendingMemo.id);
+  
     if (error) {
-      console.error(error);
+      console.error("Could not update memo title", error);
+      setError("Could not update title.");
       return;
     }
-
-    setMemos((prev) =>
-      prev.map((m) => (m.id === pendingMemo.id ? data : m))
-    );
-
+  
+    const fresh = await loadMemos();
+    setMemos(fresh as Memo[]);
+  
     finishTitleFlow();
   }}
   style={{
