@@ -245,6 +245,7 @@ function PatternDetail({
   pattern: AIPattern;
   onBack: () => void;
 }) {
+  
   return (
     <motion.div initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }}>
       <button
@@ -356,6 +357,8 @@ export function AIPatterns() {
   const [generation, setGeneration] = useState<AIPatternGeneration | null>(null);
   const [history, setHistory] = useState<AIPatternGeneration[]>([]);
   const [loading, setLoading] = useState(false);
+  const [openedHistoryItem, setOpenedHistoryItem] =
+  useState<AIPatternGeneration | null>(null);
   const [loadingStep, setLoadingStep] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const [selectedPattern, setSelectedPattern] = useState<AIPattern | null>(null);
@@ -412,6 +415,118 @@ export function AIPatterns() {
   const previous = history[1];
 
   if (selectedPattern) {
+    if (openedHistoryItem) {
+      const folderPatterns = openedHistoryItem.result.patterns || [];
+    
+      return (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          style={{
+            minHeight: "100svh",
+            background: colors.bg,
+            maxWidth: 480,
+            margin: "0 auto",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <RainLayer />
+    
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+              padding: "calc(env(safe-area-inset-top, 0px) + 52px) 20px 42px",
+            }}
+          >
+            <button
+              onClick={() => setOpenedHistoryItem(null)}
+              style={{
+                background: "none",
+                border: "none",
+                color: colors.gold,
+                fontSize: 12,
+                marginBottom: 20,
+                cursor: "pointer",
+              }}
+            >
+              ← Back to AI Patterns
+            </button>
+    
+            <h1
+              style={{
+                fontFamily: "Georgia, 'Times New Roman', serif",
+                fontSize: 31,
+                fontWeight: 400,
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              AI Pattern Folder
+            </h1>
+    
+            <p style={{ color: colors.textFaint, fontSize: 11, marginBottom: 18 }}>
+              {new Date(openedHistoryItem.created_at).toLocaleDateString()} ·{" "}
+              {labelForRange(openedHistoryItem.range)} ·{" "}
+              {openedHistoryItem.voice_count} voice ·{" "}
+              {openedHistoryItem.thought_count} thoughts
+            </p>
+    
+            {openedHistoryItem.result.hero_themes.length > 0 && (
+              <section
+                style={{
+                  borderRadius: 24,
+                  border: "1px solid rgba(205,170,100,0.16)",
+                  background:
+                    "linear-gradient(145deg, rgba(205,170,100,0.10), rgba(255,255,255,0.024))",
+                  padding: 22,
+                  marginBottom: 16,
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 10,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: colors.goldSoft,
+                    marginBottom: 10,
+                  }}
+                >
+                  What the AI noticed
+                </p>
+    
+                <div style={{ display: "grid", gap: 6 }}>
+                  {openedHistoryItem.result.hero_themes.map((theme) => (
+                    <p
+                      key={theme}
+                      style={{
+                        color: colors.text,
+                        fontFamily: "Georgia,serif",
+                        fontSize: 20,
+                      }}
+                    >
+                      • {theme}
+                    </p>
+                  ))}
+                </div>
+              </section>
+            )}
+    
+            <div style={{ display: "grid", gap: 12 }}>
+              {folderPatterns.map((pattern, index) => (
+                <PatternCard
+                  key={`${pattern.id}-${index}`}
+                  pattern={pattern}
+                  index={index}
+                  onOpen={() => setSelectedPattern(pattern)}
+                />
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -720,10 +835,12 @@ export function AIPatterns() {
           <button
             key={item.id}
             onClick={() => {
-              setGeneration(item);
-              setShowAll(false);
+              setOpenedHistoryItem(item);
               setSelectedPattern(null);
-              window.scrollTo({ top: 0, behavior: "smooth" });
+              window.scrollTo({
+                top: 0,
+                behavior: "smooth",
+              });
             }}
             style={{
               width: "100%",
