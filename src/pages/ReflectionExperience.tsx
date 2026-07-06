@@ -346,7 +346,9 @@ function EmotionalJourney({
 
   const getY = (point: any) => {
     if (point.has_entry === false || point.chart_score == null) return null;
-    return 70 - Math.max(0, Math.min(100, Number(point.chart_score))) * 0.45;
+  
+    const score = Math.max(0, Math.min(100, Number(point.chart_score)));
+    return 64 - score * 0.48;
   };
 
   const linePoints = points
@@ -426,9 +428,9 @@ function EmotionalJourney({
                     height: 86,
                   }}
                 >
-                  <motion.div
-                    initial={{ scale: 0, y: 6 }}
-                    animate={{ scale: hasEntry ? 1 : 0, y: y ?? 42 }}
+                 <motion.div
+  initial={{ scale: 0 }}
+  animate={{ scale: hasEntry ? 1 : 0 }}
                     transition={{
                       delay: 0.3 + i * 0.07,
                       type: "spring",
