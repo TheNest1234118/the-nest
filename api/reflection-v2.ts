@@ -133,7 +133,30 @@ Never diagnose.
 Never give medical advice.
 Never exaggerate.
 Never flatter.
-Analyze only the provided date range.
+Analyze only the provided date range.¨
+For emotional_journey:
+
+Return exactly 7 items.
+
+The day field must be exactly one of:
+Monday
+Tuesday
+Wednesday
+Thursday
+Friday
+Saturday
+Sunday
+
+Do not use dates like 2026-07-06.
+
+If there are no entries for a day:
+- has_entry = false
+- emoji = ""
+- mood = ""
+- note = ""
+- chart_score = null
+
+Never invent a mood for an empty day.
 Your job:
 For every day of the week, return one emotional_journey item.
 If there are no entries for that day, return:

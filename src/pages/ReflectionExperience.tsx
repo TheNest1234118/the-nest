@@ -345,9 +345,12 @@ function EmotionalJourney({
   const weekDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
   const points = weekDays.map((day) => {
-    const found = journey.find((x) =>
-      x.day?.toLowerCase().startsWith(day.toLowerCase().slice(0, 3))
-    );
+    const found = journey.find((x) => {
+      const value = String(x.day || "").toLowerCase();
+      const short = day.toLowerCase().slice(0, 3);
+    
+      return value === day.toLowerCase() || value.startsWith(short);
+    });
 
     return (
       found || {
