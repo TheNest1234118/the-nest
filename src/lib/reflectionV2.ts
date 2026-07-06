@@ -1,5 +1,6 @@
 import { loadThoughts } from "@/lib/userData";
 import { loadMemos } from "@/lib/memos";
+import { supabase } from "@/lib/supabase";
 import { loadMoodLog } from "@/lib/dailyNest";
 import type { ReflectionKind, ReflectionV2Generation } from "@/lib/reflectionV2Types";
 
@@ -24,19 +25,43 @@ function inRange(date: string, start: Date, end: Date) {
   return d >= start && d < end;
 }
 
-export function loadReflectionV2History(kind: ReflectionKind): ReflectionV2Generation[] {
-  try {
-    const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    return all.filter((x: ReflectionV2Generation) => x.kind === kind);
-  } catch {
+export async function loadReflectionV2History(kind: ReflectionKind) {
+  const { data: auth } = await supabase.auth.getUser();
+
+  if (!auth.user) return [];
+
+  const { data, error } = await supabase
+    .from("reflection_v2_generations")
+    .select("*")
+    .eq("user_id", auth.user.id)
+    .eq("kind", kind)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
     return [];
   }
+
+  return data || [];
 }
 
-function saveReflectionV2(item: ReflectionV2Generation) {
-  const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  const next = [item, ...all].slice(0, 30);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+async function saveReflectionV2(item: ReflectionV2Generation) {
+  const { data: auth } = await supabase.auth.getUser();
+
+  if (!auth.user) return;
+
+  await supabase.from("reflection_v2_generations").insert({
+    id: item.id,
+    user_id: auth.user.id,
+    kind: item.kind,
+    created_at: item.created_at,
+    range_start: item.range_start,
+    range_end: item.range_end,
+    voice_count: item.voice_count,
+    thought_count: item.thought_count,
+    mood_count: item.mood_count,
+    result: item.result,
+  });
 }
 
 export async function generateReflectionV2(

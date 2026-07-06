@@ -611,9 +611,13 @@ export function ReflectionExperience({ kind }: { kind: ReflectionKind }) {
   const isWeekly = kind === "weekly";
 
   useEffect(() => {
-    const saved = loadReflectionV2History(kind);
-    setHistory(saved);
-    setItem(saved[0] || null);
+    async function init() {
+      const saved = await loadReflectionV2History(kind);
+      setHistory(saved);
+      setItem(saved[0] || null);
+    }
+  
+    init();
   }, [kind]);
 
   async function generate() {
@@ -621,7 +625,8 @@ export function ReflectionExperience({ kind }: { kind: ReflectionKind }) {
     try {
       const next = await generateReflectionV2(kind);
       setItem(next);
-      setHistory(loadReflectionV2History(kind));
+      const saved = await loadReflectionV2History(kind);
+setHistory(saved);
     } finally {
       setLoading(false);
     }
