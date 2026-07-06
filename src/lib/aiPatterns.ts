@@ -1,6 +1,7 @@
 import { loadThoughts } from "@/lib/userData";
 import { loadMemos } from "@/lib/memos";
 import { loadReflections } from "@/lib/reflections";
+import { supabase } from "@/lib/supabase";
 import type {
   AIPatternGeneration,
   AIPatternResponse,
@@ -20,21 +21,67 @@ function withinRange(date: string, range: AIPatternTimeRange) {
   return created >= cutoff;
 }
 
-export function loadAIPatternHistory(): AIPatternGeneration[] {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch {
+export async function loadAIPatternHistory(): Promise<AIPatternGeneration[]> {
+  const { data: auth } = await supabase.auth.getUser();
+
+  if (!auth.user) {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    } catch {
+      return [];
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("ai_pattern_generations")
+    .select("*")
+    .eq("user_id", auth.user.id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (error) {
+    console.error("Could not load AI pattern history", error);
     return [];
   }
-}
 
-export function saveAIPatternGeneration(
+  return (data || []).map((row) => ({
+    id: row.id,
+    created_at: row.created_at,
+    range: row.range,
+    entry_count: row.entry_count,
+    voice_count: row.voice_count,
+    thought_count: row.thought_count,
+    result: row.result,
+  }));
+}
+export async function saveAIPatternGeneration(
   generation: AIPatternGeneration
-): AIPatternGeneration[] {
-  const existing = loadAIPatternHistory();
-  const next = [generation, ...existing].slice(0, 20);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  return next;
+): Promise<AIPatternGeneration[]> {
+  const { data: auth } = await supabase.auth.getUser();
+
+  if (!auth.user) {
+    const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const next = [generation, ...existing].slice(0, 20);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    return next;
+  }
+
+  const { error } = await supabase.from("ai_pattern_generations").insert({
+    id: generation.id,
+    user_id: auth.user.id,
+    created_at: generation.created_at,
+    range: generation.range,
+    entry_count: generation.entry_count,
+    voice_count: generation.voice_count,
+    thought_count: generation.thought_count,
+    result: generation.result,
+  });
+
+  if (error) {
+    console.error("Could not save AI pattern generation", error);
+  }
+
+  return loadAIPatternHistory();
 }
 
 export async function loadPatternEntries(
@@ -100,6 +147,7 @@ export async function generateAIPatterns(
 
   const thoughtCount = entries.filter((entry) => entry.type === "thought").length;
   const voiceCount = entries.filter((entry) => entry.type === "voice").length;
+  
 
   if (entries.length < 4) {
     return {
@@ -117,7 +165,7 @@ export async function generateAIPatterns(
     };
   }
 
-  const previousGeneration = loadAIPatternHistory()[0];
+  const previousGeneration = (await loadAIPatternHistory())[0];
 
   const res = await fetch("/api/ai-patterns", {
     method: "POST",
@@ -147,7 +195,7 @@ export async function generateAIPatterns(
     result,
   };
 
-  saveAIPatternGeneration(generation);
+  await saveAIPatternGeneration(generation);
 
   return generation;
 }

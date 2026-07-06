@@ -7,7 +7,6 @@ import {
   Repeat,
   Brain,
   Moon,
-  Flame,
   Clock3,
   Leaf,
   AlertTriangle,
@@ -170,26 +169,12 @@ function PatternCard({
           </div>
 
           {showConfidence && (
-            <p
-              style={{
-                fontSize: 11,
-                lineHeight: 1.5,
-                color: colors.textSoft,
-                marginBottom: 10,
-              }}
-            >
+            <p style={{ fontSize: 11, lineHeight: 1.5, color: colors.textSoft, marginBottom: 10 }}>
               {pattern.confidence_reason}
             </p>
           )}
 
-          <p
-            style={{
-              color: "rgba(220,205,182,0.68)",
-              fontSize: 13,
-              lineHeight: 1.6,
-              marginBottom: 13,
-            }}
-          >
+          <p style={{ color: "rgba(220,205,182,0.68)", fontSize: 13, lineHeight: 1.6, marginBottom: 13 }}>
             {pattern.description}
           </p>
 
@@ -204,14 +189,7 @@ function PatternCard({
                   padding: "10px 11px",
                 }}
               >
-                <p
-                  style={{
-                    color: "rgba(225,210,188,0.72)",
-                    fontSize: 12,
-                    lineHeight: 1.5,
-                    fontStyle: "italic",
-                  }}
-                >
+                <p style={{ color: "rgba(225,210,188,0.72)", fontSize: 12, lineHeight: 1.5, fontStyle: "italic" }}>
                   “{item.quote}”
                 </p>
                 <p style={{ color: colors.textFaint, fontSize: 10, marginTop: 5 }}>
@@ -221,13 +199,7 @@ function PatternCard({
             ))}
           </div>
 
-          <p
-            style={{
-              color: "rgba(205,170,100,0.68)",
-              fontSize: 13,
-              lineHeight: 1.55,
-            }}
-          >
+          <p style={{ color: "rgba(205,170,100,0.68)", fontSize: 13, lineHeight: 1.55 }}>
             {pattern.suggestion}
           </p>
         </div>
@@ -245,7 +217,6 @@ function PatternDetail({
   pattern: AIPattern;
   onBack: () => void;
 }) {
-  
   return (
     <motion.div initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }}>
       <button
@@ -259,7 +230,7 @@ function PatternDetail({
           cursor: "pointer",
         }}
       >
-        ← Back to patterns
+        ← Back to AI Patterns
       </button>
 
       <h1
@@ -357,17 +328,20 @@ export function AIPatterns() {
   const [generation, setGeneration] = useState<AIPatternGeneration | null>(null);
   const [history, setHistory] = useState<AIPatternGeneration[]>([]);
   const [loading, setLoading] = useState(false);
-  const [openedHistoryItem, setOpenedHistoryItem] =
-  useState<AIPatternGeneration | null>(null);
   const [loadingStep, setLoadingStep] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const [selectedPattern, setSelectedPattern] = useState<AIPattern | null>(null);
+  const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const saved = loadAIPatternHistory();
+  async function refreshHistory(selected?: AIPatternGeneration) {
+    const saved = await Promise.resolve(loadAIPatternHistory());
     setHistory(saved);
-    setGeneration(saved[0] || null);
+    setGeneration(selected || saved[0] || null);
+  }
+
+  useEffect(() => {
+    refreshHistory();
   }, []);
 
   useEffect(() => {
@@ -386,6 +360,7 @@ export function AIPatterns() {
     setLoadingStep(0);
     setShowAll(false);
     setSelectedPattern(null);
+    setExpandedHistoryId(null);
 
     const started = Date.now();
 
@@ -395,8 +370,7 @@ export function AIPatterns() {
       const delay = Math.max(0, 5200 - elapsed);
 
       setTimeout(() => {
-        setGeneration(next);
-        setHistory(loadAIPatternHistory());
+        refreshHistory(next);
         setLoading(false);
       }, delay);
     } catch (err: any) {
@@ -412,121 +386,9 @@ export function AIPatterns() {
     return showAll ? patterns : patterns.slice(0, 3);
   }, [generation, showAll]);
 
-  const previous = history[1];
+  const previous = history.find((item) => item.id !== generation?.id);
 
   if (selectedPattern) {
-    if (openedHistoryItem) {
-      const folderPatterns = openedHistoryItem.result.patterns || [];
-    
-      return (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          style={{
-            minHeight: "100svh",
-            background: colors.bg,
-            maxWidth: 480,
-            margin: "0 auto",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <RainLayer />
-    
-          <div
-            style={{
-              position: "relative",
-              zIndex: 1,
-              padding: "calc(env(safe-area-inset-top, 0px) + 52px) 20px 42px",
-            }}
-          >
-            <button
-              onClick={() => setOpenedHistoryItem(null)}
-              style={{
-                background: "none",
-                border: "none",
-                color: colors.gold,
-                fontSize: 12,
-                marginBottom: 20,
-                cursor: "pointer",
-              }}
-            >
-              ← Back to AI Patterns
-            </button>
-    
-            <h1
-              style={{
-                fontFamily: "Georgia, 'Times New Roman', serif",
-                fontSize: 31,
-                fontWeight: 400,
-                color: colors.text,
-                marginBottom: 8,
-              }}
-            >
-              AI Pattern Folder
-            </h1>
-    
-            <p style={{ color: colors.textFaint, fontSize: 11, marginBottom: 18 }}>
-              {new Date(openedHistoryItem.created_at).toLocaleDateString()} ·{" "}
-              {labelForRange(openedHistoryItem.range)} ·{" "}
-              {openedHistoryItem.voice_count} voice ·{" "}
-              {openedHistoryItem.thought_count} thoughts
-            </p>
-    
-            {openedHistoryItem.result.hero_themes.length > 0 && (
-              <section
-                style={{
-                  borderRadius: 24,
-                  border: "1px solid rgba(205,170,100,0.16)",
-                  background:
-                    "linear-gradient(145deg, rgba(205,170,100,0.10), rgba(255,255,255,0.024))",
-                  padding: 22,
-                  marginBottom: 16,
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: 10,
-                    letterSpacing: "0.18em",
-                    textTransform: "uppercase",
-                    color: colors.goldSoft,
-                    marginBottom: 10,
-                  }}
-                >
-                  What the AI noticed
-                </p>
-    
-                <div style={{ display: "grid", gap: 6 }}>
-                  {openedHistoryItem.result.hero_themes.map((theme) => (
-                    <p
-                      key={theme}
-                      style={{
-                        color: colors.text,
-                        fontFamily: "Georgia,serif",
-                        fontSize: 20,
-                      }}
-                    >
-                      • {theme}
-                    </p>
-                  ))}
-                </div>
-              </section>
-            )}
-    
-            <div style={{ display: "grid", gap: 12 }}>
-              {folderPatterns.map((pattern, index) => (
-                <PatternCard
-                  key={`${pattern.id}-${index}`}
-                  pattern={pattern}
-                  index={index}
-                  onOpen={() => setSelectedPattern(pattern)}
-                />
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      );
-    }
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -605,7 +467,6 @@ export function AIPatterns() {
         </header>
 
         <div
-          className="ai-pattern-scroll"
           style={{
             display: "flex",
             gap: 8,
@@ -733,7 +594,8 @@ export function AIPatterns() {
                     Compare with previous analysis
                   </p>
                   <p style={{ color: colors.textSoft, fontSize: 13, lineHeight: 1.6 }}>
-                    Previous analysis: {new Date(previous.created_at).toLocaleDateString()} · {previous.result.hero_themes.slice(0, 3).join(" · ") || "No strong themes detected."}
+                    Previous analysis: {new Date(previous.created_at).toLocaleDateString()} ·{" "}
+                    {previous.result.hero_themes.slice(0, 3).join(" · ") || "No strong themes detected."}
                   </p>
                 </section>
               )}
@@ -813,105 +675,172 @@ export function AIPatterns() {
                 </>
               )}
 
-{history.length > 0 && (
-  <section style={{ marginTop: 26 }}>
-    <p
-      style={{
-        fontSize: 10,
-        letterSpacing: "0.16em",
-        textTransform: "uppercase",
-        color: colors.goldSoft,
-        marginBottom: 10,
-      }}
-    >
-      Pattern History
-    </p>
+              {history.length > 0 && (
+                <section style={{ marginTop: 26 }}>
+                  <p
+                    style={{
+                      fontSize: 10,
+                      letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                      color: colors.goldSoft,
+                      marginBottom: 10,
+                    }}
+                  >
+                    Pattern History
+                  </p>
 
-    <div style={{ display: "grid", gap: 10 }}>
-      {history.map((item) => {
-        const selected = generation?.id === item.id;
+                  <div style={{ display: "grid", gap: 10 }}>
+                    {history.map((item) => {
+                      const expanded = expandedHistoryId === item.id;
 
-        return (
-          <button
-            key={item.id}
-            onClick={() => {
-              setOpenedHistoryItem(item);
-              setSelectedPattern(null);
-              window.scrollTo({
-                top: 0,
-                behavior: "smooth",
-              });
-            }}
-            style={{
-              width: "100%",
-              minHeight: 76,
-              background: selected
-                ? "rgba(205,170,100,0.10)"
-                : "rgba(255,255,255,0.028)",
-              border: selected
-                ? "1px solid rgba(205,170,100,0.24)"
-                : `1px solid ${colors.border}`,
-              borderRadius: 18,
-              padding: "16px 15px",
-              color: selected ? colors.text : colors.textSoft,
-              textAlign: "left",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  fontSize: 10,
-                  letterSpacing: "0.16em",
-                  textTransform: "uppercase",
-                  color: selected ? colors.gold : colors.goldSoft,
-                  marginBottom: 7,
-                }}
-              >
-                AI Pattern Folder
-              </div>
+                      return (
+                        <div
+                          key={item.id}
+                          style={{
+                            background: expanded ? "rgba(205,170,100,0.06)" : "rgba(255,255,255,0.028)",
+                            border: expanded ? "1px solid rgba(205,170,100,0.22)" : `1px solid ${colors.border}`,
+                            borderRadius: 18,
+                            overflow: "hidden",
+                          }}
+                        >
+                          <button
+                            onClick={() => {
+                              setExpandedHistoryId(expanded ? null : item.id);
+                            }}
+                            style={{
+                              width: "100%",
+                              minHeight: 76,
+                              background: "transparent",
+                              border: "none",
+                              padding: "16px 15px",
+                              color: colors.textSoft,
+                              textAlign: "left",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: 12,
+                            }}
+                          >
+                            <div>
+                              <div
+                                style={{
+                                  fontSize: 10,
+                                  letterSpacing: "0.16em",
+                                  textTransform: "uppercase",
+                                  color: expanded ? colors.gold : colors.goldSoft,
+                                  marginBottom: 7,
+                                }}
+                              >
+                                AI Pattern Folder
+                              </div>
 
-              <div
-                style={{
-                  fontSize: 15,
-                  color: selected ? colors.text : colors.textSoft,
-                  marginBottom: 4,
-                }}
-              >
-                {new Date(item.created_at).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </div>
+                              <div
+                                style={{
+                                  fontSize: 15,
+                                  color: expanded ? colors.text : colors.textSoft,
+                                  marginBottom: 4,
+                                }}
+                              >
+                                {new Date(item.created_at).toLocaleDateString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                              </div>
 
-              <div
-                style={{
-                  fontSize: 11,
-                  color: colors.textFaint,
-                }}
-              >
-                {labelForRange(item.range)} ·{" "}
-                {item.result.patterns.length} patterns ·{" "}
-                {item.voice_count} voice · {item.thought_count} thoughts
-              </div>
-            </div>
+                              <div style={{ fontSize: 11, color: colors.textFaint }}>
+                                {labelForRange(item.range)} · {item.result.patterns.length} patterns ·{" "}
+                                {item.voice_count} voice · {item.thought_count} thoughts
+                              </div>
+                            </div>
 
-            <ChevronRight
-              size={18}
-              strokeWidth={1.4}
-              color={selected ? colors.gold : colors.goldSoft}
-            />
-          </button>
-        );
-      })}
-    </div>
-  </section>
-)}
+                            <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.25 }}>
+                              <ChevronRight size={18} strokeWidth={1.4} color={expanded ? colors.gold : colors.goldSoft} />
+                            </motion.div>
+                          </button>
+
+                          <AnimatePresence>
+                            {expanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.35, ease: "easeInOut" }}
+                                style={{ overflow: "hidden" }}
+                              >
+                                <div style={{ padding: "0 14px 14px", display: "grid", gap: 10 }}>
+                                  {item.result.hero_themes.length > 0 && (
+                                    <section
+                                      style={{
+                                        borderRadius: 16,
+                                        border: "1px solid rgba(205,170,100,0.12)",
+                                        background: "rgba(205,170,100,0.045)",
+                                        padding: 14,
+                                      }}
+                                    >
+                                      <p
+                                        style={{
+                                          fontSize: 10,
+                                          letterSpacing: "0.16em",
+                                          textTransform: "uppercase",
+                                          color: colors.goldSoft,
+                                          marginBottom: 8,
+                                        }}
+                                      >
+                                        Themes
+                                      </p>
+
+                                      <div style={{ display: "grid", gap: 5 }}>
+                                        {item.result.hero_themes.map((theme) => (
+                                          <p
+                                            key={theme}
+                                            style={{
+                                              color: colors.text,
+                                              fontFamily: "Georgia,serif",
+                                              fontSize: 17,
+                                            }}
+                                          >
+                                            • {theme}
+                                          </p>
+                                        ))}
+                                      </div>
+                                    </section>
+                                  )}
+
+                                  {item.result.patterns.length > 0 ? (
+                                    item.result.patterns.map((pattern, index) => (
+                                      <PatternCard
+                                        key={`${item.id}-${pattern.id}-${index}`}
+                                        pattern={pattern}
+                                        index={index}
+                                        onOpen={() => setSelectedPattern(pattern)}
+                                      />
+                                    ))
+                                  ) : (
+                                    <div
+                                      style={{
+                                        borderRadius: 16,
+                                        border: `1px solid ${colors.border}`,
+                                        background: colors.card,
+                                        padding: 14,
+                                        color: colors.textSoft,
+                                        fontSize: 13,
+                                      }}
+                                    >
+                                      No patterns found in this folder.
+                                    </div>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
             </motion.div>
           </AnimatePresence>
         )}
