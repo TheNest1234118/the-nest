@@ -1,114 +1,138 @@
 import { loadThoughts } from "@/lib/userData";
 import { loadMemos } from "@/lib/memos";
-import type {
-  ReflectionKind,
-  ReflectionEntry,
-  ReflectionV2Generation,
-  ReflectionV2Result,
-} from "@/lib/reflectionV2Types";
+import { loadMoodLog } from "@/lib/dailyNest";
+import type { ReflectionKind, ReflectionV2Generation } from "@/lib/reflectionV2Types";
 
-const KEY = "nest_reflection_v2_history";
+const STORAGE_KEY = "nest_reflection_v2_history";
 
-function daysFor(kind: ReflectionKind) {
-  return kind === "weekly" ? 7 : 31;
+function getCurrentWeekRange() {
+  const now = new Date();
+  const day = now.getDay() || 7;
+
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - day + 1);
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + 7);
+
+  return { start, end };
 }
 
-function inRange(date: string, kind: ReflectionKind) {
-  const cutoff = Date.now() - daysFor(kind) * 86400000;
-  return new Date(date).getTime() >= cutoff;
+function inRange(date: string, start: Date, end: Date) {
+  const d = new Date(date);
+  return d >= start && d < end;
 }
 
-export function loadReflectionV2History(kind?: ReflectionKind) {
-  const all: ReflectionV2Generation[] = JSON.parse(localStorage.getItem(KEY) || "[]");
-  return kind ? all.filter((x) => x.kind === kind) : all;
+export function loadReflectionV2History(kind: ReflectionKind): ReflectionV2Generation[] {
+  try {
+    const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return all.filter((x: ReflectionV2Generation) => x.kind === kind);
+  } catch {
+    return [];
+  }
 }
 
 function saveReflectionV2(item: ReflectionV2Generation) {
-  const all = loadReflectionV2History();
-  localStorage.setItem(KEY, JSON.stringify([item, ...all].slice(0, 40)));
+  const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  const next = [item, ...all].slice(0, 30);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 }
 
-export async function loadReflectionEntries(kind: ReflectionKind): Promise<ReflectionEntry[]> {
+export async function generateReflectionV2(
+  kind: ReflectionKind
+): Promise<ReflectionV2Generation> {
+  const { start, end } = getCurrentWeekRange();
+
   const thoughts = await loadThoughts();
   const memos = await loadMemos();
+  const moods = await loadMoodLog();
 
-  return [
-    ...(thoughts || []).map((t: any) => ({
-      id: t.id,
-      type: "thought" as const,
-      title: "Thought",
-      text: t.text,
-      created_at: t.created_at,
+  const weekThoughts = (thoughts || []).filter((x: any) =>
+    inRange(x.created_at, start, end)
+  );
+
+  const weekMemos = (memos || []).filter((x: any) =>
+    inRange(x.created_at, start, end)
+  );
+
+  const weekMoods = (moods || []).filter((x: any) =>
+    inRange(x.mood_date || x.created_at, start, end)
+  );
+
+  const entries = [
+    ...weekThoughts.map((x: any) => ({
+      type: "thought",
+      id: x.id,
+      date: x.created_at,
+      text: x.text,
     })),
-    ...(memos || []).map((m: any) => ({
-      id: m.id,
-      type: "voice" as const,
-      title: m.title || "Voice capsule",
-      text: m.transcript_text || m.title || "",
-      created_at: m.created_at,
+    ...weekMemos.map((x: any) => ({
+      type: "voice",
+      id: x.id,
+      date: x.created_at,
+      title: x.title,
+      transcript: x.transcript_text || "",
     })),
-  ]
-    .filter((e) => inRange(e.created_at, kind))
-    .filter((e) => `${e.title || ""} ${e.text || ""}`.trim().length > 0)
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 120);
-}
-
-export async function generateReflectionV2(kind: ReflectionKind) {
-  const entries = await loadReflectionEntries(kind);
-
-  const voice_count = entries.filter((e) => e.type === "voice").length;
-  const thought_count = entries.filter((e) => e.type === "thought").length;
-  const mood_count = entries.filter((e) => e.type === "mood").length;
-
-  if (entries.length < 3) {
-    const empty: ReflectionV2Generation = {
-      id: crypto.randomUUID(),
-      kind,
-      created_at: new Date().toISOString(),
-      entry_count: entries.length,
-      voice_count,
-      thought_count,
-      mood_count,
-      result: {
-        story: "",
-        wins: [],
-        challenges: [],
-        emotional_journey: [],
-        what_changed: [],
-        moments: [],
-        gentle_reflection: "",
-        next_suggestion: "",
-      },
-    };
-    return empty;
-  }
-
-  const res = await fetch("/api/reflection-v2", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      kind,
-      entries,
-      previous: loadReflectionV2History(kind)[0]?.result || null,
-    }),
-  });
-
-  if (!res.ok) throw new Error("Could not generate reflection.");
-
-  const result: ReflectionV2Result = await res.json();
+    ...weekMoods.map((x: any) => ({
+      type: "mood",
+      id: x.id,
+      date: x.mood_date || x.created_at,
+      mood: x.mood,
+      note: x.note || "",
+    })),
+  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const generation: ReflectionV2Generation = {
     id: crypto.randomUUID(),
     kind,
     created_at: new Date().toISOString(),
-    entry_count: entries.length,
-    voice_count,
-    thought_count,
-    mood_count,
+    range_start: start.toISOString(),
+    range_end: end.toISOString(),
+    voice_count: weekMemos.length,
+    thought_count: weekThoughts.length,
+    mood_count: weekMoods.length,
+    result: {
+      story: "",
+      wins: [],
+      challenges: [],
+      emotional_journey: [],
+      what_changed: [],
+      moments: [],
+      gentle_reflection: "",
+      next_suggestion: "",
+    },
+  };
+
+  if (entries.length < 3) {
+    saveReflectionV2(generation);
+    return generation;
+  }
+
+  const res = await fetch("/api/reflection-v2", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      kind,
+      range_start: start.toISOString(),
+      range_end: end.toISOString(),
+      entries,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Could not generate reflection.");
+  }
+
+  const result = await res.json();
+
+  const finalItem: ReflectionV2Generation = {
+    ...generation,
     result,
   };
 
-  saveReflectionV2(generation);
-  return generation;
+  saveReflectionV2(finalItem);
+  return finalItem;
 }

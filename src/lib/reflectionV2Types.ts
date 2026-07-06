@@ -33,9 +33,10 @@ export type ReflectionV2Generation = {
   id: string;
   kind: ReflectionKind;
   created_at: string;
-  entry_count: number;
+  range_start?: string;
+  range_end?: string;
   voice_count: number;
   thought_count: number;
   mood_count: number;
-  result: ReflectionV2Result;
+  result: any;
 };

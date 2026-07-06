@@ -1801,40 +1801,42 @@ export function Memos() {
               }}
             />
 
-            <button
-              disabled={!customTitle.trim()}
-              onClick={async () => {
-                const title = customTitle.trim();
-                const { error } = await supabase
-                  .from("memos")
-                  .update({ title })
-                  .eq("id", pendingMemo.id);
+<button
+  disabled={!customTitle.trim()}
+  onClick={async () => {
+    const title = customTitle.trim();
 
-                if (error) {
-                  console.error("Could not update memo title", error);
-                  setError("Could not update title.");
-                  return;
-                }
+    const { data, error } = await supabase
+      .from("memos")
+      .update({ title })
+      .eq("id", pendingMemo.id)
+      .select()
+      .single();
 
-                setMemos((prev) =>
-                  prev.map((m) => (m.id === pendingMemo.id ? { ...m, title } : m))
-                );
+    if (error) {
+      console.error(error);
+      return;
+    }
 
-                finishTitleFlow();
-              }}
-              style={{
-                width: "100%",
-                marginTop: 12,
-                border: "1px solid rgba(222,179,96,.16)",
-                background: "rgba(222,179,96,.07)",
-                borderRadius: 14,
-                padding: "13px 14px",
-                color: "rgba(225,205,176,.78)",
-                opacity: customTitle.trim() ? 1 : 0.45,
-              }}
-            >
-              Save custom title
-            </button>
+    setMemos((prev) =>
+      prev.map((m) => (m.id === pendingMemo.id ? data : m))
+    );
+
+    finishTitleFlow();
+  }}
+  style={{
+    width: "100%",
+    marginTop: 12,
+    border: "1px solid rgba(222,179,96,.16)",
+    background: "rgba(222,179,96,.07)",
+    borderRadius: 14,
+    padding: "13px 14px",
+    color: "rgba(225,205,176,.78)",
+    opacity: customTitle.trim() ? 1 : 0.45,
+  }}
+>
+  Save custom title
+</button>
           </div>
         </div>
       )}
