@@ -44,13 +44,16 @@ const schema = {
        items: {
          type: "object",
          additionalProperties: false,
-         required: ["day", "mood", "emoji", "note", "chart_score"],
+         required: ["day", "has_entry", "mood", "emoji", "note", "chart_score"],
          properties: {
            day: { type: "string" },
+           has_entry: { type: "boolean" },
            mood: { type: "string" },
            emoji: { type: "string" },
            note: { type: "string" },
-           chart_score: { type: "number" },
+           chart_score: {
+             anyOf: [{ type: "number" }, { type: "null" }],
+           },
          },
        },
      },
@@ -132,6 +135,14 @@ Never exaggerate.
 Never flatter.
 Analyze only the provided date range.
 Your job:
+For every day of the week, return one emotional_journey item.
+If there are no entries for that day, return:
+has_entry:false
+emoji:""
+mood:""
+note:""
+chart_score:null
+Never invent a mood for an empty day.
 - summarize what shaped the week/month
 - find real highlights
 - find real challenges
