@@ -440,10 +440,6 @@ export function Memos() {
 
           setTimeout(() => {
             setIsSaving(false);
-
-            if (wasFirstVoiceMemo) {
-              navigate("/home");
-            }
           }, 1200);
 
           audioChunksRef.current = [];
@@ -625,7 +621,19 @@ export function Memos() {
     trackNestEvent(events.changed_voice_prompt);
     setActivePromptIndex((i) => (voicePrompts.length ? (i + 1) % voicePrompts.length : 0));
   };
-
+  function finishTitleFlow() {
+    const shouldGoHomeAfterTitle =
+      localStorage.getItem("nest_show_mood_after_first_memo") === "true";
+  
+    setTitleModalOpen(false);
+    setPendingMemo(null);
+    setCustomTitle("");
+    setTitleOptions([]);
+  
+    if (shouldGoHomeAfterTitle) {
+      navigate("/home");
+    }
+  }
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -1754,9 +1762,7 @@ export function Memos() {
                         prev.map((m) => (m.id === pendingMemo.id ? { ...m, title } : m))
                       );
 
-                      setTitleModalOpen(false);
-                      setPendingMemo(null);
-                      setCustomTitle("");
+                      finishTitleFlow();
                     }}
                     style={{
                       width: "100%",
@@ -1814,9 +1820,7 @@ export function Memos() {
                   prev.map((m) => (m.id === pendingMemo.id ? { ...m, title } : m))
                 );
 
-                setTitleModalOpen(false);
-                setPendingMemo(null);
-                setCustomTitle("");
+                finishTitleFlow();
               }}
               style={{
                 width: "100%",
