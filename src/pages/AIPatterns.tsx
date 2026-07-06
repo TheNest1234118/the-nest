@@ -698,37 +698,103 @@ export function AIPatterns() {
                 </>
               )}
 
-              {history.length > 1 && (
-                <section style={{ marginTop: 22 }}>
-                  <p style={{ fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: colors.goldSoft, marginBottom: 10 }}>
-                    Pattern History
-                  </p>
+{history.length > 0 && (
+  <section style={{ marginTop: 26 }}>
+    <p
+      style={{
+        fontSize: 10,
+        letterSpacing: "0.16em",
+        textTransform: "uppercase",
+        color: colors.goldSoft,
+        marginBottom: 10,
+      }}
+    >
+      Pattern History
+    </p>
 
-                  <div style={{ display: "grid", gap: 8 }}>
-                    {history.slice(0, 8).map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => {
-                          setGeneration(item);
-                          setShowAll(false);
-                          setSelectedPattern(null);
-                        }}
-                        style={{
-                          background: colors.card,
-                          border: `1px solid ${colors.border}`,
-                          borderRadius: 14,
-                          padding: "13px 14px",
-                          color: colors.textSoft,
-                          textAlign: "left",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {new Date(item.created_at).toLocaleDateString()} · {labelForRange(item.range)}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              )}
+    <div style={{ display: "grid", gap: 10 }}>
+      {history.map((item) => {
+        const selected = generation?.id === item.id;
+
+        return (
+          <button
+            key={item.id}
+            onClick={() => {
+              setGeneration(item);
+              setShowAll(false);
+              setSelectedPattern(null);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            style={{
+              width: "100%",
+              minHeight: 76,
+              background: selected
+                ? "rgba(205,170,100,0.10)"
+                : "rgba(255,255,255,0.028)",
+              border: selected
+                ? "1px solid rgba(205,170,100,0.24)"
+                : `1px solid ${colors.border}`,
+              borderRadius: 18,
+              padding: "16px 15px",
+              color: selected ? colors.text : colors.textSoft,
+              textAlign: "left",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: 10,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  color: selected ? colors.gold : colors.goldSoft,
+                  marginBottom: 7,
+                }}
+              >
+                AI Pattern Folder
+              </div>
+
+              <div
+                style={{
+                  fontSize: 15,
+                  color: selected ? colors.text : colors.textSoft,
+                  marginBottom: 4,
+                }}
+              >
+                {new Date(item.created_at).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </div>
+
+              <div
+                style={{
+                  fontSize: 11,
+                  color: colors.textFaint,
+                }}
+              >
+                {labelForRange(item.range)} ·{" "}
+                {item.result.patterns.length} patterns ·{" "}
+                {item.voice_count} voice · {item.thought_count} thoughts
+              </div>
+            </div>
+
+            <ChevronRight
+              size={18}
+              strokeWidth={1.4}
+              color={selected ? colors.gold : colors.goldSoft}
+            />
+          </button>
+        );
+      })}
+    </div>
+  </section>
+)}
             </motion.div>
           </AnimatePresence>
         )}
