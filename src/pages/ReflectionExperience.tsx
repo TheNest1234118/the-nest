@@ -342,158 +342,80 @@ function EmotionalJourney({
     chart_score?: number | null;
   }>;
 }) {
-  const points = journey.length ? journey.slice(0, 7) : [];
+  const weekDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-  const getY = (point: any) => {
-    if (point.has_entry === false || point.chart_score == null) return null;
-  
-    const score = Math.max(0, Math.min(100, Number(point.chart_score)));
-    return 64 - score * 0.48;
-  };
+  const points = weekDays.map((day) => {
+    const found = journey.find((x) =>
+      x.day?.toLowerCase().startsWith(day.toLowerCase().slice(0, 3))
+    );
 
-  const linePoints = points
-    .map((point, i) => {
-      const y = getY(point);
-      if (y === null) return null;
-
-      const x =
-        points.length === 1
-          ? 150
-          : 18 + (i * 264) / Math.max(points.length - 1, 1);
-
-      return { x, y };
-    })
-    .filter(Boolean) as { x: number; y: number }[];
-
-  const path =
-    linePoints.length > 1
-      ? `M ${linePoints[0].x} ${linePoints[0].y} ${linePoints
-          .slice(1)
-          .map((p) => `L ${p.x} ${p.y}`)
-          .join(" ")}`
-      : "";
+    return (
+      found || {
+        day,
+        has_entry: false,
+        mood: "",
+        emoji: "",
+        note: "",
+        chart_score: null,
+      }
+    );
+  });
 
   return (
     <Block title="Emotional Journey" icon={<Sparkles size={17} />} delay={0.16}>
-      {points.length > 0 ? (
-        <>
-          <div
-            style={{
-              position: "relative",
-              height: 96,
-              margin: "2px 0 10px",
-              display: "grid",
-              gridTemplateColumns: `repeat(${points.length}, 1fr)`,
-              alignItems: "end",
-              gap: 4,
-            }}
-          >
-            <svg
-              viewBox="0 0 300 90"
-              preserveAspectRatio="none"
+      <div style={{ display: "grid", gap: 8 }}>
+        {points.map((x, i) => {
+          const hasEntry = x.has_entry !== false;
+
+          return (
+            <div
+              key={`${x.day}-${i}`}
               style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                overflow: "visible",
-                opacity: 0.72,
+                border: "1px solid rgba(255,255,255,.06)",
+                background: hasEntry
+                  ? "rgba(255,255,255,.026)"
+                  : "rgba(255,255,255,.012)",
+                borderRadius: 14,
+                padding: "11px 12px",
+                display: "flex",
+                alignItems: "center",
+                gap: 11,
+                opacity: hasEntry ? 1 : 0.42,
               }}
             >
-              {path && (
-                <motion.path
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 1 }}
-                  transition={{ duration: 1.2, delay: 0.35 }}
-                  d={path}
-                  fill="none"
-                  stroke="rgba(205,170,100,.72)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              )}
-            </svg>
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 999,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: hasEntry
+                    ? "rgba(205,170,100,.08)"
+                    : "rgba(255,255,255,.025)",
+                  fontSize: 20,
+                  flexShrink: 0,
+                }}
+              >
+                {hasEntry ? x.emoji || moodEmoji(x.mood || x.note) : ""}
+              </div>
 
-            {points.map((x, i) => {
-              const hasEntry = x.has_entry !== false;
-              const y = getY(x);
-
-              return (
-                <div
-                  key={`${x.day}-${i}`}
-                  style={{
-                    textAlign: "center",
-                    position: "relative",
-                    zIndex: 1,
-                    height: 86,
-                  }}
-                >
-                 <motion.div
-  initial={{ scale: 0 }}
-  animate={{ scale: hasEntry ? 1 : 0 }}
-                    transition={{
-                      delay: 0.3 + i * 0.07,
-                      type: "spring",
-                      stiffness: 160,
-                    }}
-                    style={{
-                      position: "absolute",
-                      left: "50%",
-                      top: y ?? 42,
-                      transform: "translateX(-50%)",
-                      fontSize: 24,
-                      filter: hasEntry
-                        ? "drop-shadow(0 0 12px rgba(205,170,100,.20))"
-                        : "none",
-                    }}
-                  >
-                    {hasEntry ? x.emoji || moodEmoji(x.mood || x.note) : ""}
-                  </motion.div>
-
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      color: c.faint,
-                      fontSize: 10,
-                    }}
-                  >
-                    {x.day?.slice(0, 3)}
-                  </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ color: c.textDim, fontSize: 13 }}>
+                  {x.day}
                 </div>
-              );
-            })}
-          </div>
 
-          <div style={{ display: "grid", gap: 8 }}>
-            {points.map((x, i) => {
-              const hasEntry = x.has_entry !== false;
-
-              return (
-                <div
-                  key={`${x.day}-note-${i}`}
-                  style={{
-                    fontSize: 12,
-                    color: hasEntry ? c.soft : c.faint,
-                    lineHeight: 1.55,
-                  }}
-                >
-                  <span style={{ color: c.textDim }}>{x.day}</span>
+                <div style={{ color: c.soft, fontSize: 12, marginTop: 2 }}>
                   {hasEntry
-                    ? `${x.mood ? ` — ${x.emoji || moodEmoji(x.mood)} ${x.mood}` : ""}${
-                        x.note ? ` · ${x.note}` : ""
-                      }`
-                    : " — no entries"}
+                    ? `${x.mood || "Mood"}${x.note ? ` · ${x.note}` : ""}`
+                    : "No entries"}
                 </div>
-              );
-            })}
-          </div>
-        </>
-      ) : (
-        <span style={{ color: c.soft }}>No emotional journey yet.</span>
-      )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </Block>
   );
 }
