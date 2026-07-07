@@ -454,7 +454,11 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
           }, 1200);
 
           audioChunksRef.current = [];
-          setCreateTranscript(true);
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          
+          setCreateTranscript(Boolean(user));
           setRecordingTime(0);
           setIsRecording(false);
         } catch (err) {
@@ -633,13 +637,18 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
     setActivePromptIndex((i) => (voicePrompts.length ? (i + 1) % voicePrompts.length : 0));
   };
   function finishTitleFlow() {
-    const shouldGoHomeAfterTitle =
-      localStorage.getItem("nest_show_mood_after_first_memo") === "true";
-  
     setTitleModalOpen(false);
     setPendingMemo(null);
     setCustomTitle("");
     setTitleOptions([]);
+  
+    if (onboarding) {
+      onFinished?.();
+      return;
+    }
+  
+    const shouldGoHomeAfterTitle =
+      localStorage.getItem("nest_show_mood_after_first_memo") === "true";
   
     if (shouldGoHomeAfterTitle) {
       navigate("/home");
@@ -1769,18 +1778,17 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
                         );
                     
                         const localMemos = JSON.parse(
-                          localStorage.getItem("nest_memos") || "[]"
+                          localStorage.getItem("nest_local_memos") || "[]"
                         );
                     
                         localStorage.setItem(
-                          "nest_memos",
+                          "nest_local_memos",
                           JSON.stringify(
                             localMemos.map((m: any) =>
                               m.id === pendingMemo.id ? { ...m, title } : m
                             )
                           )
                         );
-                    
                         finishTitleFlow();
                         return;
                       }
@@ -1855,11 +1863,11 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
       );
   
       const localMemos = JSON.parse(
-        localStorage.getItem("nest_memos") || "[]"
+        localStorage.getItem("nest_local_memos") || "[]"
       );
   
       localStorage.setItem(
-        "nest_memos",
+        "nest_local_memos",
         JSON.stringify(
           localMemos.map((m: any) =>
             m.id === pendingMemo.id ? { ...m, title } : m
