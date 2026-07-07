@@ -36,56 +36,76 @@ export function Landing() {
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(circle at 50% 14%, rgba(255,191,73,0.20), transparent 30%), radial-gradient(circle at 50% 58%, rgba(255,171,43,0.10), transparent 42%), linear-gradient(180deg,#09080c 0%,#050507 100%)",
-          pointerEvents: "none",
+            "radial-gradient(circle at 50% 18%, rgba(255,191,73,0.20), transparent 28%), radial-gradient(circle at 50% 58%, rgba(255,171,43,0.10), transparent 42%), linear-gradient(180deg,#09080c 0%,#050507 100%)",
         }}
       />
 
       <motion.div
-        animate={{ opacity: [0.35, 0.85, 0.35], scale: [0.96, 1.06, 0.96] }}
+        animate={{ opacity: [0.4, 0.85, 0.4], scale: [0.96, 1.04, 0.96] }}
         transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
         style={{
           position: "absolute",
-          top: "14%",
-          width: 190,
-          height: 190,
-          borderRadius: "50%",
-          background:
-            "radial-gradient(circle, rgba(255,196,87,0.34), rgba(255,171,43,0.08) 48%, transparent 72%)",
-          filter: "blur(2px)",
-          pointerEvents: "none",
-        }}
-      />
-
-      <motion.div
-        animate={{ y: [0, -10, 0] }}
-        transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
-        style={{
-          position: "absolute",
           top: "18%",
-          width: 88,
-          height: 88,
+          width: 160,
+          height: 160,
           borderRadius: "50%",
           background:
-            "radial-gradient(circle at 35% 28%, #ffe3a4 0%, #f5aa2f 42%, #5b340b 100%)",
-          boxShadow:
-            "0 0 58px rgba(255,186,66,0.40), inset 0 0 22px rgba(255,255,255,0.16)",
-          pointerEvents: "none",
+            "radial-gradient(circle, rgba(255,196,87,0.35), rgba(255,171,43,0.08) 45%, transparent 70%)",
+          filter: "blur(2px)",
         }}
       />
 
       <motion.div
         initial={{ opacity: 0, y: 22 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.15, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
         style={{
           width: "100%",
           maxWidth: 390,
           zIndex: 2,
           textAlign: "center",
-          paddingTop: 120,
         }}
       >
+        <div
+          style={{
+            height: 150,
+            position: "relative",
+            marginBottom: 14,
+          }}
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              margin: "auto",
+              width: 132,
+              height: 132,
+              borderRadius: "50%",
+              border: "1px solid rgba(255,190,74,0.22)",
+              boxShadow: "0 0 70px rgba(255,178,48,0.18)",
+            }}
+          />
+
+          <motion.div
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              margin: "auto",
+              width: 86,
+              height: 86,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle at 35% 28%, #ffe3a4 0%, #f5aa2f 42%, #5b340b 100%)",
+              boxShadow:
+                "0 0 46px rgba(255,186,66,0.36), inset 0 0 20px rgba(255,255,255,0.16)",
+            }}
+          />
+        </div>
+
         <p
           style={{
             color: "rgba(255,197,91,0.72)",
@@ -93,7 +113,7 @@ export function Landing() {
             letterSpacing: "0.28em",
             textTransform: "uppercase",
             marginBottom: 18,
-            fontWeight: 800,
+            fontWeight: 700,
           }}
         >
           Voice Journal · AI Insights · Reflections
@@ -121,17 +141,10 @@ export function Landing() {
             margin: "0 auto 28px",
           }}
         >
-          Speak freely. Leave your thoughts. Let The Nest help you understand
-          yourself over time.
+          Speak freely. Leave your thoughts. Let The Nest help you understand yourself over time.
         </p>
 
-        <div
-          style={{
-            display: "grid",
-            gap: 11,
-            marginBottom: 30,
-          }}
-        >
+        <div style={{ display: "grid", gap: 11, marginBottom: 30 }}>
           {[
             ["🎙️", "Voice Capsules", "Say what is in your head."],
             ["✨", "AI Patterns", "See what keeps repeating."],
@@ -139,9 +152,9 @@ export function Landing() {
           ].map(([icon, title, text], index) => (
             <motion.div
               key={title}
-              initial={{ opacity: 0, y: 14 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + index * 0.1 }}
+              transition={{ delay: 0.25 + index * 0.08 }}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -167,13 +180,7 @@ export function Landing() {
                 >
                   {title}
                 </div>
-                <div
-                  style={{
-                    color: "rgba(238,220,190,0.58)",
-                    fontSize: 13,
-                    marginTop: 3,
-                  }}
-                >
+                <div style={{ color: "rgba(238,220,190,0.58)", fontSize: 13, marginTop: 3 }}>
                   {text}
                 </div>
               </div>
@@ -195,7 +202,7 @@ export function Landing() {
             background: "linear-gradient(135deg,#ffd36b,#f4a51f)",
             color: "#1a1205",
             fontSize: 16,
-            fontWeight: 850,
+            fontWeight: 800,
             cursor: "pointer",
             boxShadow: "0 18px 50px rgba(255,184,55,0.28)",
           }}
