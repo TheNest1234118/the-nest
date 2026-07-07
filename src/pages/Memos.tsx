@@ -781,7 +781,8 @@ const [authPassword, setAuthPassword] = useState("");
             gap: 14,
           }}
         >
-          <Link href="/home">
+         {!onboarding && (
+  <Link href="/home">
             <button
               aria-label="Back home"
               style={{
@@ -800,7 +801,7 @@ const [authPassword, setAuthPassword] = useState("");
               <ChevronLeft strokeWidth={1.45} size={22} />
             </button>
           </Link>
-
+)}
           <div>
             <p
               style={{
