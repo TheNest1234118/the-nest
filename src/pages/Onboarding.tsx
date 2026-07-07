@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import OneSignal from "react-onesignal";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
-import { Memos } from "@/pages/memos";
+import { Memos } from "@/pages/Memos";
 import { trackNestEvent, events } from "@/lib/analyticsEvents";
 import { requestNestNotifications } from "@/lib/notifications";
 
