@@ -420,10 +420,16 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
           );
 
           setPendingMemo(saved);
-          setTitleModalOpen(true);
           setTitleOptions([]);
-          waitForTranscriptAndGenerateTitles(saved.id);
-
+          setCustomTitle("");
+          
+          if (createTranscript) {
+            setTitleModalOpen(true);
+            waitForTranscriptAndGenerateTitles(saved.id);
+          } else {
+            setTitleLoading(false);
+            setTitleModalOpen(true);
+          }
           const wasFirstVoiceMemo =
             localStorage.getItem("nest_first_voice_memo_saved") !== "true";
 
@@ -1689,7 +1695,7 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
                 color: "rgba(222,179,96,.48)",
               }}
             >
-              AI Title
+              {createTranscript ? "AI Title" : "Title"}
             </p>
 
             <h2
@@ -1700,7 +1706,7 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
                 color: "rgba(235,215,180,.92)",
               }}
             >
-              Choose a title
+             {createTranscript ? "Choose a title" : "Add a title"}
             </h2>
 
             {titleLoading ? (
