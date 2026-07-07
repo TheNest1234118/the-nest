@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import OneSignal from "react-onesignal";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
+import { Memos } from "@/pages/memos";
 import { trackNestEvent, events } from "@/lib/analyticsEvents";
 import { requestNestNotifications } from "@/lib/notifications";
 
@@ -188,7 +189,7 @@ export function Onboarding() {
   const next = () => setStep((s) => Math.min(s + 1, steps.length - 1));
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
-  const completeOnboarding = async (target: "/home" | "/memos" = "/home") => {
+  const completeOnboarding = async (target: "/home" = "/home") => {
     trackNestEvent(events.completed_onboarding);
 
     const deviceId = getOrCreateDeviceId();
@@ -237,6 +238,8 @@ export function Onboarding() {
     setTimeout(() => setNotificationMessage(null), 2200);
   };
 
+  const showOnboardingChrome = current !== "firstVoice";
+
   return (
     <div
       style={{
@@ -245,42 +248,46 @@ export function Onboarding() {
         color: mainText,
         position: "relative",
         overflow: "hidden",
-        padding: "46px 24px 24px",
+        padding: showOnboardingChrome ? "46px 24px 24px" : 0,
         display: "flex",
         flexDirection: "column",
       }}
     >
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(circle at 50% 12%, rgba(255,193,69,0.18), transparent 30%), radial-gradient(circle at 50% 55%, rgba(255,172,38,0.09), transparent 44%), linear-gradient(180deg,#09080c 0%,#050507 100%)",
-        }}
-      />
+      {showOnboardingChrome && (
+        <>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "radial-gradient(circle at 50% 12%, rgba(255,193,69,0.18), transparent 30%), radial-gradient(circle at 50% 55%, rgba(255,172,38,0.09), transparent 44%), linear-gradient(180deg,#09080c 0%,#050507 100%)",
+            }}
+          />
 
-      <Progress current={step} total={steps.length} />
+          <Progress current={step} total={steps.length} />
 
-      {step > 0 && (
-        <button
-          onClick={back}
-          style={{
-            position: "absolute",
-            top: 34,
-            left: 22,
-            zIndex: 30,
-            width: 42,
-            height: 42,
-            borderRadius: "50%",
-            border: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(255,255,255,0.06)",
-            color: "rgba(248,230,202,0.75)",
-            fontSize: 22,
-            cursor: "pointer",
-          }}
-        >
-          ‹
-        </button>
+          {step > 0 && (
+            <button
+              onClick={back}
+              style={{
+                position: "absolute",
+                top: 34,
+                left: 22,
+                zIndex: 30,
+                width: 42,
+                height: 42,
+                borderRadius: "50%",
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(255,255,255,0.06)",
+                color: "rgba(248,230,202,0.75)",
+                fontSize: 22,
+                cursor: "pointer",
+              }}
+            >
+              ‹
+            </button>
+          )}
+        </>
       )}
 
       <AnimatePresence mode="wait">
@@ -368,39 +375,15 @@ export function Onboarding() {
         )}
 
         {current === "firstVoice" && (
-          <ScreenShell key="firstVoice">
-            <div style={{ textAlign: "center", paddingTop: 44 }}>
-              <motion.div
-                animate={{ scale: [1, 1.08, 1], opacity: [0.9, 1, 0.9] }}
-                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-                style={{
-                  width: 138,
-                  height: 138,
-                  borderRadius: "50%",
-                  margin: "0 auto 32px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "radial-gradient(circle, rgba(255,193,69,0.95), rgba(244,165,31,0.82))",
-                  boxShadow: "0 0 70px rgba(255,193,69,0.28)",
-                  fontSize: 52,
-                }}
-              >
-                🎙️
-              </motion.div>
-
-              <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 40, lineHeight: 1.08 }}>
-                Let’s create your first <span style={{ color: gold }}>voice capsule.</span>
-              </h1>
-              <p style={{ color: softText, fontSize: 15, lineHeight: 1.65, maxWidth: 300, margin: "18px auto 0" }}>
-                Speak about anything. There is no right or wrong. Your real voice is enough.
-              </p>
-            </div>
-            <div style={{ display: "grid", gap: 12 }}>
-              <PrimaryButton onClick={() => completeOnboarding("/memos")}>Open Voice Capsules →</PrimaryButton>
-              <SecondaryButton onClick={next}>Set reminders first</SecondaryButton>
-            </div>
-          </ScreenShell>
+          <motion.div
+            key="firstVoice"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ flex: 1, width: "100%" }}
+          >
+            <Memos onboarding onFinished={next} />
+          </motion.div>
         )}
 
         {current === "reminders" && (
@@ -470,7 +453,7 @@ export function Onboarding() {
               </p>
             </div>
             <div style={{ display: "grid", gap: 12 }}>
-              <PrimaryButton onClick={() => completeOnboarding("/memos")}>Create my first voice capsule →</PrimaryButton>
+              <PrimaryButton onClick={() => completeOnboarding("/home")}>Enter The Nest →</PrimaryButton>
               <SecondaryButton onClick={() => completeOnboarding("/home")}>Go to my Nest</SecondaryButton>
             </div>
           </ScreenShell>

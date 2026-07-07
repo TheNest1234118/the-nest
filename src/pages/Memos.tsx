@@ -25,8 +25,13 @@ import {
   Sparkles,
   Wand2,
 } from "lucide-react";
+type MemosProps = {
+  onboarding?: boolean;
+  onFinished?: () => void;
+};
 
 type Memo = SupabaseMemo;
+
 
 function getSupportedMimeType(): string {
   const types = [
@@ -260,7 +265,7 @@ function RecordButton({
   );
 }
 
-export function Memos() {
+export function Memos({ onboarding = false, onFinished }: MemosProps) {
   const [, navigate] = useLocation();
   const [memos, setMemos] = useState<Memo[]>([]);
   const [plan, setPlan] = useState<"free" | "supporter">("free");
