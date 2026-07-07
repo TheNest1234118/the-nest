@@ -862,16 +862,20 @@ const [authPassword, setAuthPassword] = useState("");
           </div>
 
           <span
-            style={{
-              fontSize: 13,
-              color: transcriptionLimitReached
-                ? "rgba(248,113,113,0.72)"
-                : "rgba(222,179,96,0.72)",
-              fontFamily: "monospace",
-            }}
-          >
-            {user ? transcriptionLimitLabel : "Sign in"}
-          </span>
+  onClick={() => {
+    if (!user) setAuthOpen(true);
+  }}
+  style={{
+    fontSize: 13,
+    color: transcriptionLimitReached
+      ? "rgba(248,113,113,0.72)"
+      : "rgba(222,179,96,0.72)",
+    fontFamily: "monospace",
+    cursor: user ? "default" : "pointer",
+  }}
+>
+  {user ? transcriptionLimitLabel : "Sign in"}
+</span>
         </motion.div>
 
         <motion.section
