@@ -8,6 +8,7 @@ import { AudioProvider } from "@/hooks/use-audio-context";
 import { initClarity } from "@/lib/clarity";
 import { AtmosphereProvider } from "@/hooks/use-atmosphere";
 import NotFound from "@/pages/not-found";
+import { supabase } from "@/lib/supabase";
 import { Landing } from "@/pages/Landing";
 import { Onboarding } from "@/pages/Onboarding";
 import { Dashboard } from "@/pages/Dashboard";
@@ -67,7 +68,9 @@ function AppRouter() {
       <Route path="/nest" component={Nest} />
       <Route path="/reflections" component={Reflections} />
       <Route path="/thoughts" component={Thoughts} />
-      <Route path="/memos" component={Memos} />
+      <Route path="/memos">
+  <Memos />
+</Route>
       <Route path="/reset" component={Reset} />
       <Route path="/anchors" component={Anchors} />
       <Route path="/atmosphere" component={Atmosphere} />
@@ -77,10 +80,20 @@ function AppRouter() {
     </Switch>
   );
 }
-
 function App() {
   React.useEffect(() => {
     initClarity();
+    syncLocalDataToAccount();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        syncLocalDataToAccount();
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   return (

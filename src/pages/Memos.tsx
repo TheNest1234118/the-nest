@@ -277,12 +277,16 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
   const [createTranscript, setCreateTranscript] = useState(true);
   const [titleModalOpen, setTitleModalOpen] = useState(false);
   const [titleOptions, setTitleOptions] = useState<string[]>([]);
+  
   const [pendingMemo, setPendingMemo] = useState<Memo | null>(null);
   const [customTitle, setCustomTitle] = useState("");
   const [titleLoading, setTitleLoading] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+const [authOpen, setAuthOpen] = useState(false);
+const [authEmail, setAuthEmail] = useState("");
+const [authPassword, setAuthPassword] = useState("");
   const [promptIntroOpen, setPromptIntroOpen] = useState(false);
   const [voicePrompts, setVoicePrompts] = useState<ReturnType<typeof getEnabledVoicePrompts>>([]);
   const [activePromptIndex, setActivePromptIndex] = useState(0);
@@ -297,9 +301,24 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
+      setUser(data.user ?? null);
       setCreateTranscript(Boolean(data.user));
     });
+  
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUser = session?.user ?? null;
+  
+      setUser(nextUser);
+      setCreateTranscript(Boolean(nextUser));
+  
+      if (nextUser) {
+        setAuthOpen(false);
+      }
+    });
+  
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -638,6 +657,31 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
     trackNestEvent(events.changed_voice_prompt);
     setActivePromptIndex((i) => (voicePrompts.length ? (i + 1) % voicePrompts.length : 0));
   };
+  async function handleLogin() {
+    setError(null);
+  
+    const { error } = await supabase.auth.signInWithPassword({
+      email: authEmail,
+      password: authPassword,
+    });
+  
+    if (error) {
+      setError(error.message);
+    }
+  }
+  
+  async function handleRegister() {
+    setError(null);
+  
+    const { error } = await supabase.auth.signUp({
+      email: authEmail,
+      password: authPassword,
+    });
+  
+    if (error) {
+      setError(error.message);
+    }
+  }
   function finishTitleFlow() {
     setTitleModalOpen(false);
     setPendingMemo(null);
@@ -1104,6 +1148,11 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
         <button
           type="button"
           onClick={() => {
+            if (!user) {
+              setAuthOpen(true);
+              return;
+            }
+          
             if (transcriptionLimitReached && !createTranscript) return;
             setCreateTranscript(!createTranscript);
           }}
@@ -1135,13 +1184,11 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
                 color: "rgba(175,158,132,.46)",
               }}
             >
-           {
-  !user
-    ? "Sign in to unlock searchable transcripts, AI Patterns, Weekly Reflections and Ask the Past."
-    : transcriptionLimitReached
-      ? "Free monthly transcription limit reached. Audio recording still works."
-      : "Makes this voice capsule searchable with AI."
-}
+          {!user
+  ? "Create an account to enable AI transcription."
+  : transcriptionLimitReached
+  ? "Free monthly transcription limit reached. Audio recording still works."
+  : "Makes this voice capsule searchable with AI."}
             </div>
           </div>
 
@@ -1936,6 +1983,147 @@ opacity: user ? 1 : 0.45,
           </div>
         </div>
       )}
+      {authOpen && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      zIndex: 1400,
+      background: "rgba(6,5,8,.88)",
+      backdropFilter: "blur(10px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+    }}
+  >
+    <div
+      style={{
+        width: "100%",
+        maxWidth: 360,
+        background: "rgba(18,15,12,.96)",
+        border: "1px solid rgba(222,179,96,.12)",
+        borderRadius: 24,
+        padding: 22,
+      }}
+    >
+      <button
+        onClick={() => setAuthOpen(false)}
+        style={{
+          float: "right",
+          width: 34,
+          height: 34,
+          borderRadius: 999,
+          border: "1px solid rgba(255,255,255,.07)",
+          background: "rgba(255,255,255,.03)",
+          color: "rgba(235,215,180,.65)",
+          cursor: "pointer",
+        }}
+      >
+        <X size={16} />
+      </button>
+
+      <p
+        style={{
+          fontSize: 10,
+          letterSpacing: ".18em",
+          textTransform: "uppercase",
+          color: "rgba(222,179,96,.48)",
+        }}
+      >
+        Account
+      </p>
+
+      <h2
+        style={{
+          fontFamily: "Georgia, serif",
+          fontSize: 26,
+          fontWeight: 400,
+          color: "rgba(235,215,180,.92)",
+          marginBottom: 10,
+        }}
+      >
+        Enable AI transcription
+      </h2>
+
+      <p
+        style={{
+          color: "rgba(185,162,128,.58)",
+          fontSize: 13,
+          lineHeight: 1.6,
+          marginBottom: 16,
+        }}
+      >
+        Create an account or log in to save this voice capsule with searchable AI transcription.
+      </p>
+
+      <input
+        value={authEmail}
+        onChange={(e) => setAuthEmail(e.target.value)}
+        placeholder="Email"
+        type="email"
+        style={{
+          width: "100%",
+          marginBottom: 10,
+          background: "rgba(255,255,255,.026)",
+          border: "1px solid rgba(255,255,255,.065)",
+          borderRadius: 14,
+          padding: "13px 14px",
+          color: "rgba(225,210,188,.82)",
+          outline: "none",
+        }}
+      />
+
+      <input
+        value={authPassword}
+        onChange={(e) => setAuthPassword(e.target.value)}
+        placeholder="Password"
+        type="password"
+        style={{
+          width: "100%",
+          marginBottom: 14,
+          background: "rgba(255,255,255,.026)",
+          border: "1px solid rgba(255,255,255,.065)",
+          borderRadius: 14,
+          padding: "13px 14px",
+          color: "rgba(225,210,188,.82)",
+          outline: "none",
+        }}
+      />
+
+      <button
+        onClick={handleRegister}
+        style={{
+          width: "100%",
+          border: "1px solid rgba(222,179,96,.16)",
+          background: "rgba(222,179,96,.07)",
+          borderRadius: 14,
+          padding: "13px 14px",
+          color: "rgba(225,205,176,.88)",
+          marginBottom: 10,
+          cursor: "pointer",
+        }}
+      >
+        Create account
+      </button>
+
+      <button
+        onClick={handleLogin}
+        style={{
+          width: "100%",
+          border: "1px solid rgba(255,255,255,.07)",
+          background: "rgba(255,255,255,.03)",
+          borderRadius: 14,
+          padding: "13px 14px",
+          color: "rgba(225,205,176,.74)",
+          cursor: "pointer",
+        }}
+      >
+        Log in
+      </button>
+    </div>
+  </div>
+)}
     </motion.div>
   );
 }
