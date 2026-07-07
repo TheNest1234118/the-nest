@@ -1758,13 +1758,40 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
                   <button
                     key={title}
                     onClick={async () => {
+                      if (pendingMemo.id.startsWith("local-")) {
+                        const updated = {
+                          ...pendingMemo,
+                          title,
+                        };
+                    
+                        setMemos((prev) =>
+                          prev.map((m) => (m.id === pendingMemo.id ? updated : m))
+                        );
+                    
+                        const localMemos = JSON.parse(
+                          localStorage.getItem("nest_memos") || "[]"
+                        );
+                    
+                        localStorage.setItem(
+                          "nest_memos",
+                          JSON.stringify(
+                            localMemos.map((m: any) =>
+                              m.id === pendingMemo.id ? { ...m, title } : m
+                            )
+                          )
+                        );
+                    
+                        finishTitleFlow();
+                        return;
+                      }
+                    
                       const { error } = await supabase
                         .from("memos")
                         .update({ title })
                         .eq("id", pendingMemo.id);
                     
                       if (error) {
-                        console.error("Could not update memo title", error);
+                        console.error(error);
                         setError("Could not update title.");
                         return;
                       }
@@ -1817,13 +1844,40 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
     const title = customTitle.trim();
     if (!title) return;
   
+    if (pendingMemo.id.startsWith("local-")) {
+      const updated = {
+        ...pendingMemo,
+        title,
+      };
+  
+      setMemos((prev) =>
+        prev.map((m) => (m.id === pendingMemo.id ? updated : m))
+      );
+  
+      const localMemos = JSON.parse(
+        localStorage.getItem("nest_memos") || "[]"
+      );
+  
+      localStorage.setItem(
+        "nest_memos",
+        JSON.stringify(
+          localMemos.map((m: any) =>
+            m.id === pendingMemo.id ? { ...m, title } : m
+          )
+        )
+      );
+  
+      finishTitleFlow();
+      return;
+    }
+  
     const { error } = await supabase
       .from("memos")
       .update({ title })
       .eq("id", pendingMemo.id);
   
     if (error) {
-      console.error("Could not update memo title", error);
+      console.error(error);
       setError("Could not update title.");
       return;
     }

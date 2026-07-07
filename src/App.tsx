@@ -22,6 +22,7 @@ import { ProfileData } from "@/pages/ProfileData";
 import { ProfileVoicePrompts } from "@/pages/ProfileVoicePrompts";
 import { AskPast } from "@/pages/AskPast";
 import { WeeklyReflection } from "@/pages/WeeklyReflection";
+import { syncLocalDataToAccount } from "@/lib/syncLocalDataToAccount";
 import { MonthlyReflection } from "@/pages/MonthlyReflection";
 import { VoiceHistory } from "@/pages/VoiceHistory";
 import { ThoughtHistory } from "@/pages/ThoughtHistory";
