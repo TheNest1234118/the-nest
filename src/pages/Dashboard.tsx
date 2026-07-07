@@ -1738,105 +1738,309 @@ export function Dashboard() {
         </CalmModal>
       )}
 
-      {dailyOpen && (
-        <CalmModal>
-          <p style={modalEyebrow}>{dailyCheckin.title}</p>
-          {dailyCheckin.yesterday && (
-            <p style={{ ...modalText, marginBottom: 10 }}>
-              {dailyCheckin.yesterday}
-            </p>
-          )}
-          <h2 style={modalTitle}>{dailyCheckin.question}</h2>
+{dailyOpen && (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    style={{
+      position: "fixed",
+      inset: 0,
+      zIndex: 300,
+      background:
+        "radial-gradient(circle at 50% 18%, rgba(205,170,100,0.16), transparent 30%), rgba(5,4,7,0.88)",
+      backdropFilter: "blur(14px)",
+      WebkitBackdropFilter: "blur(14px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 20,
+    }}
+  >
+    <motion.div
+      initial={{ opacity: 0, y: 22, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      style={{
+        width: "100%",
+        maxWidth: 390,
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 32,
+        padding: "26px 22px 22px",
+        background:
+          "linear-gradient(165deg, rgba(25,20,14,0.98), rgba(10,9,13,0.98))",
+        border: "1px solid rgba(205,170,100,0.18)",
+        boxShadow:
+          "0 28px 100px rgba(0,0,0,0.58), 0 0 70px rgba(205,145,45,0.13), inset 0 1px 0 rgba(255,255,255,0.06)",
+      }}
+    >
+      <motion.div
+        aria-hidden
+        animate={{ opacity: [0.32, 0.62, 0.32], scale: [0.92, 1.08, 0.92] }}
+        transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          position: "absolute",
+          top: -86,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 230,
+          height: 230,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle, rgba(255,210,135,0.28), rgba(205,145,45,0.08) 42%, transparent 72%)",
+          filter: "blur(4px)",
+          pointerEvents: "none",
+        }}
+      />
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {MOODS.map((mood) => (
-              <button
+      <div style={{ position: "relative", zIndex: 1 }}>
+        <div
+          style={{
+            width: 84,
+            height: 84,
+            margin: "0 auto 18px",
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "46% 54% 56% 44% / 50% 44% 56% 50%",
+              border: "1px solid rgba(205,170,100,0.20)",
+              boxShadow: "0 0 34px rgba(205,170,100,0.12)",
+            }}
+          />
+          <motion.div
+            animate={{ scale: [1, 1.08, 1], opacity: [0.82, 1, 0.82] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle at 35% 26%, rgba(255,235,185,0.96), rgba(205,170,100,0.70) 52%, rgba(78,45,14,0.42) 100%)",
+              boxShadow:
+                "0 0 38px rgba(205,170,100,0.28), inset 0 1px 0 rgba(255,255,255,0.18)",
+            }}
+          />
+        </div>
+
+        <p
+          style={{
+            margin: "0 0 9px",
+            textAlign: "center",
+            color: "rgba(205,170,100,0.52)",
+            fontSize: 10,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            fontWeight: 700,
+          }}
+        >
+          {dailyCheckin.title}
+        </p>
+
+        <h2
+          style={{
+            ...serif,
+            margin: "0 auto 10px",
+            maxWidth: 300,
+            color: "rgba(245,230,205,0.94)",
+            fontSize: 30,
+            lineHeight: 1.12,
+            textAlign: "center",
+            letterSpacing: "-0.035em",
+          }}
+        >
+          How are you feeling today?
+        </h2>
+
+        <p
+          style={{
+            margin: "0 auto 20px",
+            maxWidth: 300,
+            color: "rgba(198,178,150,0.60)",
+            fontSize: 13,
+            lineHeight: 1.55,
+            textAlign: "center",
+          }}
+        >
+          {dailyCheckin.yesterday || "A quick check-in helps your reflections understand the shape of your day."}
+        </p>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 9,
+            marginBottom: 16,
+          }}
+        >
+          {MOODS.map((mood) => {
+            const selected = selectedDailyMood === mood.key;
+
+            return (
+              <motion.button
                 key={mood.key}
+                type="button"
                 onClick={() => setSelectedDailyMood(mood.key)}
+                whileTap={{ scale: 0.97 }}
+                animate={
+                  selected
+                    ? {
+                        scale: [1, 1.025, 1],
+                        boxShadow: [
+                          "0 0 0 rgba(205,170,100,0)",
+                          "0 0 30px rgba(205,170,100,0.16)",
+                          "0 0 0 rgba(205,170,100,0)",
+                        ],
+                      }
+                    : {}
+                }
+                transition={{ duration: 1.8, repeat: selected ? Infinity : 0 }}
                 style={{
-                  background:
-                    selectedDailyMood === mood.key
-                      ? "rgba(205,170,100,0.12)"
-                      : "rgba(255,255,255,0.035)",
-                  border: "1px solid rgba(255,255,255,0.065)",
-                  borderRadius: 13,
+                  minHeight: 54,
+                  borderRadius: 18,
                   padding: "12px 10px",
-                  color: "rgba(225,210,188,0.78)",
-                  fontSize: 12,
                   cursor: "pointer",
+                  border: selected
+                    ? "1px solid rgba(205,170,100,0.36)"
+                    : "1px solid rgba(255,255,255,0.065)",
+                  background: selected
+                    ? "linear-gradient(145deg, rgba(205,170,100,0.16), rgba(255,255,255,0.045))"
+                    : "rgba(255,255,255,0.032)",
+                  color: selected
+                    ? "rgba(245,225,195,0.94)"
+                    : "rgba(225,210,188,0.70)",
+                  fontSize: 13,
+                  fontWeight: selected ? 700 : 500,
+                  textAlign: "center",
                 }}
               >
                 {mood.label}
-              </button>
-            ))}
-          </div>
+              </motion.button>
+            );
+          })}
+        </div>
 
-          <button
-            disabled={!selectedDailyMood}
-            onClick={async () => {
-              if (!selectedDailyMood) return;
-              await saveDailyMood(selectedDailyMood as MoodKey);
-
-              const today = new Date().toISOString().slice(0, 10);
-
-              if (user?.id) {
-                await supabase.from("nest_daily_activity").upsert({
-                  user_id: user.id,
-                  activity_date: today,
-                });
-              }
-
-              setTodayMood(selectedDailyMood);
-              localStorage.setItem("nest_daily_checkin_date", today);
-              localStorage.removeItem("nest_show_mood_after_first_memo");
-              setSelectedDailyMood(null);
-              setDailyOpen(false);
-              openAccountAfterMood();
-              
-        
-            }}
+        {selectedDailyMood && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
             style={{
-              width: "100%",
-              marginTop: 14,
-              background: selectedDailyMood
-                ? "rgba(205,170,100,0.10)"
-                : "rgba(255,255,255,0.025)",
-              border: selectedDailyMood
-                ? "1px solid rgba(205,170,100,0.18)"
-                : "1px solid rgba(255,255,255,0.05)",
-              borderRadius: 14,
-              padding: "14px 16px",
-              color: selectedDailyMood
-                ? "rgba(225,205,176,0.82)"
-                : "rgba(175,158,132,0.36)",
-              fontSize: 11,
-              letterSpacing: "0.16em",
-              textTransform: "uppercase",
-              cursor: selectedDailyMood ? "pointer" : "default",
+              marginBottom: 14,
+              borderRadius: 18,
+              padding: "13px 14px",
+              background: "rgba(205,170,100,0.06)",
+              border: "1px solid rgba(205,170,100,0.12)",
+              color: "rgba(215,195,165,0.72)",
+              fontSize: 12,
+              lineHeight: 1.55,
+              textAlign: "center",
             }}
           >
-            Continue
-          </button>
+            {dailyCheckin.invitation}
+          </motion.div>
+        )}
 
-          <button
-            onClick={() => {
-              localStorage.setItem(
-                "nest_daily_checkin_date",
-                new Date().toISOString().slice(0, 10)
-              );
-            
-              localStorage.removeItem("nest_show_mood_after_first_memo");
-            
-              setDailyOpen(false);
-            
-              openAccountAfterMood();
-            }}
-            style={{ ...modalButton, color: "rgba(175,158,132,0.44)" }}
-          >
-            Skip for now
-          </button>
-        </CalmModal>
-      )}
+        <motion.button
+          type="button"
+          disabled={!selectedDailyMood}
+          onClick={async () => {
+            if (!selectedDailyMood) return;
+            await saveDailyMood(selectedDailyMood as MoodKey);
+
+            const today = new Date().toISOString().slice(0, 10);
+
+            if (user?.id) {
+              await supabase.from("nest_daily_activity").upsert({
+                user_id: user.id,
+                activity_date: today,
+              });
+            }
+
+            setTodayMood(selectedDailyMood);
+            localStorage.setItem("nest_daily_checkin_date", today);
+            localStorage.removeItem("nest_show_mood_after_first_memo");
+            setSelectedDailyMood(null);
+            setDailyOpen(false);
+            openAccountAfterMood();
+          }}
+          whileTap={selectedDailyMood ? { scale: 0.98 } : undefined}
+          style={{
+            width: "100%",
+            height: 56,
+            borderRadius: 999,
+            border: selectedDailyMood
+              ? "1px solid rgba(205,170,100,0.34)"
+              : "1px solid rgba(255,255,255,0.055)",
+            background: selectedDailyMood
+              ? "linear-gradient(135deg, rgba(245,205,120,0.95), rgba(205,145,45,0.88))"
+              : "rgba(255,255,255,0.030)",
+            color: selectedDailyMood ? "rgba(18,12,5,0.92)" : "rgba(175,158,132,0.34)",
+            fontSize: 13,
+            fontWeight: 800,
+            letterSpacing: "0.09em",
+            textTransform: "uppercase",
+            cursor: selectedDailyMood ? "pointer" : "default",
+            boxShadow: selectedDailyMood
+              ? "0 18px 52px rgba(205,145,45,0.22)"
+              : "none",
+          }}
+        >
+          Continue to My Nest →
+        </motion.button>
+
+        <button
+          type="button"
+          onClick={() => {
+            localStorage.setItem(
+              "nest_daily_checkin_date",
+              new Date().toISOString().slice(0, 10)
+            );
+
+            localStorage.removeItem("nest_show_mood_after_first_memo");
+
+            setDailyOpen(false);
+
+            openAccountAfterMood();
+          }}
+          style={{
+            width: "100%",
+            marginTop: 12,
+            background: "none",
+            border: "none",
+            color: "rgba(175,158,132,0.42)",
+            fontSize: 12,
+            cursor: "pointer",
+            padding: "10px 0 0",
+          }}
+        >
+          Skip for now
+        </button>
+
+        <p
+          style={{
+            margin: "14px 0 0",
+            color: "rgba(185,162,128,0.32)",
+            fontSize: 11,
+            lineHeight: 1.45,
+            textAlign: "center",
+          }}
+        >
+          Your check-in only helps your own reflections feel more personal.
+        </p>
+      </div>
+    </motion.div>
+  </motion.div>
+)}
+
 
     
 {installGuideOpen && (

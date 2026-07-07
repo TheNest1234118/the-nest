@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import OneSignal from "react-onesignal";
+import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
 import { Memos } from "@/pages/Memos";
@@ -176,8 +177,7 @@ function Toggle({ enabled, onClick }: { enabled: boolean; onClick: () => void })
 export function Onboarding() {
   const [, navigate] = useLocation();
   const [step, setStep] = useState(0);
-  const [morningReminder, setMorningReminder] = useState(true);
-  const [eveningReminder, setEveningReminder] = useState(true);
+
   const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
 
   const steps: Step[] = useMemo(
@@ -196,8 +196,7 @@ export function Onboarding() {
 
     localStorage.setItem(DONE_KEY, "true");
     localStorage.setItem(HOME_WELCOME_KEY, "true");
-    localStorage.setItem("nest_morning_reminder_enabled", String(morningReminder));
-    localStorage.setItem("nest_evening_reminder_enabled", String(eveningReminder));
+
 
     await supabase.from("onboarding_devices").upsert({
       device_id: deviceId,
@@ -386,60 +385,51 @@ export function Onboarding() {
           </motion.div>
         )}
 
-        {current === "reminders" && (
-          <ScreenShell key="reminders">
-            <div style={{ textAlign: "center", paddingTop: 32 }}>
-              <div style={{ fontSize: 64, marginBottom: 18 }}>🔔</div>
-              <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 39, lineHeight: 1.08 }}>
-                We’ll remind you to <span style={{ color: gold }}>keep going.</span>
-              </h1>
-              <p style={{ color: softText, fontSize: 15, lineHeight: 1.65, maxWidth: 300, margin: "16px auto 26px" }}>
-                A small nudge helps you come back before your thoughts disappear.
-              </p>
+{current === "reminders" && (
+  <ScreenShell key="reminders">
+    <div style={{ textAlign: "center", paddingTop: 32 }}>
+      <div style={{ fontSize: 64, marginBottom: 18 }}>🔔</div>
 
-              <div style={{ display: "grid", gap: 14, marginBottom: 18 }}>
-                {[
-                  ["☀️", "Morning reminder", "08:00", morningReminder, () => setMorningReminder((v) => !v)],
-                  ["🌙", "Evening reminder", "21:00", eveningReminder, () => setEveningReminder((v) => !v)],
-                ].map(([icon, label, time, enabled, onClick]) => (
-                  <div key={String(label)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px", borderRadius: 22, background: "rgba(255,255,255,0.045)", border: "1px solid rgba(255,255,255,0.08)", textAlign: "left" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-                      <div style={{ fontSize: 24 }}>{icon as string}</div>
-                      <div>
-                        <div style={{ color: "rgba(248,230,202,0.82)", fontSize: 14 }}>{label as string}</div>
-                        <div style={{ color: gold, fontSize: 24, marginTop: 2 }}>{time as string}</div>
-                      </div>
-                    </div>
-                    <Toggle enabled={Boolean(enabled)} onClick={onClick as () => void} />
-                  </div>
-                ))}
-              </div>
+      <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 39, lineHeight: 1.08 }}>
+        Choose your <span style={{ color: gold }}>gentle reminders.</span>
+      </h1>
 
-              <button
-                onClick={enableNotifications}
-                style={{
-                  width: "100%",
-                  border: "1px solid rgba(255,193,69,0.16)",
-                  background: "rgba(255,193,69,0.06)",
-                  borderRadius: 18,
-                  padding: "14px 16px",
-                  color: "rgba(248,230,202,0.82)",
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
-              >
-                Allow notifications
-              </button>
+      <p style={{ color: softText, fontSize: 15, lineHeight: 1.65, maxWidth: 300, margin: "16px auto 26px" }}>
+        Pick when The Nest should gently bring you back.
+      </p>
 
-              {notificationMessage && (
-                <p style={{ color: "rgba(255,193,69,0.66)", fontSize: 12, marginTop: 12 }}>
-                  {notificationMessage}
-                </p>
-              )}
-            </div>
-            <PrimaryButton onClick={next}>Continue →</PrimaryButton>
-          </ScreenShell>
-        )}
+      <button
+        onClick={enableNotifications}
+        style={{
+          width: "100%",
+          marginBottom: 14,
+          border: "1px solid rgba(255,193,69,0.16)",
+          background: "rgba(255,193,69,0.06)",
+          borderRadius: 18,
+          padding: "14px 16px",
+          color: "rgba(248,230,202,0.82)",
+          fontSize: 13,
+          cursor: "pointer",
+        }}
+      >
+        Allow notifications
+      </button>
+
+      <NotificationPreferences flash={(msg) => {
+        setNotificationMessage(msg);
+        setTimeout(() => setNotificationMessage(null), 2200);
+      }} />
+
+      {notificationMessage && (
+        <p style={{ color: "rgba(255,193,69,0.66)", fontSize: 12, marginTop: 12 }}>
+          {notificationMessage}
+        </p>
+      )}
+    </div>
+
+    <PrimaryButton onClick={next}>Continue →</PrimaryButton>
+  </ScreenShell>
+)}
 
         {current === "done" && (
           <ScreenShell key="done">
