@@ -1838,34 +1838,7 @@ export function Dashboard() {
         </CalmModal>
       )}
 
-      {guideOpen && (
-        <CalmModal>
-          <p style={modalEyebrow}>Welcome</p>
-          <h2 style={modalTitle}>A short guide to The Nest.</h2>
-          <p style={modalText}>
-            Take less than 30 seconds to understand what this place is for.
-          </p>
-          <button
-            onClick={() => {
-              setGuideOpen(false);
-              navigate("/onboarding");
-            }}
-            style={{ ...modalButton, color: "rgba(205,170,100,0.76)" }}
-          >
-            Open guide
-          </button>
-          <button
-            onClick={() => {
-              localStorage.setItem("nest_guide_completed", "true");
-              setGuideOpen(false);
-            }}
-            style={{ ...modalButton, color: "rgba(175,158,132,0.44)" }}
-          >
-            Skip
-          </button>
-        </CalmModal>
-      )}
-
+    
 {installGuideOpen && (
   <CalmModal>
     <p style={modalEyebrow}>Install The Nest</p>
