@@ -175,6 +175,8 @@ function Toggle({ enabled, onClick }: { enabled: boolean; onClick: () => void })
 }
 
 export function Onboarding() {
+  const [morningReminder, setMorningReminder] = useState(true);
+  const [eveningReminder, setEveningReminder] = useState(true);
   const [, navigate] = useLocation();
   const [step, setStep] = useState(0);
 
@@ -189,24 +191,25 @@ export function Onboarding() {
   const next = () => setStep((s) => Math.min(s + 1, steps.length - 1));
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
-  const completeOnboarding = async (target: "/home" = "/home") => {
+  const completeOnboarding = async (target: "/home" | "/mood-log" = "/home") => {
     trackNestEvent(events.completed_onboarding);
-
+  
     const deviceId = getOrCreateDeviceId();
-
+  
     localStorage.setItem(DONE_KEY, "true");
     localStorage.setItem(HOME_WELCOME_KEY, "true");
-
-
+    localStorage.setItem("nest_morning_reminder_enabled", String(morningReminder));
+    localStorage.setItem("nest_evening_reminder_enabled", String(eveningReminder));
+  
     await supabase.from("onboarding_devices").upsert({
       device_id: deviceId,
       completed_at: new Date().toISOString(),
     });
-
+  
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
+  
     if (user) {
       await supabase.from("profiles").upsert({
         user_id: user.id,
@@ -214,8 +217,12 @@ export function Onboarding() {
         onboarding_completed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
+  
+      localStorage.setItem("nest_show_mood_after_first_memo", "true");
+      navigate("/mood-log");
+      return;
     }
-
+  
     navigate(target);
   };
 
@@ -443,8 +450,9 @@ export function Onboarding() {
               </p>
             </div>
             <div style={{ display: "grid", gap: 12 }}>
-              <PrimaryButton onClick={() => completeOnboarding("/home")}>Enter The Nest →</PrimaryButton>
-              <SecondaryButton onClick={() => completeOnboarding("/home")}>Go to my Nest</SecondaryButton>
+            <PrimaryButton onClick={() => completeOnboarding("/mood-log")}>
+  Enter The Nest →
+</PrimaryButton>
             </div>
           </ScreenShell>
         )}
