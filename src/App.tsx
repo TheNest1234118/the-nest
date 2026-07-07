@@ -37,11 +37,6 @@ import { Settings } from "@/pages/Settings";
 
 const queryClient = new QueryClient();
 
-const routerBase =
-  import.meta.env.BASE_URL === "/"
-    ? undefined
-    : import.meta.env.BASE_URL.replace(/\/$/, "");
-
 function AppRouter() {
   return (
     <Switch>
@@ -81,6 +76,7 @@ function AppRouter() {
     </Switch>
   );
 }
+
 function App() {
   React.useEffect(() => {
     initClarity();
@@ -91,7 +87,7 @@ function App() {
       <TooltipProvider>
         <AudioProvider>
           <AtmosphereProvider>
-            <WouterRouter base={routerBase}>
+            <WouterRouter>
               <AppRouter />
             </WouterRouter>
 
