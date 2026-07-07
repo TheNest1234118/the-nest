@@ -282,6 +282,7 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
   const [titleLoading, setTitleLoading] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [promptIntroOpen, setPromptIntroOpen] = useState(false);
   const [voicePrompts, setVoicePrompts] = useState<ReturnType<typeof getEnabledVoicePrompts>>([]);
   const [activePromptIndex, setActivePromptIndex] = useState(0);
@@ -296,7 +297,8 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) setCreateTranscript(false);
+      setUser(data.user);
+      setCreateTranscript(Boolean(data.user));
     });
   }, []);
 
@@ -823,7 +825,7 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
               fontFamily: "monospace",
             }}
           >
-            {transcriptionLimitLabel}
+            {user ? transcriptionLimitLabel : "Sign in"}
           </span>
         </motion.div>
 
@@ -1133,39 +1135,60 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
                 color: "rgba(175,158,132,.46)",
               }}
             >
-              {transcriptionLimitReached
-                ? "Free monthly transcription limit reached. Audio recording still works."
-                : "Makes this voice capsule searchable with AI."}
+           {
+  !user
+    ? "Sign in to unlock searchable transcripts, AI Patterns, Weekly Reflections and Ask the Past."
+    : transcriptionLimitReached
+      ? "Free monthly transcription limit reached. Audio recording still works."
+      : "Makes this voice capsule searchable with AI."
+}
             </div>
           </div>
 
-          <div
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: 999,
-              border: createTranscript
-                ? "1px solid rgba(222,179,96,.58)"
-                : "1px solid rgba(255,255,255,.12)",
-              background: createTranscript ? "rgba(222,179,96,.18)" : "transparent",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all .25s ease",
-              flexShrink: 0,
-            }}
-          >
-            {createTranscript && (
-              <div
-                style={{
-                  width: 9,
-                  height: 9,
-                  borderRadius: 999,
-                  background: "rgba(240,218,179,.95)",
-                }}
-              />
-            )}
-          </div>
+          {user ? (
+  <div
+    style={{
+      width: 24,
+      height: 24,
+      borderRadius: 999,
+      border: createTranscript
+        ? "1px solid rgba(222,179,96,.58)"
+        : "1px solid rgba(255,255,255,.12)",
+      background: createTranscript
+        ? "rgba(222,179,96,.18)"
+        : "transparent",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    }}
+  >
+    {createTranscript && (
+      <div
+        style={{
+          width: 9,
+          height: 9,
+          borderRadius: 999,
+          background: "rgba(240,218,179,.95)",
+        }}
+      />
+    )}
+  </div>
+) : (
+  <div
+    style={{
+      width: 24,
+      height: 24,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: "rgba(222,179,96,.45)",
+      fontSize: 18,
+    }}
+  >
+    🔒
+  </div>
+)}
         </button>
 
         <p
@@ -1467,6 +1490,7 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
                 {voicePrompts.map((prompt, index) => (
                   <button
                     type="button"
+                    disabled={!user}
                     key={prompt.id}
                     onClick={() => {
                       setActivePromptIndex(index);
@@ -1480,7 +1504,8 @@ export function Memos({ onboarding = false, onFinished }: MemosProps) {
                       color: "rgba(225,210,188,.84)",
                       fontSize: 13,
                       textAlign: "left",
-                      cursor: "pointer",
+                      cursor: user ? "pointer" : "default",
+opacity: user ? 1 : 0.45,
                     }}
                   >
                     {prompt.text}
