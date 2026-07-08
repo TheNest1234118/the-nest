@@ -1870,17 +1870,24 @@ opacity: user ? 1 : 0.45,
                         return;
                       }
                     
-                      const { error } = await supabase
+                      console.log("TITLE DEBUG before update", {
+                        title,
+                        pendingMemoId: pendingMemo.id,
+                      });
+                      
+                      const { data, error } = await supabase
                         .from("memos")
                         .update({ title })
-                        .eq("id", pendingMemo.id);
-                    
-                      if (error) {
-                        console.error(error);
-                        setError("Could not update title.");
+                        .eq("id", pendingMemo.id)
+                        .select("id,title")
+                        .single();
+                      
+                      console.log("TITLE DEBUG after update", { data, error });
+                      
+                      if (error || !data) {
+                        alert(error?.message || "No memo row updated");
                         return;
                       }
-                    
                       const fresh = await loadMemos();
                       setMemos(fresh as Memo[]);
                     
@@ -1958,15 +1965,40 @@ opacity: user ? 1 : 0.45,
       return;
     }
   
-    const { error } = await supabase
+    console.log("CUSTOM TITLE DEBUG before update", {
+
+      title,
+    
+      pendingMemoId: pendingMemo.id,
+    
+    });
+    
+    
+    
+    const { data, error } = await supabase
+    
       .from("memos")
+    
       .update({ title })
-      .eq("id", pendingMemo.id);
-  
-    if (error) {
-      console.error(error);
-      setError("Could not update title.");
+    
+      .eq("id", pendingMemo.id)
+    
+      .select("id,title")
+    
+      .single();
+    
+    
+    
+    console.log("CUSTOM TITLE DEBUG after update", { data, error });
+    
+    
+    
+    if (error || !data) {
+    
+      alert(error?.message || "No memo row updated");
+    
       return;
+    
     }
   
     const fresh = await loadMemos();
