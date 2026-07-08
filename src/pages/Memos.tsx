@@ -1880,7 +1880,7 @@ opacity: user ? 1 : 0.45,
                         .update({ title })
                         .eq("id", pendingMemo.id)
                         .select("id,title")
-                        .single();
+                        .maybeSingle();
                       
                       console.log("TITLE DEBUG after update", { data, error });
                       
@@ -1984,8 +1984,7 @@ opacity: user ? 1 : 0.45,
       .eq("id", pendingMemo.id)
     
       .select("id,title")
-    
-      .single();
+      .maybeSingle();
     
     
     
