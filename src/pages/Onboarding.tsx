@@ -297,8 +297,69 @@ export function Onboarding() {
       )}
 
       <AnimatePresence mode="wait">
-      {current === "one" && (
-  <ScreenShell key="one">
+        {current === "one" && (
+          <ScreenShell key="one">
+            <div style={{ textAlign: "center", paddingTop: 42 }}>
+              <Orb size={118} />
+              <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 42, lineHeight: 1.06 }}>
+                One voice note <span style={{ color: gold }}>a day.</span>
+                <br />That’s all.
+              </h1>
+              <p style={{ color: softText, fontSize: 15, lineHeight: 1.65, maxWidth: 280, margin: "0 auto" }}>
+                Just you, your thoughts, and a few minutes to clear your head.
+              </p>
+            </div>
+            <PrimaryButton onClick={next}>Continue →</PrimaryButton>
+          </ScreenShell>
+        )}
+
+        {current === "understand" && (
+          <ScreenShell key="understand">
+            <div style={{ textAlign: "center", paddingTop: 32 }}>
+              <div style={{ fontSize: 82, marginBottom: 18 }}>🧠</div>
+              <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 38, lineHeight: 1.08 }}>
+                AI that truly <span style={{ color: gold }}>understands you.</span>
+              </h1>
+              <p style={{ color: softText, fontSize: 15, lineHeight: 1.65, maxWidth: 300, margin: "0 auto" }}>
+                The more you share, the more The Nest can connect dots you would usually miss.
+              </p>
+            </div>
+            <PrimaryButton onClick={next}>Continue →</PrimaryButton>
+          </ScreenShell>
+        )}
+
+        {current === "journey" && (
+          <ScreenShell key="journey">
+            <div style={{ textAlign: "center", paddingTop: 24 }}>
+              <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 37, lineHeight: 1.08 }}>
+                From small talks to <span style={{ color: gold }}>big breakthroughs.</span>
+              </h1>
+
+              <div style={{ marginTop: 34, display: "grid", gap: 14 }}>
+                {[
+                  ["Mon", "😔", "I felt so stressed"],
+                  ["Wed", "🙂", "But today was amazing"],
+                  ["Sun", "🌟", "I’m finally proud"],
+                ].map(([day, emoji, text]) => (
+                  <div key={day} style={{ display: "grid", gridTemplateColumns: "42px 1fr", alignItems: "center", gap: 10 }}>
+                    <div style={{ color: "rgba(238,220,190,0.38)", fontSize: 12 }}>{day}</div>
+                    <div style={{ background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "13px 14px", textAlign: "left", color: "rgba(248,230,202,0.78)", fontSize: 14 }}>
+                      {emoji} {text}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <p style={{ color: softText, fontSize: 15, lineHeight: 1.65, maxWidth: 290, margin: "32px auto 0" }}>
+                Look back. Reflect. Understand yourself like never before.
+              </p>
+            </div>
+            <PrimaryButton onClick={next}>Continue →</PrimaryButton>
+          </ScreenShell>
+        )}
+
+{current === "safe" && (
+  <ScreenShell key="safe">
     <div style={{ textAlign: "center", paddingTop: 22 }}>
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 26 }}>
         <Orb size={68} />
@@ -333,14 +394,8 @@ export function Onboarding() {
           position: "relative",
         }}
       >
-        <div
-          style={{
-            padding: "26px 16px",
-            borderRight: "1px solid rgba(255,193,69,0.14)",
-            position: "relative",
-          }}
-        >
-          <div style={{ fontSize: 13, fontWeight: 800, color: mainText }}>
+        <div style={{ padding: "26px 16px", borderRight: "1px solid rgba(255,193,69,0.14)", position: "relative" }}>
+          <div style={{ fontSize: 13, fontWeight: 800 }}>
             <span style={{ color: "#ff4d4d", marginRight: 8 }}>✕</span>
             Without The Nest
           </div>
@@ -361,7 +416,6 @@ export function Onboarding() {
                   padding: "9px 10px",
                   borderRadius: 9,
                   background: "rgba(255,255,255,0.055)",
-                  border: "1px solid rgba(255,255,255,0.06)",
                   color: "rgba(248,230,202,0.7)",
                   fontSize: 10,
                 }}
@@ -379,22 +433,13 @@ export function Onboarding() {
                 height: 112,
                 borderRadius: "50%",
                 opacity: 0.45,
-                filter: "blur(.2px)",
                 background:
                   "repeating-radial-gradient(circle, transparent 0 9px, rgba(255,255,255,0.28) 10px 11px)",
                 transform: "rotate(18deg)",
               }}
             />
 
-            <div
-              style={{
-                position: "absolute",
-                left: 82,
-                top: 158,
-                fontSize: 34,
-                opacity: 0.5,
-              }}
-            >
+            <div style={{ position: "absolute", left: 82, top: 158, fontSize: 34, opacity: 0.5 }}>
               ☹️
             </div>
           </div>
@@ -403,25 +448,17 @@ export function Onboarding() {
         <div
           style={{
             padding: "26px 16px",
-            background:
-              "radial-gradient(circle at 50% 52%, rgba(255,193,69,0.22), transparent 38%)",
+            background: "radial-gradient(circle at 50% 52%, rgba(255,193,69,0.22), transparent 38%)",
             position: "relative",
           }}
         >
-          <div style={{ fontSize: 13, fontWeight: 800, color: mainText }}>
+          <div style={{ fontSize: 13, fontWeight: 800 }}>
             <span style={{ color: "#48c763", marginRight: 8 }}>✓</span>
             With The Nest
           </div>
 
           <div style={{ position: "relative", height: 210, marginTop: 28 }}>
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: 76,
-                transform: "translateX(-50%)",
-              }}
-            >
+            <div style={{ position: "absolute", left: "50%", top: 76, transform: "translateX(-50%)" }}>
               <Orb size={70} />
             </div>
 
@@ -443,9 +480,6 @@ export function Onboarding() {
                   border: "1px solid rgba(255,193,69,0.12)",
                   color: "rgba(248,230,202,0.76)",
                   fontSize: 10,
-                  display: "grid",
-                  gap: 4,
-                  placeItems: "center",
                   minWidth: 70,
                 }}
               >
@@ -470,7 +504,6 @@ export function Onboarding() {
             display: "grid",
             placeItems: "center",
             fontSize: 30,
-            color: mainText,
           }}
         >
           →
@@ -478,92 +511,9 @@ export function Onboarding() {
       </div>
     </div>
 
-    <div>
-      <PrimaryButton onClick={next}>ENTER THE NEST →</PrimaryButton>
-
-      <button
-        onClick={() => navigate("/auth")}
-        style={{
-          marginTop: 14,
-          width: "100%",
-          background: "transparent",
-          border: "none",
-          color: "rgba(248,230,202,0.38)",
-          fontSize: 14,
-          cursor: "pointer",
-        }}
-      >
-        I already have an account
-      </button>
-
-      <div
-        style={{
-          marginTop: 28,
-          display: "flex",
-          justifyContent: "space-between",
-          color: "rgba(248,230,202,0.42)",
-          fontSize: 11,
-        }}
-      >
-        <span>🔒 Private & secure</span>
-        <span>🛡️ Your data is yours</span>
-        <span>⚡ Works in seconds</span>
-      </div>
-    </div>
+    <PrimaryButton onClick={next}>Continue →</PrimaryButton>
   </ScreenShell>
 )}
-
-        {current === "journey" && (
-          <ScreenShell key="journey">
-            <div style={{ textAlign: "center", paddingTop: 24 }}>
-              <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 37, lineHeight: 1.08 }}>
-                From small talks to <span style={{ color: gold }}>big breakthroughs.</span>
-              </h1>
-
-              <div style={{ marginTop: 34, display: "grid", gap: 14 }}>
-                {[
-                  ["Mon", "😔", "I felt so stressed"],
-                  ["Wed", "🙂", "But today was amazing"],
-                  ["Sun", "🌟", "I’m finally proud"],
-                ].map(([day, emoji, text]) => (
-                  <div key={day} style={{ display: "grid", gridTemplateColumns: "42px 1fr", alignItems: "center", gap: 10 }}>
-                    <div style={{ color: "rgba(238,220,190,0.38)", fontSize: 12 }}>{day}</div>
-                    <div style={{ background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "13px 14px", textAlign: "left", color: "rgba(248,230,202,0.78)", fontSize: 14 }}>
-                      {emoji} {text}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <p style={{ color: softText, fontSize: 15, lineHeight: 1.65, maxWidth: 290, margin: "32px auto 0" }}>
-                Look back. Reflect. Understand yourself like never before.
-              </p>
-            </div>
-            <PrimaryButton onClick={next}>Continue →</PrimaryButton>
-          </ScreenShell>
-        )}
-
-        {current === "safe" && (
-          <ScreenShell key="safe">
-            <div style={{ textAlign: "center", paddingTop: 52 }}>
-              <div style={{ fontSize: 70, marginBottom: 18 }}>🛡️</div>
-              <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 42, lineHeight: 1.06 }}>
-                This is your <span style={{ color: gold }}>safe space.</span>
-              </h1>
-              <div style={{ display: "flex", justifyContent: "center", gap: 8, margin: "26px 0" }}>
-                {["🔒 Private", "🛡️ Encrypted", "💛 Yours"].map((item) => (
-                  <div key={item} style={{ padding: "9px 11px", borderRadius: 999, background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.08)", fontSize: 12, color: "rgba(248,230,202,0.76)" }}>
-                    {item}
-                  </div>
-                ))}
-              </div>
-              <p style={{ color: softText, fontSize: 15, lineHeight: 1.65, maxWidth: 280, margin: "0 auto" }}>
-                No filters. No pressure. Just you, being real.
-              </p>
-            </div>
-            <PrimaryButton onClick={next}>Continue →</PrimaryButton>
-          </ScreenShell>
-        )}
 
         {current === "firstVoice" && (
           <motion.div
