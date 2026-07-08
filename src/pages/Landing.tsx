@@ -66,13 +66,7 @@ export function Landing() {
           textAlign: "center",
         }}
       >
-        <div
-          style={{
-            height: 150,
-            position: "relative",
-            marginBottom: 14,
-          }}
-        >
+        <div style={{ height: 120, position: "relative", marginBottom: 18 }}>
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
@@ -80,8 +74,8 @@ export function Landing() {
               position: "absolute",
               inset: 0,
               margin: "auto",
-              width: 132,
-              height: 132,
+              width: 118,
+              height: 118,
               borderRadius: "50%",
               border: "1px solid rgba(255,190,74,0.22)",
               boxShadow: "0 0 70px rgba(255,178,48,0.18)",
@@ -95,8 +89,8 @@ export function Landing() {
               position: "absolute",
               inset: 0,
               margin: "auto",
-              width: 86,
-              height: 86,
+              width: 68,
+              height: 68,
               borderRadius: "50%",
               background:
                 "radial-gradient(circle at 35% 28%, #ffe3a4 0%, #f5aa2f 42%, #5b340b 100%)",
@@ -106,86 +100,180 @@ export function Landing() {
           />
         </div>
 
-        <p
-          style={{
-            color: "rgba(255,197,91,0.72)",
-            fontSize: 11,
-            letterSpacing: "0.28em",
-            textTransform: "uppercase",
-            marginBottom: 18,
-            fontWeight: 700,
-          }}
-        >
-          Voice Journal · AI Insights · Reflections
-        </p>
-
         <h1
           style={{
-            fontFamily: "Georgia, 'Times New Roman', serif",
-            fontSize: 47,
-            lineHeight: 1.04,
-            fontWeight: 400,
-            margin: "0 0 14px",
-            letterSpacing: "-0.02em",
+            fontSize: 31,
+            lineHeight: 1.28,
+            fontWeight: 900,
+            margin: "0 auto 30px",
+            letterSpacing: "-0.05em",
+            maxWidth: 360,
           }}
         >
-          This is <span style={{ color: "#ffc145" }}>your</span> space.
+          Your thoughts.
+          <br />
+          Organized. Understood. <span style={{ color: "#ffc145" }}>Growth.</span>
         </h1>
 
-        <p
+        <div
           style={{
-            color: "rgba(238,220,190,0.68)",
-            fontSize: 15,
-            lineHeight: 1.65,
-            maxWidth: 300,
-            margin: "0 auto 28px",
+            borderRadius: 22,
+            border: "1px solid rgba(255,193,69,0.14)",
+            background: "rgba(255,255,255,0.025)",
+            overflow: "hidden",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            minHeight: 322,
+            position: "relative",
+            marginBottom: 36,
           }}
         >
-          Speak freely. Leave your thoughts. Let The Nest help you understand yourself over time.
-        </p>
+          <div
+            style={{
+              padding: "26px 16px",
+              borderRight: "1px solid rgba(255,193,69,0.14)",
+              position: "relative",
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 800 }}>
+              <span style={{ color: "#ff4d4d", marginRight: 8 }}>✕</span>
+              Without The Nest
+            </div>
 
-        <div style={{ display: "grid", gap: 11, marginBottom: 30 }}>
-          {[
-            ["🎙️", "Voice Capsules", "Say what is in your head."],
-            ["✨", "AI Patterns", "See what keeps repeating."],
-            ["🌙", "Weekly Reflections", "Understand how your week shaped you."],
-          ].map(([icon, title, text], index) => (
-            <motion.div
-              key={title}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25 + index * 0.08 }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 13,
-                textAlign: "left",
-                padding: "13px 15px",
-                borderRadius: 18,
-                border: "1px solid rgba(255,193,69,0.12)",
-                background: "rgba(255,255,255,0.035)",
-                boxShadow: "0 14px 40px rgba(0,0,0,0.25)",
-              }}
-            >
-              <div style={{ fontSize: 20 }}>{icon}</div>
-              <div>
+            <div style={{ marginTop: 46, position: "relative", height: 165 }}>
+              {[
+                ["Overthinking", 4, 0],
+                ["Lost ideas", 124, 0],
+                ["No clarity", 0, 100],
+                ["No progress", 130, 132],
+              ].map(([text, left, top]) => (
                 <div
+                  key={String(text)}
                   style={{
-                    color: "rgba(255,202,100,0.92)",
-                    fontSize: 12,
-                    fontWeight: 800,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
+                    position: "absolute",
+                    left: Number(left),
+                    top: Number(top),
+                    padding: "9px 10px",
+                    borderRadius: 9,
+                    background: "rgba(255,255,255,0.055)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    color: "rgba(248,230,202,0.7)",
+                    fontSize: 10,
                   }}
                 >
-                  {title}
-                </div>
-                <div style={{ color: "rgba(238,220,190,0.58)", fontSize: 13, marginTop: 3 }}>
                   {text}
                 </div>
+              ))}
+
+              <div
+                style={{
+                  position: "absolute",
+                  left: 48,
+                  top: 42,
+                  width: 112,
+                  height: 112,
+                  borderRadius: "50%",
+                  opacity: 0.45,
+                  background:
+                    "repeating-radial-gradient(circle, transparent 0 9px, rgba(255,255,255,0.28) 10px 11px)",
+                  transform: "rotate(18deg)",
+                }}
+              />
+
+              <div
+                style={{
+                  position: "absolute",
+                  left: 82,
+                  top: 158,
+                  fontSize: 34,
+                  opacity: 0.5,
+                }}
+              >
+                ☹️
               </div>
-            </motion.div>
-          ))}
+            </div>
+          </div>
+
+          <div
+            style={{
+              padding: "26px 16px",
+              background:
+                "radial-gradient(circle at 50% 52%, rgba(255,193,69,0.22), transparent 38%)",
+              position: "relative",
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 800 }}>
+              <span style={{ color: "#48c763", marginRight: 8 }}>✓</span>
+              With The Nest
+            </div>
+
+            <div style={{ position: "relative", height: 210, marginTop: 28 }}>
+              <motion.div
+                animate={{ y: [0, -5, 0], scale: [1, 1.04, 1] }}
+                transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+                style={{
+                  position: "absolute",
+                  left: "50%",
+                  top: 76,
+                  transform: "translateX(-50%)",
+                  width: 70,
+                  height: 70,
+                  borderRadius: "50%",
+                  background:
+                    "radial-gradient(circle at 35% 28%, #ffe3a4 0%, #f5aa2f 42%, #5b340b 100%)",
+                  boxShadow: "0 0 44px rgba(255,186,66,0.38)",
+                }}
+              />
+
+              {[
+                ["🧠", "Clear mind", 72, 0],
+                ["🎙️", "Captured ideas", 20, 72],
+                ["✨", "AI insights", 142, 72],
+                ["📈", "Real growth", 84, 150],
+              ].map(([icon, text, left, top]) => (
+                <div
+                  key={String(text)}
+                  style={{
+                    position: "absolute",
+                    left: Number(left),
+                    top: Number(top),
+                    padding: "10px 11px",
+                    borderRadius: 11,
+                    background: "rgba(255,193,69,0.09)",
+                    border: "1px solid rgba(255,193,69,0.12)",
+                    color: "rgba(248,230,202,0.76)",
+                    fontSize: 10,
+                    minWidth: 70,
+                    display: "grid",
+                    gap: 4,
+                    placeItems: "center",
+                  }}
+                >
+                  <div style={{ fontSize: 18 }}>{icon}</div>
+                  <div>{text}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "45%",
+              transform: "translate(-50%, -50%)",
+              width: 48,
+              height: 48,
+              borderRadius: "50%",
+              background: "#0b0b0f",
+              border: "1px solid rgba(255,193,69,0.13)",
+              display: "grid",
+              placeItems: "center",
+              fontSize: 30,
+            }}
+          >
+            →
+          </div>
         </div>
 
         <motion.button
@@ -196,18 +284,19 @@ export function Landing() {
           whileTap={{ scale: 0.97 }}
           style={{
             width: "100%",
-            height: 58,
+            height: 62,
             borderRadius: 999,
             border: "none",
             background: "linear-gradient(135deg,#ffd36b,#f4a51f)",
             color: "#1a1205",
             fontSize: 16,
-            fontWeight: 800,
+            fontWeight: 900,
             cursor: "pointer",
             boxShadow: "0 18px 50px rgba(255,184,55,0.28)",
+            textTransform: "uppercase",
           }}
         >
-          Enter The Nest →
+          ENTER THE NEST →
         </motion.button>
 
         <button
@@ -223,6 +312,20 @@ export function Landing() {
         >
           I already have an account
         </button>
+
+        <div
+          style={{
+            marginTop: 30,
+            display: "flex",
+            justifyContent: "space-between",
+            color: "rgba(238,220,190,0.44)",
+            fontSize: 11,
+          }}
+        >
+          <span>🔒 Private & secure</span>
+          <span>🛡️ Your data is yours</span>
+          <span>⚡ Works in seconds</span>
+        </div>
       </motion.div>
     </div>
   );

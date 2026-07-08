@@ -358,162 +358,27 @@ export function Onboarding() {
           </ScreenShell>
         )}
 
-{current === "safe" && (
-  <ScreenShell key="safe">
-    <div style={{ textAlign: "center", paddingTop: 22 }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 26 }}>
-        <Orb size={68} />
-      </div>
-
-      <h1
-        style={{
-          fontWeight: 850,
-          fontSize: 30,
-          lineHeight: 1.28,
-          letterSpacing: "-0.04em",
-          margin: "0 auto",
-          maxWidth: 360,
-        }}
-      >
-        Your thoughts.
-        <br />
-        Organized. Understood.{" "}
-        <span style={{ color: gold }}>Growth.</span>
-      </h1>
-
-      <div
-        style={{
-          marginTop: 32,
-          borderRadius: 22,
-          border: "1px solid rgba(255,193,69,0.14)",
-          background: "rgba(255,255,255,0.025)",
-          overflow: "hidden",
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          minHeight: 322,
-          position: "relative",
-        }}
-      >
-        <div style={{ padding: "26px 16px", borderRight: "1px solid rgba(255,193,69,0.14)", position: "relative" }}>
-          <div style={{ fontSize: 13, fontWeight: 800 }}>
-            <span style={{ color: "#ff4d4d", marginRight: 8 }}>✕</span>
-            Without The Nest
-          </div>
-
-          <div style={{ marginTop: 46, position: "relative", height: 165 }}>
-            {[
-              ["Overthinking", 4, 0],
-              ["Lost ideas", 124, 0],
-              ["No clarity", 0, 100],
-              ["No progress", 130, 132],
-            ].map(([text, left, top]) => (
-              <div
-                key={String(text)}
-                style={{
-                  position: "absolute",
-                  left: Number(left),
-                  top: Number(top),
-                  padding: "9px 10px",
-                  borderRadius: 9,
-                  background: "rgba(255,255,255,0.055)",
-                  color: "rgba(248,230,202,0.7)",
-                  fontSize: 10,
-                }}
-              >
-                {text}
+        {current === "safe" && (
+          <ScreenShell key="safe">
+            <div style={{ textAlign: "center", paddingTop: 52 }}>
+              <div style={{ fontSize: 70, marginBottom: 18 }}>🛡️</div>
+              <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 42, lineHeight: 1.06 }}>
+                This is your <span style={{ color: gold }}>safe space.</span>
+              </h1>
+              <div style={{ display: "flex", justifyContent: "center", gap: 8, margin: "26px 0" }}>
+                {["🔒 Private", "🛡️ Encrypted", "💛 Yours"].map((item) => (
+                  <div key={item} style={{ padding: "9px 11px", borderRadius: 999, background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.08)", fontSize: 12, color: "rgba(248,230,202,0.76)" }}>
+                    {item}
+                  </div>
+                ))}
               </div>
-            ))}
-
-            <div
-              style={{
-                position: "absolute",
-                left: 48,
-                top: 42,
-                width: 112,
-                height: 112,
-                borderRadius: "50%",
-                opacity: 0.45,
-                background:
-                  "repeating-radial-gradient(circle, transparent 0 9px, rgba(255,255,255,0.28) 10px 11px)",
-                transform: "rotate(18deg)",
-              }}
-            />
-
-            <div style={{ position: "absolute", left: 82, top: 158, fontSize: 34, opacity: 0.5 }}>
-              ☹️
+              <p style={{ color: softText, fontSize: 15, lineHeight: 1.65, maxWidth: 280, margin: "0 auto" }}>
+                No filters. No pressure. Just you, being real.
+              </p>
             </div>
-          </div>
-        </div>
-
-        <div
-          style={{
-            padding: "26px 16px",
-            background: "radial-gradient(circle at 50% 52%, rgba(255,193,69,0.22), transparent 38%)",
-            position: "relative",
-          }}
-        >
-          <div style={{ fontSize: 13, fontWeight: 800 }}>
-            <span style={{ color: "#48c763", marginRight: 8 }}>✓</span>
-            With The Nest
-          </div>
-
-          <div style={{ position: "relative", height: 210, marginTop: 28 }}>
-            <div style={{ position: "absolute", left: "50%", top: 76, transform: "translateX(-50%)" }}>
-              <Orb size={70} />
-            </div>
-
-            {[
-              ["🧠", "Clear mind", 72, 0],
-              ["🎙️", "Captured ideas", 20, 72],
-              ["✨", "AI insights", 142, 72],
-              ["📈", "Real growth", 84, 150],
-            ].map(([icon, text, left, top]) => (
-              <div
-                key={String(text)}
-                style={{
-                  position: "absolute",
-                  left: Number(left),
-                  top: Number(top),
-                  padding: "10px 11px",
-                  borderRadius: 11,
-                  background: "rgba(255,193,69,0.09)",
-                  border: "1px solid rgba(255,193,69,0.12)",
-                  color: "rgba(248,230,202,0.76)",
-                  fontSize: 10,
-                  minWidth: 70,
-                }}
-              >
-                <div style={{ fontSize: 18 }}>{icon}</div>
-                <div>{text}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "45%",
-            transform: "translate(-50%, -50%)",
-            width: 48,
-            height: 48,
-            borderRadius: "50%",
-            background: "#0b0b0f",
-            border: "1px solid rgba(255,193,69,0.13)",
-            display: "grid",
-            placeItems: "center",
-            fontSize: 30,
-          }}
-        >
-          →
-        </div>
-      </div>
-    </div>
-
-    <PrimaryButton onClick={next}>Continue →</PrimaryButton>
-  </ScreenShell>
-)}
+            <PrimaryButton onClick={next}>Continue →</PrimaryButton>
+          </ScreenShell>
+        )}
 
         {current === "firstVoice" && (
           <motion.div
