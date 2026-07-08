@@ -430,7 +430,7 @@ const [authPassword, setAuthPassword] = useState("");
             type: recorder.mimeType || "audio/webm",
           });
 
-          const finalTitle = "Generating title...";
+          const finalTitle = createTranscript ? "Generating title..." : "Voice capsule";
 
           const saved = await saveMemo(
             blob,
@@ -1903,7 +1903,9 @@ opacity: user ? 1 : 0.45,
               </div>
             ) : (
               <p style={{ color: "rgba(185,162,128,.52)", fontSize: 13, marginTop: 14 }}>
-                No AI titles yet. Write your own title below.
+                {createTranscript
+  ? "No AI titles yet. Write your own title below."
+  : "Add your own title below."}
               </p>
             )}
 
