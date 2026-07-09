@@ -4,7 +4,7 @@ import OneSignal from "react-onesignal";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
-import { Memos } from "@/pages/Memos";
+import { OnboardingVoice } from "@/pages/OnboardingVoice";
 import { trackNestEvent, events } from "@/lib/analyticsEvents";
 import { requestNestNotifications } from "@/lib/notifications";
 
@@ -388,7 +388,7 @@ export function Onboarding() {
             exit={{ opacity: 0 }}
             style={{ flex: 1, width: "100%" }}
           >
-            <Memos onboarding onFinished={next} />
+            <OnboardingVoice onFinished={next} />
           </motion.div>
         )}
 
