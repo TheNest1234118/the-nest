@@ -1,0 +1,1 @@
+localStorage.setItem("nest_show_mood_after_first_memo", "true");

@@ -531,12 +531,16 @@ function BottomNav({
         <span>Home</span>
       </button>
 
-      <button onClick={() => setActiveTab("history")} style={itemStyle(activeTab === "history")}>
-        <Clock3 size={20} strokeWidth={1.45} />
+      <button
+  data-tour="history"
+  onClick={() => setActiveTab("history")}
+  style={itemStyle(activeTab === "history")}
+>
         <span>History</span>
       </button>
 
       <motion.button
+      data-tour="mic"
         whileTap={{ scale: 0.94 }}
         onClick={onCapture}
         aria-label="Capture everything"
@@ -982,7 +986,154 @@ function ProfilePage({
     </>
   );
 }
+const TOUR_STEPS = [
+  {
+    selector: '[data-tour="mic"]',
+    title: "🎤 Voice",
+    text: "Whenever something is on your mind, start here.",
+  },
+  {
+    selector: '[data-tour="history"]',
+    title: "📚 History",
+    text: "Every thought you save will appear here.",
+  },
+  {
+    selector: '[data-tour="reflections"]',
+    title: "🧠 Reflections",
+    text: "Over time, The Nest finds patterns in your thoughts.",
+  },
+  {
+    selector: '[data-tour="mood"]',
+    title: "🙂 Mood",
+    text: "Track how your days really felt.",
+  },
+];
 
+function DashboardTour({
+  step,
+  onNext,
+}: {
+  step: number;
+  onNext: () => void;
+}) {
+  const item = TOUR_STEPS[step];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 20000,
+        pointerEvents: "none",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(5,4,7,0.56)",
+          backdropFilter: "blur(3px)",
+        }}
+      />
+
+      <motion.div
+        initial={{ opacity: 0, y: 12, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        style={{
+          position: "absolute",
+          left: 22,
+          right: 22,
+          bottom: step === 0 ? 128 : 108,
+          maxWidth: 360,
+          margin: "0 auto",
+          pointerEvents: "auto",
+          borderRadius: 24,
+          padding: 20,
+          background: "rgba(18,15,12,0.96)",
+          border: "1px solid rgba(205,170,100,0.18)",
+          boxShadow: "0 24px 90px rgba(0,0,0,0.55)",
+          color: colors.text,
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            left:
+              step === 0
+                ? "50%"
+                : step === 1
+                ? "28%"
+                : step === 2
+                ? "72%"
+                : "88%",
+            bottom: -18,
+            transform: "translateX(-50%) rotate(45deg)",
+            width: 34,
+            height: 34,
+            background: "rgba(18,15,12,0.96)",
+            borderRight: "1px solid rgba(205,170,100,0.18)",
+            borderBottom: "1px solid rgba(205,170,100,0.18)",
+          }}
+        />
+
+        <p
+          style={{
+            margin: "0 0 8px",
+            color: colors.gold,
+            fontSize: 11,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            fontWeight: 800,
+          }}
+        >
+          Step {step + 1} of 4
+        </p>
+
+        <h3
+          style={{
+            ...serif,
+            margin: "0 0 8px",
+            fontSize: 25,
+            color: "rgba(245,230,205,0.94)",
+          }}
+        >
+          {item.title}
+        </h3>
+
+        <p
+          style={{
+            margin: "0 0 18px",
+            color: colors.textSoft,
+            fontSize: 14,
+            lineHeight: 1.55,
+          }}
+        >
+          {item.text}
+        </p>
+
+        <button
+          onClick={onNext}
+          style={{
+            width: "100%",
+            height: 48,
+            borderRadius: 999,
+            border: "1px solid rgba(205,170,100,0.28)",
+            background:
+              "linear-gradient(135deg, rgba(245,205,120,0.95), rgba(205,145,45,0.88))",
+            color: "rgba(18,12,5,0.92)",
+            fontSize: 13,
+            fontWeight: 850,
+            cursor: "pointer",
+          }}
+        >
+          {step === 3 ? "You’re ready →" : "Next →"}
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
 export function Dashboard() {
   const [, navigate] = useLocation();
   const [authOpen, setAuthOpen] = useState(false);
@@ -996,6 +1147,7 @@ export function Dashboard() {
   const [todayMood, setTodayMood] = useState<string | null>(null);
   const [yesterdayMood, setYesterdayMood] = useState<string | null>(null);
   const [dailyIntention, setDailyIntention] = useState<string | null>(null);
+  const [tourStep, setTourStep] = useState<number | null>(null);
   const [quickThought, setQuickThought] = useState("");
   const [quickSaving, setQuickSaving] = useState(false);
   const [latestMemo, setLatestMemo] = useState<SupabaseMemo | null>(null);
@@ -1034,7 +1186,16 @@ export function Dashboard() {
     () => getDailyCheckin(todayMood, yesterdayMood),
     [todayMood, yesterdayMood]
   );
-
+  const startDashboardTour = () => {
+    localStorage.removeItem("nest_start_dashboard_tour");
+    setActiveTab("home");
+    setTourStep(0);
+  };
+  
+  const finishDashboardTour = () => {
+    localStorage.setItem("nest_dashboard_tour_done", "true");
+    setTourStep(null);
+  };
   const saveQuickThought = async () => {
     const text = quickThought.trim();
     if (!text || quickSaving) return;
@@ -1124,7 +1285,14 @@ export function Dashboard() {
     }
 
     init();
-
+    const shouldStartTour =
+    localStorage.getItem("nest_start_dashboard_tour") === "true" &&
+    localStorage.getItem("nest_show_mood_after_first_memo") !== "true" &&
+    localStorage.getItem("nest_dashboard_tour_done") !== "true";
+  
+  if (shouldStartTour) {
+    setTimeout(() => startDashboardTour(), 700);
+  }
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
@@ -1694,7 +1862,18 @@ export function Dashboard() {
           onCapture={() => setCaptureOpen(true)}
         />
       </div>
-
+      {tourStep !== null && (
+  <DashboardTour
+    step={tourStep}
+    onNext={() => {
+      if (tourStep >= 3) {
+        finishDashboardTour();
+      } else {
+        setTourStep((s) => (s === null ? null : s + 1));
+      }
+    }}
+  />
+)}
       <CaptureSheet
         open={captureOpen}
         onClose={() => setCaptureOpen(false)}
@@ -1970,6 +2149,7 @@ export function Dashboard() {
             localStorage.removeItem("nest_show_mood_after_first_memo");
             setSelectedDailyMood(null);
             setDailyOpen(false);
+            setTimeout(() => startDashboardTour(), 350);
             openAccountAfterMood();
           }}
           whileTap={selectedDailyMood ? { scale: 0.98 } : undefined}
@@ -2008,7 +2188,7 @@ export function Dashboard() {
             localStorage.removeItem("nest_show_mood_after_first_memo");
 
             setDailyOpen(false);
-
+            setTimeout(() => startDashboardTour(), 350);
             openAccountAfterMood();
           }}
           style={{

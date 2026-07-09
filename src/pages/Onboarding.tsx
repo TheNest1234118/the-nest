@@ -219,11 +219,14 @@ export function Onboarding() {
       });
   
       localStorage.setItem("nest_show_mood_after_first_memo", "true");
-      navigate("/mood-log");
+      localStorage.setItem("nest_start_dashboard_tour", "true");
+      navigate("/home");
       return;
     }
   
-    navigate(target);
+    localStorage.setItem("nest_show_mood_after_first_memo", "true");
+localStorage.setItem("nest_start_dashboard_tour", "true");
+navigate("/home");
   };
 
   const enableNotifications = async () => {
@@ -450,7 +453,7 @@ export function Onboarding() {
               </p>
             </div>
             <div style={{ display: "grid", gap: 12 }}>
-            <PrimaryButton onClick={() => completeOnboarding("/mood-log")}>
+            <PrimaryButton onClick={() => completeOnboarding("/home")}>
   Enter The Nest →
 </PrimaryButton>
             </div>
