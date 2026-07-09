@@ -1321,7 +1321,7 @@ export function Dashboard() {
       return;
     }
   
-    startDashboardTour();
+    setTimeout(() => startDashboardTour(), 300);
   };
 
   return (
