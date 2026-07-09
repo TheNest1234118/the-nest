@@ -1320,7 +1320,10 @@ export function Dashboard() {
     if (!user && !continueWithoutAccount) {
       trackNestEvent(events.opened_signup);
       setAuthOpen(true);
+      return;
     }
+  
+    setTimeout(() => startDashboardTour(), 350);
   };
   return (
     <motion.div
@@ -2149,7 +2152,6 @@ export function Dashboard() {
             localStorage.removeItem("nest_show_mood_after_first_memo");
             setSelectedDailyMood(null);
             setDailyOpen(false);
-            setTimeout(() => startDashboardTour(), 350);
             openAccountAfterMood();
           }}
           whileTap={selectedDailyMood ? { scale: 0.98 } : undefined}
@@ -2255,10 +2257,14 @@ export function Dashboard() {
 
 <AuthModal
   open={authOpen}
-  onClose={() => setAuthOpen(false)}
+  onClose={() => {
+    setAuthOpen(false);
+    setTimeout(() => startDashboardTour(), 350);
+  }}
   onSuccess={() => {
     trackNestEvent(events.created_account);
     setAuthOpen(false);
+    setTimeout(() => startDashboardTour(), 350);
   }}
 />
     </motion.div>
