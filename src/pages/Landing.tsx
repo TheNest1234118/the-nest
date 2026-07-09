@@ -93,13 +93,30 @@ export function Landing() {
             textShadow: "0 2px 12px rgba(0,0,0,0.45)",
           }}
         >
-          Your thoughts.
+          Get your 
           <br />
-          Organized. Understood.
-          <br />
-          <span style={{ color: "#ffc145" }}>Growth.</span>
+          thoughts
+          <br /> 
+          out of
+          <br /> 
+          <span style={{ color: "#ffc145" }}>your head.</span>
         </h1>
-
+        <p
+ style={{
+   fontSize: 16,
+   lineHeight: 1.6,
+   color: "rgba(245,226,196,0.72)",
+   margin: "0 auto 28px",
+   maxWidth: 340,
+ }}
+>
+ Some thoughts only make sense once you say them out loud.
+<br />
+<br />
+<strong style={{ color: "#f5e2c4", fontWeight: 600 }}>
+   Speak. Remember. Understand yourself over time.
+</strong>
+</p>
         <img
           src="/landing-comparison.png"
           alt="Without The Nest and With The Nest comparison"
