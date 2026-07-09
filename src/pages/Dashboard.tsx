@@ -536,6 +536,7 @@ function BottomNav({
   onClick={() => setActiveTab("history")}
   style={itemStyle(activeTab === "history")}
 >
+<Clock3 size={20} strokeWidth={1.45} />
         <span>History</span>
       </button>
 
