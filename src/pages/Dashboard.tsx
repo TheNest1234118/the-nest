@@ -2188,11 +2188,10 @@ export function Dashboard() {
               "nest_daily_checkin_date",
               new Date().toISOString().slice(0, 10)
             );
-
+          
             localStorage.removeItem("nest_show_mood_after_first_memo");
-
+          
             setDailyOpen(false);
-            setTimeout(() => startDashboardTour(), 350);
             openAccountAfterMood();
           }}
           style={{
