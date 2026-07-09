@@ -1314,17 +1314,15 @@ export function Dashboard() {
   const openAccountAfterMood = () => {
     localStorage.removeItem("nest_show_mood_after_first_memo");
   
-    const continueWithoutAccount =
-      localStorage.getItem("nest_continue_without_account") === "true";
-  
-    if (!user && !continueWithoutAccount) {
+    if (!user) {
       trackNestEvent(events.opened_signup);
       setAuthOpen(true);
       return;
     }
   
-    setTimeout(() => startDashboardTour(), 350);
+    startDashboardTour();
   };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -1895,12 +1893,15 @@ export function Dashboard() {
             voice capsules, anchors and reflections across devices.
           </p>
           <button
-          onClick={() => {
-            localStorage.setItem("nest_welcome_seen", "true");
-            localStorage.setItem("nest_continue_without_account", "true");
-            setWelcomeOpen(false);
-            setAuthOpen(false);
-          }}
+         onClick={() => {
+          localStorage.setItem("nest_welcome_seen", "true");
+          localStorage.setItem("nest_continue_without_account", "true");
+        
+          setWelcomeOpen(false);
+          setAuthOpen(false);
+        
+          setTimeout(() => startDashboardTour(), 300);
+        }}
             style={modalButton}
           >
             Continue without account
@@ -2259,12 +2260,12 @@ export function Dashboard() {
   open={authOpen}
   onClose={() => {
     setAuthOpen(false);
-    setTimeout(() => startDashboardTour(), 350);
+    startDashboardTour();
   }}
   onSuccess={() => {
     trackNestEvent(events.created_account);
     setAuthOpen(false);
-    setTimeout(() => startDashboardTour(), 350);
+    startDashboardTour();
   }}
 />
     </motion.div>
