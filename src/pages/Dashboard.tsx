@@ -2260,12 +2260,19 @@ export function Dashboard() {
   open={authOpen}
   onClose={() => {
     setAuthOpen(false);
-    startDashboardTour();
+
+    if (
+      localStorage.getItem("nest_show_mood_after_first_memo") !== "true" &&
+      localStorage.getItem("nest_dashboard_tour_done") !== "true"
+    ) {
+      setTimeout(() => startDashboardTour(), 300);
+    }
   }}
   onSuccess={() => {
     trackNestEvent(events.created_account);
     setAuthOpen(false);
-    startDashboardTour();
+
+    setTimeout(() => startDashboardTour(), 300);
   }}
 />
     </motion.div>
