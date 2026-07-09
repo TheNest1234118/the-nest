@@ -10,5 +10,11 @@
       "source": "/(.*)",
       "destination": "/"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/send-weekly-reflection-push?secret=DEIN_CRON_SECRET",
+      "schedule": "* * * * *"
+    }
   ]
 }
