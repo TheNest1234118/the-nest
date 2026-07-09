@@ -183,25 +183,7 @@ if (plan !== "supporter" && count >= 30) {
 
     const arrayBuffer = await audioBlob.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const maxBytes = 24 * 1024 * 1024;
-
-    if (buffer.length > maxBytes) {
-      await supabase
-        .from("memos")
-        .update({
-          status: "ready",
-          transcript_error:
-            "Audio saved. This recording is too large to transcribe in one piece.",
-          processing_finished_at: new Date().toISOString(),
-        })
-        .eq("id", memoId);
-    
-      return res.status(200).json({
-        ok: false,
-        error:
-          "Audio saved. This recording is too large to transcribe in one piece.",
-      });
-    }
+   
     const filename =
       memo.mime_type?.includes("mp4") || memo.mime_type?.includes("aac")
         ? "audio.m4a"
