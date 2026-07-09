@@ -1483,7 +1483,7 @@ export function Dashboard() {
               letterSpacing: "-0.02em",
             }}
           >
-            What’s on your mind?
+            What’s on your mind??
           </div>
 
           <div style={{ display: "flex", alignItems: "flex-end", gap: 12 }}>
