@@ -500,14 +500,20 @@ export function MoodLog() {
       </section>
 
       <div
-        style={{
-          display: "flex",
-          gap: 8,
-          overflowX: "auto",
-          padding: "8px 0 18px",
-          marginBottom: 4,
-        }}
-      >
+  style={{
+    display: "flex",
+    gap: 8,
+    overflowX: "auto",
+    overflowY: "hidden",
+    padding: "8px 0 18px",
+    marginBottom: 4,
+
+    scrollbarWidth: "none",      // Firefox
+    msOverflowStyle: "none",     // IE/Edge
+    WebkitOverflowScrolling: "touch",
+  }}
+  className="hide-scrollbar"
+>
         {FILTERS.map((item) => {
           const active = filter === item.key;
 
