@@ -57,7 +57,25 @@ const sectionLabel: React.CSSProperties = {
   marginBottom: 11,
   fontWeight: 700,
 };
+function getNextWeeklyUnlock() {
+  const now = new Date();
 
+  const next = new Date(now);
+
+  // nächsten Sonntag berechnen
+  const daysUntilSunday = (7 - now.getDay()) % 7;
+
+  next.setDate(now.getDate() + daysUntilSunday);
+
+  // wenn heute Sonntag nach 20 Uhr -> nächste Woche
+  if (daysUntilSunday === 0 && now.getHours() >= 20) {
+    next.setDate(next.getDate() + 7);
+  }
+
+  next.setHours(20, 0, 0, 0);
+
+  return next;
+}
 function formatDate(value?: string) {
   if (!value) return "";
   try {
@@ -616,7 +634,11 @@ export function ReflectionExperience({ kind }: { kind: ReflectionKind }) {
   const [history, setHistory] = useState<ReflectionV2Generation[]>([]);
   const [loading, setLoading] = useState(false);
   const isWeekly = kind === "weekly";
+  const weeklyUnlocked =
+  !isWeekly ||
+  (new Date().getDay() === 0 && new Date().getHours() >= 20);
 
+const nextWeeklyUnlock = getNextWeeklyUnlock();
   useEffect(() => {
     async function init() {
       const saved = await loadReflectionV2History(kind);
@@ -770,7 +792,7 @@ setHistory(saved);
 
         <motion.button
           onClick={generate}
-          disabled={loading}
+          disabled={loading || !weeklyUnlocked}
           whileTap={{ scale: 0.985 }}
           style={{
             width: "100%",
@@ -787,8 +809,9 @@ setHistory(saved);
             alignItems: "center",
             gap: 10,
             fontSize: 16,
-            cursor: loading ? "default" : "pointer",
-            opacity: loading ? 0.72 : 1,
+            cursor:
+  loading || !weeklyUnlocked ? "default" : "pointer",
+  opacity: loading || !weeklyUnlocked ? 0.45 : 1,
             boxShadow: "0 18px 70px rgba(0,0,0,.20)",
           }}
         >
@@ -800,10 +823,39 @@ setHistory(saved);
             <Sparkles size={18} />
           </motion.span>
           {loading
-            ? "Looking back through your entries..."
-            : `Generate ${isWeekly ? "Weekly" : "Monthly"} Reflection`}
+  ? "Looking back through your entries..."
+  : isWeekly && !weeklyUnlocked
+    ? "Available Sunday"
+    : `Generate ${isWeekly ? "Weekly" : "Monthly"} Reflection`}
         </motion.button>
+        {isWeekly && !weeklyUnlocked && (
+  <motion.div
+    initial={{ opacity: 0, y: 4 }}
+    animate={{ opacity: 1, y: 0 }}
+    style={{
+      textAlign: "center",
+      marginBottom: 18,
+      color: "rgba(185,162,128,.58)",
+      fontSize: 12,
+      lineHeight: 1.6,
+    }}
+  >
+    <div style={{ marginBottom: 4 }}>
+      Your next Weekly Reflection unlocks every Sunday at 8:00 PM.
+    </div>
 
+    <div style={{ color: "rgba(215,178,103,.82)" }}>
+      Next unlock:{" "}
+      {nextWeeklyUnlock.toLocaleString(undefined, {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "numeric",
+        minute: "2-digit",
+      })}
+    </div>
+  </motion.div>
+)}
         <div style={{ display: "grid", gap: 13 }}>
           <HeroReflectionCard item={item} isWeekly={isWeekly} />
 

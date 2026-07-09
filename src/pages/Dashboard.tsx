@@ -1150,6 +1150,7 @@ export function Dashboard() {
   const [dailyIntention, setDailyIntention] = useState<string | null>(null);
   const [tourStep, setTourStep] = useState<number | null>(null);
   const [quickThought, setQuickThought] = useState("");
+  const [tourWaitingForAccount, setTourWaitingForAccount] = useState(false);
   const [quickSaving, setQuickSaving] = useState(false);
   const [latestMemo, setLatestMemo] = useState<SupabaseMemo | null>(null);
   const [quickSaved, setQuickSaved] = useState(false);
@@ -1286,14 +1287,14 @@ export function Dashboard() {
     }
 
     init();
-    const shouldStartTour =
-    localStorage.getItem("nest_start_dashboard_tour") === "true" &&
-    localStorage.getItem("nest_show_mood_after_first_memo") !== "true" &&
-    localStorage.getItem("nest_dashboard_tour_done") !== "true";
-  
-  if (shouldStartTour) {
-    setTimeout(() => startDashboardTour(), 700);
-  }
+    const openAccountAfterMood = () => {
+      localStorage.removeItem("nest_show_mood_after_first_memo");
+      localStorage.setItem("nest_waiting_for_account_choice", "true");
+      setTourWaitingForAccount(true);
+    
+      trackNestEvent(events.opened_signup);
+      setAuthOpen(true);
+    };
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
@@ -1321,7 +1322,9 @@ export function Dashboard() {
       return;
     }
   
-    setTimeout(() => startDashboardTour(), 300);
+    localStorage.removeItem("nest_waiting_for_account_choice");
+    setTourWaitingForAccount(false);
+    setTimeout(() => startDashboardTour(), 350);
   };
 
   return (
@@ -2262,17 +2265,26 @@ export function Dashboard() {
     setAuthOpen(false);
 
     if (
-      localStorage.getItem("nest_show_mood_after_first_memo") !== "true" &&
-      localStorage.getItem("nest_dashboard_tour_done") !== "true"
+      tourWaitingForAccount ||
+      localStorage.getItem("nest_waiting_for_account_choice") === "true"
     ) {
-      setTimeout(() => startDashboardTour(), 300);
+      localStorage.removeItem("nest_waiting_for_account_choice");
+      setTourWaitingForAccount(false);
+      setTimeout(() => startDashboardTour(), 350);
     }
   }}
   onSuccess={() => {
     trackNestEvent(events.created_account);
     setAuthOpen(false);
 
-    setTimeout(() => startDashboardTour(), 300);
+    if (
+      tourWaitingForAccount ||
+      localStorage.getItem("nest_waiting_for_account_choice") === "true"
+    ) {
+      localStorage.removeItem("nest_waiting_for_account_choice");
+      setTourWaitingForAccount(false);
+      setTimeout(() => startDashboardTour(), 350);
+    }
   }}
 />
     </motion.div>
