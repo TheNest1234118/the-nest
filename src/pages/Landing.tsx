@@ -83,7 +83,7 @@ export function Landing() {
     >
       <audio
         ref={audioRef}
-        src="/founder-onboarding-first.m4a"
+        src="/founder-onboarding-first.mp3"
         preload="metadata"
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
