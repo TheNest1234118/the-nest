@@ -10,11 +10,5 @@
       "source": "/(.*)",
       "destination": "/"
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/send-weekly-reflection-push?secret=nest2026secret",
-      "schedule": "* * * * *"
-    }
   ]
 }
