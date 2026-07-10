@@ -13,7 +13,7 @@
   ],
   "crons": [
     {
-      "path": "/api/send-weekly-reflection-push?secret=DEIN_CRON_SECRET",
+      "path": "/api/send-weekly-reflection-push?secret=nest2026secret",
       "schedule": "* * * * *"
     }
   ]
