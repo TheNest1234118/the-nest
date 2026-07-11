@@ -7,6 +7,7 @@ import { loadThoughts, saveThought } from "@/lib/userData";
 import { registerVisitForPwaPrompt } from "@/lib/pwa";
 import { AuthModal } from "@/components/AuthModal";
 import { supabase } from "@/lib/supabase";
+
 import type { User } from "@supabase/supabase-js";
 import {
   loadMoodContinuity,
@@ -28,6 +29,7 @@ import {
   FileText,
   Home,
   Lock,
+  MessageSquare,
   Mic,
   Palette,
   Play,
@@ -959,6 +961,12 @@ function ProfilePage({
       action: () => navigate("/profile/premium"),
     },
     {
+      label: "Send feedback",
+      subtitle: "Help make The Nest better.",
+      icon: <MessageSquare size={18} />,
+      action: () => navigate("/profile/feedback"),
+    },
+    {
       label: "Help & Guide",
       icon: <BookOpen size={18} />,
       action: () => navigate("/profile/help"),
@@ -977,10 +985,49 @@ function ProfilePage({
         {rows.map((row) => (
           <SoftCard key={row.label} onClick={row.action}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 13, color: colors.text }}>
-                <span style={{ color: colors.goldSoft }}>{row.icon}</span>
-                <span style={{ fontSize: 15 }}>{row.label}</span>
-              </div>
+            <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 13,
+    color: colors.text,
+    minWidth: 0,
+  }}
+>
+  <span
+    style={{
+      color: colors.goldSoft,
+      flex: "0 0 auto",
+    }}
+  >
+    {row.icon}
+  </span>
+
+  <div style={{ minWidth: 0 }}>
+    <div
+      style={{
+        color: colors.text,
+        fontSize: 15,
+        lineHeight: 1.35,
+      }}
+    >
+      {row.label}
+    </div>
+
+    {"subtitle" in row && row.subtitle && (
+      <div
+        style={{
+          marginTop: 4,
+          color: colors.textSoft,
+          fontSize: 12,
+          lineHeight: 1.45,
+        }}
+      >
+        {row.subtitle}
+      </div>
+    )}
+  </div>
+</div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 9, color: colors.textSoft, fontSize: 12 }}>
                 {row.value && <span>{row.value}</span>}

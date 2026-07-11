@@ -1,7 +1,7 @@
 import React from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
+import { FeedbackPage } from "@/pages/FeedbackPage";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { AudioProvider } from "@/hooks/use-audio-context";
@@ -52,7 +52,7 @@ function AppRouter() {
       <Route path="/profile/privacy" component={ProfilePrivacy} />
       <Route path="/profile/data" component={ProfileData} />
       <Route path="/profile/voice-prompts" component={ProfileVoicePrompts} />
-
+      <Route path="/profile/feedback" component={FeedbackPage} />
       <Route path="/history/voice" component={VoiceHistory} />
       <Route path="/history/thoughts" component={ThoughtHistory} />
 
