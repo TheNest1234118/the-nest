@@ -159,7 +159,13 @@ function getGreeting() {
   if (h < 21) return "Good evening";
   return "Back again";
 }
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
 
+  return `${year}-${month}-${day}`;
+}
 function moodLabel(mood: string | null) {
   return MOODS.find((m) => m.key === mood)?.label.replace(/^.+?\s/, "") ?? mood;
 }
@@ -1228,7 +1234,7 @@ export function Dashboard() {
     async function init() {
       registerVisitForPwaPrompt();
 
-      const today = new Date().toISOString().slice(0, 10);
+      const today = getLocalDateKey();
       const { data } = await supabase.auth.getUser();
       setUser(data.user ?? null);
       const memos = await loadMemos();
@@ -1260,18 +1266,16 @@ export function Dashboard() {
       setWelcomeOpen(true);
     }
 
-    
-      const shouldShowMoodAfterFirstMemo =
-      localStorage.getItem("nest_show_mood_after_first_memo") === "true";
+    const lastMoodCheckinDate = localStorage.getItem(
+      "nest_daily_checkin_date"
+    );
     
     if (
       hasFirstVoiceMemo &&
-      shouldShowMoodAfterFirstMemo &&
-      localStorage.getItem("nest_daily_checkin_date") !== today
+      lastMoodCheckinDate !== today
     ) {
       setDailyOpen(true);
     }
-
       if (localStorage.getItem("nest_guide_completed") !== "true") {
         setTimeout(() => setGuideOpen(true), 450);
       }
@@ -2143,7 +2147,7 @@ export function Dashboard() {
             if (!selectedDailyMood) return;
             await saveDailyMood(selectedDailyMood as MoodKey);
 
-            const today = new Date().toISOString().slice(0, 10);
+            const today = getLocalDateKey();
 
             if (user?.id) {
               await supabase.from("nest_daily_activity").upsert({
@@ -2189,7 +2193,7 @@ export function Dashboard() {
           onClick={() => {
             localStorage.setItem(
               "nest_daily_checkin_date",
-              new Date().toISOString().slice(0, 10)
+              getLocalDateKey()
             );
           
             localStorage.removeItem("nest_show_mood_after_first_memo");
