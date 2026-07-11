@@ -532,10 +532,14 @@ function BottomNav({
       boxSizing: "border-box",
     }}
     >
-      <button onClick={() => setActiveTab("home")} style={itemStyle(activeTab === "home")}>
-        <Home size={20} strokeWidth={1.55} />
-        <span>Home</span>
-      </button>
+<button
+  data-tour="home"
+  onClick={() => setActiveTab("home")}
+  style={itemStyle(activeTab === "home")}
+>
+  <Home size={20} strokeWidth={1.55} />
+  <span>Home</span>
+</button>
 
       <button
   data-tour="history"
@@ -1010,9 +1014,9 @@ const TOUR_STEPS = [
     text: "Over time, The Nest finds patterns in your thoughts.",
   },
   {
-    selector: '[data-tour="mood"]',
-    title: "🙂 Mood",
-    text: "Track how your days really felt.",
+    selector: '[data-tour="home"]',
+    title: "🏡 Home",
+    text: 'Return here daily. Tap "View then", then check your Mood Log.',
   },
 ];
 
@@ -1068,13 +1072,13 @@ function DashboardTour({
           style={{
             position: "absolute",
             left:
-              step === 0
-                ? "50%"
-                : step === 1
-                ? "28%"
-                : step === 2
-                ? "72%"
-                : "88%",
+            step === 0
+              ? "50%"  // Voice Plus-Button
+              : step === 1
+              ? "28%"  // History
+              : step === 2
+              ? "72%"  // Insights
+              : "12%", // Home
             bottom: -18,
             transform: "translateX(-50%) rotate(45deg)",
             width: 34,
