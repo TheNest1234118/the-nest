@@ -1,9 +1,6 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
 import OpenAI from "openai";
 
-export const config = {
-  maxDuration: 300,
-};
+
 
 type PatternEntry = {
   id: string;
@@ -409,64 +406,3 @@ Rules:
   return normalizeResult(parsed);
 }
 
-function isAuthorizedInternalRequest(
-  req: VercelRequest
-) {
-  const expected =
-    process.env.AI_PATTERNS_INTERNAL_SECRET ||
-    process.env.CRON_SECRET;
-
-  if (!expected) return false;
-
-  const authorization =
-    typeof req.headers.authorization === "string"
-      ? req.headers.authorization
-      : "";
-
-  const headerSecret =
-    typeof req.headers["x-internal-secret"] === "string"
-      ? req.headers["x-internal-secret"]
-      : "";
-
-  return (
-    authorization === `Bearer ${expected}` ||
-    headerSecret === expected
-  );
-}
-
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
-  if (req.method !== "POST") {
-    return res
-      .status(405)
-      .json({ error: "Method not allowed" });
-  }
-
-  try {
-    if (!isAuthorizedInternalRequest(req)) {
-      return res
-        .status(401)
-        .json({ error: "Unauthorized" });
-    }
-
-    const result = await analyzePatterns({
-      newEntries: req.body?.newEntries || [],
-      comparisonEntries:
-        req.body?.comparisonEntries || [],
-      previousInsights:
-        req.body?.previousInsights || [],
-    });
-
-    return res.status(200).json(result);
-  } catch (error: any) {
-    console.error("AI PATTERNS ERROR:", error);
-
-    return res.status(500).json({
-      error:
-        error.message ||
-        "Could not analyze AI patterns.",
-    });
-  }
-}

@@ -3,7 +3,7 @@ import type {
     VercelResponse,
   } from "@vercel/node";
   import { createClient } from "@supabase/supabase-js";
-  import { analyzePatterns } from "./ai-patterns.js";
+  import { analyzePatterns } from "../server/analyze-patterns.js";
   
   export const config = {
     maxDuration: 300,
