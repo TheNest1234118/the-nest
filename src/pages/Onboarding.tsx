@@ -16,7 +16,7 @@ const FOUNDER_BEFORE_RECORDING_KEY =
   "nest_founder_before_recording_seen";
 
 const FOUNDER_BEFORE_RECORDING_AUDIO =
-  "https://res.cloudinary.com/db3kqfbko/video/upload/v1783754357/onboarding-before-recording_2_fxbwet.m4a";
+  "https://res.cloudinary.com/db3kqfbko/video/upload/v1783777302/onboarding-before-recording_2_zpivje.mp3";
 const gold = "#ffc145";
 const bg = "#07070a";
 const mainText = "rgba(248,230,202,0.94)";
