@@ -1,201 +1,383 @@
-import { loadThoughts } from "@/lib/userData";
-import { loadMemos } from "@/lib/memos";
-import { loadReflections } from "@/lib/reflections";
 import { supabase } from "@/lib/supabase";
 import type {
   AIPatternGeneration,
-  AIPatternResponse,
   AIPatternTimeRange,
-  PatternEntry,
 } from "@/lib/aiPatternTypes";
 
 const STORAGE_KEY = "nest_ai_pattern_generations";
+const SEEN_KEY_PREFIX = "nest_ai_patterns_seen_at";
 
-function withinRange(date: string, range: AIPatternTimeRange) {
-  if (range === "all") return true;
+export type AIPatternAutomationStatus =
+  | "signed_out"
+  | "locked"
+  | "active";
 
-  const days = range === "7d" ? 7 : range === "30d" ? 30 : 90;
-  const created = new Date(date).getTime();
-  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+export type AIPatternAnalysisState = {
+  user_id: string;
+  last_analyzed_at: string | null;
+  last_checked_at: string | null;
+  last_new_entry_count: number;
+  last_new_word_count: number;
+  updated_at: string | null;
+};
 
-  return created >= cutoff;
+export type AIPatternPageData = {
+  signedIn: boolean;
+  isSupporter: boolean;
+  status: AIPatternAutomationStatus;
+  history: AIPatternGeneration[];
+  latestGeneration: AIPatternGeneration | null;
+  analysisState: AIPatternAnalysisState | null;
+  lastCheckedAt: string | null;
+  lastAnalyzedAt: string | null;
+  hasUnseenInsights: boolean;
+};
+
+/**
+ * Converts one Supabase row into the structure used by the frontend.
+ */
+function mapGenerationRow(row: any): AIPatternGeneration {
+  return {
+    id: String(row.id),
+    created_at: String(row.created_at),
+    range: (row.range || "all") as AIPatternTimeRange,
+    entry_count: Number(row.entry_count || 0),
+    voice_count: Number(row.voice_count || 0),
+    thought_count: Number(row.thought_count || 0),
+    result: {
+      summary: String(row.result?.summary || ""),
+      hero_themes: Array.isArray(row.result?.hero_themes)
+        ? row.result.hero_themes
+        : [],
+      patterns: Array.isArray(row.result?.patterns)
+        ? row.result.patterns
+        : [],
+    },
+  };
 }
 
-export async function loadAIPatternHistory(): Promise<AIPatternGeneration[]> {
-  const { data: auth } = await supabase.auth.getUser();
+/**
+ * Local fallback for older anonymous generations.
+ *
+ * Automatic AI Patterns only run for signed-in Supporters,
+ * but keeping this fallback prevents old local data from disappearing.
+ */
+function readLocalHistory(): AIPatternGeneration[] {
+  if (typeof window === "undefined") return [];
 
-  if (!auth.user) {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    } catch {
-      return [];
-    }
+  try {
+    const parsed = JSON.parse(
+      localStorage.getItem(STORAGE_KEY) || "[]"
+    );
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.map(mapGenerationRow);
+  } catch {
+    return [];
   }
+}
+
+/**
+ * Loads previously generated AI Pattern folders.
+ *
+ * New generations are created by the automatic server job,
+ * not by the browser.
+ */
+export async function loadAIPatternHistory(
+  limit = 20
+): Promise<AIPatternGeneration[]> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return readLocalHistory();
+  }
+
+  const safeLimit = Math.min(
+    Math.max(limit, 1),
+    50
+  );
 
   const { data, error } = await supabase
     .from("ai_pattern_generations")
-    .select("*")
-    .eq("user_id", auth.user.id)
-    .order("created_at", { ascending: false })
-    .limit(20);
+    .select(
+      `
+        id,
+        created_at,
+        range,
+        entry_count,
+        voice_count,
+        thought_count,
+        result
+      `
+    )
+    .eq("user_id", user.id)
+    .order("created_at", {
+      ascending: false,
+    })
+    .limit(safeLimit);
 
   if (error) {
-    console.error("Could not load AI pattern history", error);
+    console.error(
+      "Could not load AI Pattern history:",
+      error
+    );
+
     return [];
   }
 
-  return (data || []).map((row) => ({
-    id: row.id,
-    created_at: row.created_at,
-    range: row.range,
-    entry_count: row.entry_count,
-    voice_count: row.voice_count,
-    thought_count: row.thought_count,
-    result: row.result,
-  }));
-}
-export async function saveAIPatternGeneration(
-  generation: AIPatternGeneration
-): Promise<AIPatternGeneration[]> {
-  const { data: auth } = await supabase.auth.getUser();
-
-  if (!auth.user) {
-    const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    const next = [generation, ...existing].slice(0, 20);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    return next;
-  }
-
-  const { error } = await supabase.from("ai_pattern_generations").insert({
-    id: generation.id,
-    user_id: auth.user.id,
-    created_at: generation.created_at,
-    range: generation.range,
-    entry_count: generation.entry_count,
-    voice_count: generation.voice_count,
-    thought_count: generation.thought_count,
-    result: generation.result,
-  });
-
-  if (error) {
-    console.error("Could not save AI pattern generation", error);
-  }
-
-  return loadAIPatternHistory();
+  return (data || []).map(mapGenerationRow);
 }
 
-export async function loadPatternEntries(
-  range: AIPatternTimeRange
-): Promise<PatternEntry[]> {
-  const entries: PatternEntry[] = [];
+/**
+ * Loads the user's plan.
+ */
+export async function loadAIPatternPlan(): Promise<{
+  signedIn: boolean;
+  isSupporter: boolean;
+  plan: "free" | "supporter" | null;
+}> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const thoughts = await loadThoughts();
-  for (const thought of thoughts || []) {
-    if (!withinRange(thought.created_at, range)) continue;
-
-    entries.push({
-      id: thought.id,
-      type: "thought",
-      title: "Thought",
-      text: thought.text,
-      created_at: thought.created_at,
-    });
-  }
-
-  const memos = await loadMemos();
-  for (const memo of memos || []) {
-    if (!withinRange(memo.created_at, range)) continue;
-
-    entries.push({
-      id: memo.id,
-      type: "voice",
-      title: memo.title || "Voice capsule",
-      transcript: memo.transcript_text || "",
-      created_at: memo.created_at,
-    });
-  }
-
-  const reflections = await loadReflections();
-  for (const reflection of reflections || []) {
-    if (!withinRange(reflection.created_at, range)) continue;
-
-    entries.push({
-      id: reflection.id,
-      type: "reflection",
-      title: reflection.type,
-      text: reflection.summary || "",
-      created_at: reflection.created_at,
-    });
-  }
-
-  return entries
-    .filter((entry) => {
-      const content = `${entry.title || ""} ${entry.text || ""} ${entry.transcript || ""}`;
-      return content.trim().length > 0;
-    })
-    .sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )
-    .slice(0, 100);
-}
-
-export async function generateAIPatterns(
-  range: AIPatternTimeRange
-): Promise<AIPatternGeneration> {
-  const entries = await loadPatternEntries(range);
-
-  const thoughtCount = entries.filter((entry) => entry.type === "thought").length;
-  const voiceCount = entries.filter((entry) => entry.type === "voice").length;
-  
-
-  if (entries.length < 4) {
+  if (!user) {
     return {
-      id: crypto.randomUUID(),
-      created_at: new Date().toISOString(),
-      range,
-      entry_count: entries.length,
-      voice_count: voiceCount,
-      thought_count: thoughtCount,
-      result: {
-        summary: "",
-        hero_themes: [],
-        patterns: [],
-      },
+      signedIn: false,
+      isSupporter: false,
+      plan: null,
     };
   }
 
-  const previousGeneration = (await loadAIPatternHistory())[0];
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  const res = await fetch("/api/ai-patterns", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      range,
-      entries,
-      previousGeneration: previousGeneration?.result || null,
-    }),
-  });
+  if (error) {
+    console.error(
+      "Could not load AI Pattern plan:",
+      error
+    );
 
-  if (!res.ok) {
-    throw new Error("Could not generate AI Patterns.");
+    return {
+      signedIn: true,
+      isSupporter: false,
+      plan: "free",
+    };
   }
 
-  const result: AIPatternResponse = await res.json();
+  const plan =
+    data?.plan === "supporter"
+      ? "supporter"
+      : "free";
 
-  const generation: AIPatternGeneration = {
-    id: crypto.randomUUID(),
-    created_at: new Date().toISOString(),
-    range,
-    entry_count: entries.length,
-    voice_count: voiceCount,
-    thought_count: thoughtCount,
-    result,
+  return {
+    signedIn: true,
+    isSupporter: plan === "supporter",
+    plan,
   };
+}
 
-  await saveAIPatternGeneration(generation);
+/**
+ * Loads information from the automatic analysis state table.
+ *
+ * If RLS does not allow the client to read the row yet,
+ * this safely returns null. The AI Pattern page can still work
+ * using the latest saved generation.
+ */
+export async function loadAIPatternAnalysisState(): Promise<AIPatternAnalysisState | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return generation;
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("ai_pattern_analysis_state")
+    .select(
+      `
+        user_id,
+        last_analyzed_at,
+        last_checked_at,
+        last_new_entry_count,
+        last_new_word_count,
+        updated_at
+      `
+    )
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.warn(
+      "Could not load AI Pattern analysis state:",
+      error
+    );
+
+    return null;
+  }
+
+  if (!data) return null;
+
+  return {
+    user_id: String(data.user_id),
+    last_analyzed_at:
+      data.last_analyzed_at || null,
+    last_checked_at:
+      data.last_checked_at || null,
+    last_new_entry_count: Number(
+      data.last_new_entry_count || 0
+    ),
+    last_new_word_count: Number(
+      data.last_new_word_count || 0
+    ),
+    updated_at: data.updated_at || null,
+  };
+}
+
+function getSeenStorageKey(userId: string) {
+  return `${SEEN_KEY_PREFIX}:${userId}`;
+}
+
+/**
+ * Stores when the user last opened their AI Pattern page.
+ *
+ * This is only presentation state. It does not trigger analysis.
+ */
+export async function markAIPatternsSeen(): Promise<void> {
+  if (typeof window === "undefined") return;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return;
+
+  localStorage.setItem(
+    getSeenStorageKey(user.id),
+    new Date().toISOString()
+  );
+}
+
+/**
+ * Returns the last time the user viewed the AI Pattern page.
+ */
+export async function getAIPatternsSeenAt(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  return (
+    localStorage.getItem(
+      getSeenStorageKey(user.id)
+    ) || null
+  );
+}
+
+/**
+ * Loads everything required by the new automatic AI Patterns page.
+ */
+export async function loadAIPatternPageData(): Promise<AIPatternPageData> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    const localHistory = readLocalHistory();
+
+    return {
+      signedIn: false,
+      isSupporter: false,
+      status: "signed_out",
+      history: localHistory,
+      latestGeneration:
+        localHistory[0] || null,
+      analysisState: null,
+      lastCheckedAt: null,
+      lastAnalyzedAt:
+        localHistory[0]?.created_at || null,
+      hasUnseenInsights: false,
+    };
+  }
+
+  const [
+    planResult,
+    history,
+    analysisState,
+    seenAt,
+  ] = await Promise.all([
+    loadAIPatternPlan(),
+    loadAIPatternHistory(),
+    loadAIPatternAnalysisState(),
+    getAIPatternsSeenAt(),
+  ]);
+
+  const latestGeneration =
+    history[0] || null;
+
+  const latestInsightDate =
+    latestGeneration?.created_at || null;
+
+  const hasUnseenInsights =
+    Boolean(
+      latestInsightDate &&
+        (!seenAt ||
+          new Date(
+            latestInsightDate
+          ).getTime() >
+            new Date(seenAt).getTime())
+    );
+
+  return {
+    signedIn: true,
+    isSupporter: planResult.isSupporter,
+    status: planResult.isSupporter
+      ? "active"
+      : "locked",
+    history,
+    latestGeneration,
+    analysisState,
+    lastCheckedAt:
+      analysisState?.last_checked_at ||
+      null,
+    lastAnalyzedAt:
+      analysisState?.last_analyzed_at ||
+      latestGeneration?.created_at ||
+      null,
+    hasUnseenInsights,
+  };
+}
+
+/**
+ * Reloads the latest automatic generation.
+ */
+export async function loadLatestAIPatternGeneration(): Promise<AIPatternGeneration | null> {
+  const history =
+    await loadAIPatternHistory(1);
+
+  return history[0] || null;
+}
+
+/**
+ * Compatibility function.
+ *
+ * AI Pattern generation is now automatic and may no longer be
+ * started manually from the browser.
+ *
+ * Keep this export temporarily so the old AIPatterns.tsx does not
+ * fail to compile before you replace that page.
+ */
+export async function generateAIPatterns(
+  _range: AIPatternTimeRange
+): Promise<AIPatternGeneration> {
+  throw new Error(
+    "AI Patterns now run automatically in the background for Supporters."
+  );
 }
