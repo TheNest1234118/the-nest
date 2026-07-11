@@ -3,7 +3,7 @@
     "name": "The Nest",
     "short_name": "The Nest",
     "description": "A quiet place to clear your mind and return to what matters.",
-    "start_url": "/home",
+    "start_url": "/",
     "scope": "/",
     "display": "standalone",
     "background_color": "#09090d",

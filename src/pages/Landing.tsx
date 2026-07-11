@@ -81,15 +81,21 @@ export function Landing() {
         boxSizing: "border-box",
       }}
     >
-      <audio
-        ref={audioRef}
-        src="/founder-onboarding-first.mp3"
-        preload="metadata"
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onEnded={() => setIsPlaying(false)}
-      />
-
+    <audio
+  ref={audioRef}
+  src="https://res.cloudinary.com/db3kqfbko/video/upload/v1783753673/onboarding-first_2_pnwdq9.mp3"
+  preload="metadata"
+  onPlay={() => setIsPlaying(true)}
+  onPause={() => setIsPlaying(false)}
+  onEnded={() => setIsPlaying(false)}
+  onError={(event) => {
+    console.error(
+      "Founder audio loading failed:",
+      event.currentTarget.error
+    );
+    setIsPlaying(false);
+  }}
+/>
       <div
         aria-hidden
         style={{

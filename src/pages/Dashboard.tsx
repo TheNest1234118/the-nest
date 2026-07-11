@@ -537,7 +537,7 @@ function BottomNav({
   style={itemStyle(activeTab === "history")}
 >
 <Clock3 size={20} strokeWidth={1.45} />
-        <span>History</span>
+        <span>Every moment</span>
       </button>
 
       <motion.button
@@ -1483,7 +1483,7 @@ export function Dashboard() {
               letterSpacing: "-0.02em",
             }}
           >
-            What’s on your mind
+            What’s on your mind?
           </div>
 
           <div style={{ display: "flex", alignItems: "flex-end", gap: 12 }}>
