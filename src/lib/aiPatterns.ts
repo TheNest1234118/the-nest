@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import type {
   AIPatternGeneration,
   AIPatternTimeRange,
+  LifeTheme,
 } from "@/lib/aiPatternTypes";
 
 const STORAGE_KEY = "nest_ai_pattern_generations";
@@ -27,16 +28,19 @@ export type AIPatternPageData = {
   status: AIPatternAutomationStatus;
   history: AIPatternGeneration[];
   latestGeneration: AIPatternGeneration | null;
+  latestInsight:
+    | AIPatternGeneration["result"]["patterns"][number]
+    | null;
+  lifeThemes: LifeTheme[];
   analysisState: AIPatternAnalysisState | null;
   lastCheckedAt: string | null;
   lastAnalyzedAt: string | null;
   hasUnseenInsights: boolean;
 };
 
-/**
- * Converts one Supabase row into the structure used by the frontend.
- */
 function mapGenerationRow(row: any): AIPatternGeneration {
+  const result = row?.result || {};
+
   return {
     id: String(row.id),
     created_at: String(row.created_at),
@@ -45,32 +49,33 @@ function mapGenerationRow(row: any): AIPatternGeneration {
     voice_count: Number(row.voice_count || 0),
     thought_count: Number(row.thought_count || 0),
     result: {
-      summary: String(row.result?.summary || ""),
-      hero_themes: Array.isArray(row.result?.hero_themes)
-        ? row.result.hero_themes
+      summary: String(result.summary || ""),
+      hero_themes: Array.isArray(result.hero_themes)
+        ? result.hero_themes
         : [],
-      patterns: Array.isArray(row.result?.patterns)
-        ? row.result.patterns
+      patterns: Array.isArray(result.patterns)
+        ? result.patterns
+        : [],
+      life_themes: Array.isArray(result.life_themes)
+        ? result.life_themes
         : [],
     },
   };
 }
 
-/**
- * Local fallback for older anonymous generations.
- *
- * Automatic AI Patterns only run for signed-in Supporters,
- * but keeping this fallback prevents old local data from disappearing.
- */
 function readLocalHistory(): AIPatternGeneration[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") {
+    return [];
+  }
 
   try {
     const parsed = JSON.parse(
       localStorage.getItem(STORAGE_KEY) || "[]"
     );
 
-    if (!Array.isArray(parsed)) return [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
 
     return parsed.map(mapGenerationRow);
   } catch {
@@ -78,12 +83,6 @@ function readLocalHistory(): AIPatternGeneration[] {
   }
 }
 
-/**
- * Loads previously generated AI Pattern folders.
- *
- * New generations are created by the automatic server job,
- * not by the browser.
- */
 export async function loadAIPatternHistory(
   limit = 20
 ): Promise<AIPatternGeneration[]> {
@@ -121,7 +120,7 @@ export async function loadAIPatternHistory(
 
   if (error) {
     console.error(
-      "Could not load AI Pattern history:",
+      "Could not load The Nest Noticed history:",
       error
     );
 
@@ -131,9 +130,6 @@ export async function loadAIPatternHistory(
   return (data || []).map(mapGenerationRow);
 }
 
-/**
- * Loads the user's plan.
- */
 export async function loadAIPatternPlan(): Promise<{
   signedIn: boolean;
   isSupporter: boolean;
@@ -159,7 +155,7 @@ export async function loadAIPatternPlan(): Promise<{
 
   if (error) {
     console.error(
-      "Could not load AI Pattern plan:",
+      "Could not load The Nest Noticed plan:",
       error
     );
 
@@ -182,19 +178,14 @@ export async function loadAIPatternPlan(): Promise<{
   };
 }
 
-/**
- * Loads information from the automatic analysis state table.
- *
- * If RLS does not allow the client to read the row yet,
- * this safely returns null. The AI Pattern page can still work
- * using the latest saved generation.
- */
 export async function loadAIPatternAnalysisState(): Promise<AIPatternAnalysisState | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
   const { data, error } = await supabase
     .from("ai_pattern_analysis_state")
@@ -213,14 +204,16 @@ export async function loadAIPatternAnalysisState(): Promise<AIPatternAnalysisSta
 
   if (error) {
     console.warn(
-      "Could not load AI Pattern analysis state:",
+      "Could not load The Nest Noticed analysis state:",
       error
     );
 
     return null;
   }
 
-  if (!data) return null;
+  if (!data) {
+    return null;
+  }
 
   return {
     user_id: String(data.user_id),
@@ -242,19 +235,18 @@ function getSeenStorageKey(userId: string) {
   return `${SEEN_KEY_PREFIX}:${userId}`;
 }
 
-/**
- * Stores when the user last opened their AI Pattern page.
- *
- * This is only presentation state. It does not trigger analysis.
- */
 export async function markAIPatternsSeen(): Promise<void> {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined") {
+    return;
+  }
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return;
+  if (!user) {
+    return;
+  }
 
   localStorage.setItem(
     getSeenStorageKey(user.id),
@@ -262,17 +254,18 @@ export async function markAIPatternsSeen(): Promise<void> {
   );
 }
 
-/**
- * Returns the last time the user viewed the AI Pattern page.
- */
 export async function getAIPatternsSeenAt(): Promise<string | null> {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined") {
+    return null;
+  }
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
   return (
     localStorage.getItem(
@@ -281,9 +274,95 @@ export async function getAIPatternsSeenAt(): Promise<string | null> {
   );
 }
 
-/**
- * Loads everything required by the new automatic AI Patterns page.
- */
+function getLatestInsight(
+  history: AIPatternGeneration[]
+) {
+  for (const generation of history) {
+    const firstPattern =
+      generation.result.patterns?.[0];
+
+    if (firstPattern) {
+      return firstPattern;
+    }
+  }
+
+  return null;
+}
+
+function mergeLifeThemes(
+  history: AIPatternGeneration[]
+): LifeTheme[] {
+  const byName = new Map<string, LifeTheme>();
+
+  for (const generation of history) {
+    const themes =
+      generation.result.life_themes || [];
+
+    for (const theme of themes) {
+      const key = theme.name
+        .trim()
+        .toLowerCase();
+
+      if (!key) {
+        continue;
+      }
+
+      const existing = byName.get(key);
+
+      if (!existing) {
+        byName.set(key, {
+          ...theme,
+          supporting_entry_ids: [
+            ...new Set(
+              theme.supporting_entry_ids || []
+            ),
+          ],
+        });
+
+        continue;
+      }
+
+      const combinedIds = [
+        ...new Set([
+          ...(existing.supporting_entry_ids || []),
+          ...(theme.supporting_entry_ids || []),
+        ]),
+      ];
+
+      byName.set(key, {
+        ...existing,
+        mention_count: Math.max(
+          existing.mention_count,
+          theme.mention_count,
+          combinedIds.length
+        ),
+        strength: Math.max(
+          existing.strength,
+          theme.strength
+        ),
+        direction: theme.direction,
+        description:
+          theme.description ||
+          existing.description,
+        supporting_entry_ids: combinedIds,
+      });
+    }
+  }
+
+  return [...byName.values()]
+    .sort((a, b) => {
+      if (b.strength !== a.strength) {
+        return b.strength - a.strength;
+      }
+
+      return (
+        b.mention_count -
+        a.mention_count
+      );
+    })
+    .slice(0, 8);
+}
+
 export async function loadAIPatternPageData(): Promise<AIPatternPageData> {
   const {
     data: { user },
@@ -299,6 +378,10 @@ export async function loadAIPatternPageData(): Promise<AIPatternPageData> {
       history: localHistory,
       latestGeneration:
         localHistory[0] || null,
+      latestInsight:
+        getLatestInsight(localHistory),
+      lifeThemes:
+        mergeLifeThemes(localHistory),
       analysisState: null,
       lastCheckedAt: null,
       lastAnalyzedAt:
@@ -322,27 +405,38 @@ export async function loadAIPatternPageData(): Promise<AIPatternPageData> {
   const latestGeneration =
     history[0] || null;
 
-  const latestInsightDate =
-    latestGeneration?.created_at || null;
+  const latestInsight =
+    getLatestInsight(history);
 
-  const hasUnseenInsights =
-    Boolean(
-      latestInsightDate &&
-        (!seenAt ||
-          new Date(
-            latestInsightDate
-          ).getTime() >
-            new Date(seenAt).getTime())
-    );
+  const lifeThemes =
+    mergeLifeThemes(history);
+
+  const latestInsightDate =
+    history.find(
+      (generation) =>
+        generation.result.patterns?.length > 0
+    )?.created_at || null;
+
+  const hasUnseenInsights = Boolean(
+    latestInsightDate &&
+      (!seenAt ||
+        new Date(
+          latestInsightDate
+        ).getTime() >
+          new Date(seenAt).getTime())
+  );
 
   return {
     signedIn: true,
-    isSupporter: planResult.isSupporter,
+    isSupporter:
+      planResult.isSupporter,
     status: planResult.isSupporter
       ? "active"
       : "locked",
     history,
     latestGeneration,
+    latestInsight,
+    lifeThemes,
     analysisState,
     lastCheckedAt:
       analysisState?.last_checked_at ||
@@ -355,9 +449,6 @@ export async function loadAIPatternPageData(): Promise<AIPatternPageData> {
   };
 }
 
-/**
- * Reloads the latest automatic generation.
- */
 export async function loadLatestAIPatternGeneration(): Promise<AIPatternGeneration | null> {
   const history =
     await loadAIPatternHistory(1);
@@ -366,18 +457,15 @@ export async function loadLatestAIPatternGeneration(): Promise<AIPatternGenerati
 }
 
 /**
- * Compatibility function.
+ * Temporary compatibility export.
  *
- * AI Pattern generation is now automatic and may no longer be
- * started manually from the browser.
- *
- * Keep this export temporarily so the old AIPatterns.tsx does not
- * fail to compile before you replace that page.
+ * Automatic insight generation must only happen
+ * through the background server job.
  */
 export async function generateAIPatterns(
   _range: AIPatternTimeRange
 ): Promise<AIPatternGeneration> {
   throw new Error(
-    "AI Patterns now run automatically in the background for Supporters."
+    "The Nest Noticed runs automatically in the background for Supporters."
   );
 }

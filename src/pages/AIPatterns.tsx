@@ -1,14 +1,14 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
   Brain,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock3,
   Crown,
+  Heart,
   Leaf,
   Lock,
   Moon,
@@ -27,21 +27,27 @@ import { startSupporterCheckout } from "@/lib/subscription";
 import type {
   AIPattern,
   AIPatternGeneration,
+  LifeTheme,
 } from "@/lib/aiPatternTypes";
 
 const colors = {
   bg: "#09090d",
   card: "rgba(255,255,255,0.026)",
   border: "rgba(255,255,255,0.065)",
-  gold: "rgba(205,170,100,0.72)",
-  goldSoft: "rgba(205,170,100,0.42)",
-  text: "rgba(235,215,180,0.90)",
-  textSoft: "rgba(185,162,128,0.52)",
-  textFaint: "rgba(175,158,132,0.34)",
+  gold: "rgba(205,170,100,0.78)",
+  goldSoft: "rgba(205,170,100,0.46)",
+  text: "rgba(235,215,180,0.92)",
+  textSoft: "rgba(185,162,128,0.58)",
+  textFaint: "rgba(175,158,132,0.36)",
   green: "rgba(138,220,151,0.92)",
-  greenSoft: "rgba(138,220,151,0.12)",
+  greenSoft: "rgba(138,220,151,0.10)",
   greenBorder: "rgba(138,220,151,0.24)",
-  red: "rgba(248,113,113,0.76)",
+  red: "rgba(248,113,113,0.78)",
+};
+
+const serif: React.CSSProperties = {
+  fontFamily: "Georgia, 'Times New Roman', serif",
+  fontWeight: 400,
 };
 
 function RainLayer() {
@@ -54,29 +60,32 @@ function RainLayer() {
         pointerEvents: "none",
       }}
     >
-      {Array.from({ length: 34 }).map((_, i) => (
+      {Array.from({ length: 30 }).map((_, index) => (
         <motion.span
-          key={i}
-          initial={{ y: -80, opacity: 0 }}
+          key={index}
+          initial={{
+            y: -80,
+            opacity: 0,
+          }}
           animate={{
             y: "115svh",
-            opacity: [0, 0.18, 0.06, 0],
+            opacity: [0, 0.16, 0.05, 0],
           }}
           transition={{
-            duration: 5 + (i % 7) * 0.45,
+            duration: 5 + (index % 7) * 0.45,
             repeat: Infinity,
-            delay: (i % 13) * 0.35,
+            delay: (index % 13) * 0.35,
             ease: "linear",
           }}
           style={{
             position: "absolute",
-            left: `${(i * 37) % 100}%`,
+            left: `${(index * 37) % 100}%`,
             top: -80,
             width: 1,
-            height: 46 + (i % 5) * 12,
+            height: 46 + (index % 5) * 12,
             borderRadius: 999,
             background:
-              "linear-gradient(to bottom, transparent, rgba(255,255,255,0.18), transparent)",
+              "linear-gradient(to bottom, transparent, rgba(255,255,255,0.16), transparent)",
             transform: "rotate(12deg)",
           }}
         />
@@ -90,50 +99,56 @@ function iconFor(type: AIPattern["type"]) {
     type === "creative_pattern" ||
     type === "time_of_day_pattern"
   ) {
-    return <Moon size={17} />;
+    return <Moon size={18} />;
   }
 
   if (
     type === "stress_pattern" ||
     type === "negative_loop"
   ) {
-    return <AlertTriangle size={17} />;
+    return <AlertTriangle size={18} />;
   }
 
   if (
     type === "growth_pattern" ||
-    type === "positive_change"
+    type === "positive_change" ||
+    type === "confidence_change"
   ) {
-    return <Leaf size={17} />;
+    return <Leaf size={18} />;
   }
 
   if (type === "habit_pattern") {
-    return <Clock3 size={17} />;
+    return <Clock3 size={18} />;
   }
 
   if (
     type === "recurring_topic" ||
-    type === "recently_started"
+    type === "recently_started" ||
+    type === "priority_change"
   ) {
-    return <Repeat size={17} />;
+    return <Repeat size={18} />;
   }
 
-  return <Brain size={17} />;
+  return <Brain size={18} />;
 }
 
 function timeAgo(date?: string | null) {
-  if (!date) return "Not analyzed yet";
+  if (!date) return "Not checked yet";
 
-  const difference =
-    Date.now() - new Date(date).getTime();
+  const timestamp = new Date(date).getTime();
 
+  if (Number.isNaN(timestamp)) {
+    return "Recently";
+  }
+
+  const difference = Date.now() - timestamp;
   const seconds = Math.max(
     0,
     Math.floor(difference / 1000)
   );
 
   if (seconds < 60) {
-    return "Just now";
+    return "just now";
   }
 
   const minutes = Math.floor(seconds / 60);
@@ -172,6 +187,30 @@ function formatDate(date?: string | null) {
   } catch {
     return date;
   }
+}
+
+function formatChangeType(value?: string) {
+  return String(value || "")
+    .replace(/_/g, " ")
+    .trim();
+}
+
+function formatDirection(
+  direction: LifeTheme["direction"]
+) {
+  if (direction === "rising") {
+    return "Rising";
+  }
+
+  if (direction === "falling") {
+    return "Fading";
+  }
+
+  if (direction === "new") {
+    return "New";
+  }
+
+  return "Steady";
 }
 
 function ActiveStatus({
@@ -223,9 +262,9 @@ function ActiveStatus({
           <div
             style={{
               color: colors.green,
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: 700,
-              letterSpacing: "0.12em",
+              letterSpacing: "0.14em",
               textTransform: "uppercase",
               marginBottom: 6,
             }}
@@ -236,13 +275,13 @@ function ActiveStatus({
           <p
             style={{
               margin: 0,
-              color: "rgba(205,225,207,0.74)",
+              color: "rgba(205,225,207,0.76)",
               fontSize: 13,
               lineHeight: 1.6,
             }}
           >
-            The Nest quietly analyzes new entries in
-            the background.
+            The Nest quietly looks for meaningful
+            changes in your recent entries.
           </p>
 
           <p
@@ -253,15 +292,15 @@ function ActiveStatus({
               lineHeight: 1.5,
             }}
           >
-            Analysis begins after at least 3 new
-            entries or 500 new words.
+            It only creates an insight when something
+            is supported by multiple entries.
           </p>
 
           {lastCheckedAt && (
             <p
               style={{
                 margin: "7px 0 0",
-                color: "rgba(138,220,151,0.50)",
+                color: "rgba(138,220,151,0.52)",
                 fontSize: 10,
               }}
             >
@@ -274,33 +313,19 @@ function ActiveStatus({
   );
 }
 
-function PatternCard({
+function InsightHero({
   pattern,
-  index,
   onOpen,
 }: {
   pattern: AIPattern;
-  index: number;
   onOpen: () => void;
 }) {
-  const [showConfidence, setShowConfidence] =
-    useState(false);
-
-  const confidenceScore = Number(
-    (pattern as any).confidence_score || 0
-  );
-
-  const changeType = String(
-    (pattern as any).change_type || ""
-  );
-
   return (
-    <motion.button
-      onClick={onOpen}
+    <motion.section
       initial={{
         opacity: 0,
-        y: 10,
-        scale: 0.98,
+        y: 14,
+        scale: 0.985,
       }}
       animate={{
         opacity: 1,
@@ -308,16 +333,294 @@ function PatternCard({
         scale: 1,
       }}
       transition={{
-        delay: Math.min(index * 0.05, 0.35),
-        duration: 0.55,
+        duration: 0.7,
+        ease: [0.22, 1, 0.36, 1],
       }}
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 26,
+        border:
+          "1px solid rgba(205,170,100,0.18)",
+        background:
+          "linear-gradient(145deg, rgba(205,170,100,0.12), rgba(255,255,255,0.024))",
+        padding: "23px 21px",
+        marginBottom: 17,
+        boxShadow:
+          "0 25px 90px rgba(0,0,0,0.28)",
+      }}
+    >
+      <motion.div
+        animate={{
+          opacity: [0.32, 0.65, 0.32],
+          scale: [0.97, 1.03, 0.97],
+        }}
+        transition={{
+          duration: 5.5,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        style={{
+          position: "absolute",
+          top: -90,
+          right: -55,
+          width: 220,
+          height: 220,
+          borderRadius: 999,
+          background:
+            "radial-gradient(circle, rgba(218,174,91,0.20), transparent 68%)",
+          pointerEvents: "none",
+        }}
+      />
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            color: colors.gold,
+            marginBottom: 13,
+          }}
+        >
+          <Sparkles size={16} />
+
+          <p
+            style={{
+              margin: 0,
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              fontWeight: 700,
+            }}
+          >
+            The Nest noticed
+          </p>
+        </div>
+
+        <h2
+          style={{
+            ...serif,
+            fontSize: 27,
+            lineHeight: 1.2,
+            color: colors.text,
+            margin: "0 0 12px",
+          }}
+        >
+          {pattern.title}
+        </h2>
+
+        <p
+          style={{
+            color: colors.textSoft,
+            fontSize: 14,
+            lineHeight: 1.7,
+            margin: "0 0 18px",
+          }}
+        >
+          {pattern.description}
+        </p>
+
+        <button
+          onClick={onOpen}
+          style={{
+            background: "none",
+            border: "none",
+            padding: 0,
+            color: colors.gold,
+            fontSize: 13,
+            cursor: "pointer",
+          }}
+        >
+          See why →
+        </button>
+      </div>
+    </motion.section>
+  );
+}
+
+function LifeThemesSection({
+  themes,
+}: {
+  themes: LifeTheme[];
+}) {
+  if (themes.length === 0) {
+    return null;
+  }
+
+  return (
+    <section
+      style={{
+        borderRadius: 22,
+        border: `1px solid ${colors.border}`,
+        background: colors.card,
+        padding: 17,
+        marginBottom: 17,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 9,
+          marginBottom: 13,
+        }}
+      >
+        <Heart
+          size={17}
+          color={colors.gold}
+          strokeWidth={1.5}
+        />
+
+        <div>
+          <p
+            style={{
+              color: colors.goldSoft,
+              fontSize: 10,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+              margin: "0 0 3px",
+              fontWeight: 700,
+            }}
+          >
+            Your Life Themes
+          </p>
+
+          <p
+            style={{
+              color: colors.textFaint,
+              fontSize: 11,
+              margin: 0,
+            }}
+          >
+            The parts of life appearing most often.
+          </p>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gap: 10,
+        }}
+      >
+        {themes.slice(0, 5).map((theme) => (
+          <div
+            key={theme.id || theme.name}
+            style={{
+              borderRadius: 16,
+              border:
+                "1px solid rgba(255,255,255,0.055)",
+              background:
+                "rgba(255,255,255,0.021)",
+              padding: "13px 14px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                marginBottom: 8,
+              }}
+            >
+              <span
+                style={{
+                  color: colors.text,
+                  fontSize: 14,
+                }}
+              >
+                {theme.name}
+              </span>
+
+              <span
+                style={{
+                  color: colors.goldSoft,
+                  fontSize: 9,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                }}
+              >
+                {formatDirection(theme.direction)}
+              </span>
+            </div>
+
+            <div
+              style={{
+                height: 4,
+                borderRadius: 999,
+                background:
+                  "rgba(255,255,255,0.05)",
+                overflow: "hidden",
+                marginBottom: 9,
+              }}
+            >
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{
+                  width: `${Math.min(
+                    100,
+                    Math.max(0, theme.strength)
+                  )}%`,
+                }}
+                transition={{
+                  duration: 0.9,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                style={{
+                  height: "100%",
+                  borderRadius: 999,
+                  background:
+                    "linear-gradient(to right, rgba(205,170,100,0.34), rgba(225,190,116,0.84))",
+                }}
+              />
+            </div>
+
+            <p
+              style={{
+                color: colors.textSoft,
+                fontSize: 12,
+                lineHeight: 1.55,
+                margin: 0,
+              }}
+            >
+              {theme.description}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PatternCard({
+  pattern,
+  onOpen,
+}: {
+  pattern: AIPattern;
+  onOpen: () => void;
+}) {
+  const changeType = formatChangeType(
+    pattern.change_type
+  );
+
+  return (
+    <motion.button
+      onClick={onOpen}
+      whileTap={{ scale: 0.985 }}
       style={{
         width: "100%",
         textAlign: "left",
         background: colors.card,
         border: `1px solid ${colors.border}`,
         borderRadius: 20,
-        padding: 18,
+        padding: 17,
         cursor: "pointer",
       }}
     >
@@ -347,152 +650,47 @@ function PatternCard({
           {iconFor(pattern.type)}
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              gap: 10,
-            }}
-          >
-            <h3
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          {changeType && (
+            <p
               style={{
-                fontFamily:
-                  "Georgia, 'Times New Roman', serif",
-                fontWeight: 400,
-                fontSize: 19,
-                lineHeight: 1.25,
-                color: colors.text,
-                margin: "0 0 7px",
-              }}
-            >
-              {pattern.title}
-            </h3>
-
-            <span
-              onClick={(event) => {
-                event.stopPropagation();
-                setShowConfidence((current) => !current);
-              }}
-              style={{
+                color: colors.goldSoft,
                 fontSize: 9,
                 letterSpacing: "0.12em",
                 textTransform: "uppercase",
-                color: colors.goldSoft,
-                whiteSpace: "nowrap",
-                marginTop: 4,
+                margin: "0 0 6px",
               }}
             >
-              {confidenceScore > 0
-                ? `${confidenceScore}%`
-                : pattern.confidence}
-            </span>
-          </div>
-
-          {changeType && (
-            <div
-              style={{
-                display: "inline-flex",
-                borderRadius: 999,
-                padding: "5px 8px",
-                marginBottom: 9,
-                background:
-                  "rgba(205,170,100,0.06)",
-                border:
-                  "1px solid rgba(205,170,100,0.12)",
-                color: colors.goldSoft,
-                fontSize: 9,
-                letterSpacing: "0.09em",
-                textTransform: "uppercase",
-              }}
-            >
-            {changeType.replace(/_/g, " ")}
-            </div>
-          )}
-
-          {showConfidence && (
-            <p
-              style={{
-                fontSize: 11,
-                lineHeight: 1.5,
-                color: colors.textSoft,
-                margin: "0 0 10px",
-              }}
-            >
-              {pattern.confidence_reason}
+              {changeType}
             </p>
           )}
 
+          <h3
+            style={{
+              ...serif,
+              color: colors.text,
+              fontSize: 19,
+              lineHeight: 1.25,
+              margin: "0 0 8px",
+            }}
+          >
+            {pattern.title}
+          </h3>
+
           <p
             style={{
-              color:
-                "rgba(220,205,182,0.68)",
-              fontSize: 13,
+              color: colors.textSoft,
+              fontSize: 12,
               lineHeight: 1.6,
-              margin: "0 0 13px",
+              margin: 0,
             }}
           >
             {pattern.description}
-          </p>
-
-          <div
-            style={{
-              display: "grid",
-              gap: 7,
-              marginBottom: 13,
-            }}
-          >
-            {pattern.evidence
-              .slice(0, 2)
-              .map((item, evidenceIndex) => (
-                <div
-                  key={`${item.entry_id}-${evidenceIndex}`}
-                  style={{
-                    background:
-                      "rgba(255,255,255,0.022)",
-                    border:
-                      "1px solid rgba(255,255,255,0.052)",
-                    borderRadius: 14,
-                    padding: "10px 11px",
-                  }}
-                >
-                  <p
-                    style={{
-                      margin: 0,
-                      color:
-                        "rgba(225,210,188,0.72)",
-                      fontSize: 12,
-                      lineHeight: 1.5,
-                      fontStyle: "italic",
-                    }}
-                  >
-                    “{item.quote}”
-                  </p>
-
-                  <p
-                    style={{
-                      color: colors.textFaint,
-                      fontSize: 10,
-                      margin: "5px 0 0",
-                    }}
-                  >
-                    {item.date}
-                  </p>
-                </div>
-              ))}
-          </div>
-
-          <p
-            style={{
-              margin: 0,
-              color:
-                "rgba(205,170,100,0.68)",
-              fontSize: 13,
-              lineHeight: 1.55,
-            }}
-          >
-            {pattern.suggestion}
           </p>
         </div>
 
@@ -514,8 +712,14 @@ function PatternDetail({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: 18 }}
-      animate={{ opacity: 1, x: 0 }}
+      initial={{
+        opacity: 0,
+        x: 18,
+      }}
+      animate={{
+        opacity: 1,
+        x: 0,
+      }}
     >
       <button
         onClick={onBack}
@@ -524,11 +728,12 @@ function PatternDetail({
           border: "none",
           color: colors.gold,
           fontSize: 12,
-          marginBottom: 18,
+          marginBottom: 20,
+          padding: 0,
           cursor: "pointer",
         }}
       >
-        ← Back to AI Patterns
+        ← Back to The Nest Noticed
       </button>
 
       <p
@@ -537,21 +742,19 @@ function PatternDetail({
           fontSize: 10,
           letterSpacing: "0.16em",
           textTransform: "uppercase",
-          marginBottom: 9,
+          margin: "0 0 9px",
         }}
       >
-        New Insight
+        What The Nest noticed
       </p>
 
       <h1
         style={{
-          fontFamily:
-            "Georgia, 'Times New Roman', serif",
-          fontSize: 30,
-          fontWeight: 400,
-          lineHeight: 1.15,
+          ...serif,
+          fontSize: 31,
+          lineHeight: 1.16,
           color: colors.text,
-          margin: "0 0 10px",
+          margin: "0 0 12px",
         }}
       >
         {pattern.title}
@@ -560,8 +763,8 @@ function PatternDetail({
       <p
         style={{
           color: colors.textSoft,
-          fontSize: 13,
-          lineHeight: 1.65,
+          fontSize: 14,
+          lineHeight: 1.7,
           margin: "0 0 22px",
         }}
       >
@@ -570,69 +773,79 @@ function PatternDetail({
 
       <section
         style={{
+          borderRadius: 20,
           background: colors.card,
           border: `1px solid ${colors.border}`,
-          borderRadius: 20,
           padding: 18,
           marginBottom: 16,
         }}
       >
         <p
           style={{
+            color: colors.goldSoft,
             fontSize: 10,
             letterSpacing: "0.16em",
             textTransform: "uppercase",
-            color: colors.goldSoft,
-            margin: "0 0 16px",
+            margin: "0 0 11px",
           }}
         >
-          Why The Nest thinks this
+          Why The Nest noticed this
         </p>
 
         <p
           style={{
             color: colors.textSoft,
             fontSize: 12,
-            lineHeight: 1.6,
+            lineHeight: 1.65,
             margin: 0,
           }}
         >
           {pattern.confidence_reason}
         </p>
+
+        <p
+          style={{
+            color: colors.textFaint,
+            fontSize: 10,
+            lineHeight: 1.5,
+            margin: "9px 0 0",
+          }}
+        >
+          Confidence: {pattern.confidence_score}%
+        </p>
       </section>
 
       <section
         style={{
+          borderRadius: 20,
           background: colors.card,
           border: `1px solid ${colors.border}`,
-          borderRadius: 20,
           padding: 18,
           marginBottom: 16,
         }}
       >
         <p
           style={{
+            color: colors.goldSoft,
             fontSize: 10,
             letterSpacing: "0.16em",
             textTransform: "uppercase",
-            color: colors.goldSoft,
             margin: "0 0 16px",
           }}
         >
-          Timeline
+          What supports this
         </p>
 
-        <div style={{ display: "grid", gap: 14 }}>
-          {pattern.evidence
-            .slice()
-            .sort(
-              (a, b) =>
-                new Date(b.date).getTime() -
-                new Date(a.date).getTime()
-            )
-            .map((item, index) => (
+        <div
+          style={{
+            display: "grid",
+            gap: 14,
+          }}
+        >
+          {pattern.evidence.map(
+            (evidence, index) => (
               <div
-                key={`${item.entry_id}-${index}`}
+                key={`${evidence.entry_id}-${index}`}
                 style={{
                   display: "flex",
                   gap: 12,
@@ -660,7 +873,7 @@ function PatternDetail({
                       style={{
                         width: 1,
                         flex: 1,
-                        minHeight: 44,
+                        minHeight: 48,
                         background:
                           "rgba(205,170,100,0.16)",
                         marginTop: 6,
@@ -678,76 +891,80 @@ function PatternDetail({
                   <p
                     style={{
                       color: colors.goldSoft,
-                      fontSize: 11,
-                      margin: "0 0 6px",
+                      fontSize: 10,
+                      margin: "0 0 7px",
                     }}
                   >
-                    {item.date} · {item.entry_type}
+                    {formatDate(evidence.date)} ·{" "}
+                    {evidence.entry_type}
                   </p>
 
                   <p
                     style={{
                       color:
-                        "rgba(225,210,188,0.74)",
+                        "rgba(225,210,188,0.76)",
                       fontSize: 13,
-                      lineHeight: 1.6,
+                      lineHeight: 1.65,
                       fontStyle: "italic",
                       margin: 0,
                     }}
                   >
-                    “{item.quote}”
+                    “{evidence.quote}”
                   </p>
 
-                  {item.mood && (
+                  {evidence.mood && (
                     <p
                       style={{
                         color: colors.textFaint,
                         fontSize: 10,
-                        margin: "6px 0 0",
+                        margin: "7px 0 0",
                       }}
                     >
-                      Mood: {item.mood}
+                      Mood: {evidence.mood}
                     </p>
                   )}
                 </div>
               </div>
-            ))}
+            )
+          )}
         </div>
       </section>
 
-      <section
-        style={{
-          background:
-            "linear-gradient(145deg, rgba(205,170,100,0.08), rgba(255,255,255,0.022))",
-          border:
-            "1px solid rgba(205,170,100,0.14)",
-          borderRadius: 20,
-          padding: 18,
-        }}
-      >
-        <p
+      {pattern.suggestion && (
+        <section
           style={{
-            fontSize: 10,
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
-            color: colors.goldSoft,
-            margin: "0 0 10px",
+            borderRadius: 20,
+            background:
+              "linear-gradient(145deg, rgba(205,170,100,0.08), rgba(255,255,255,0.022))",
+            border:
+              "1px solid rgba(205,170,100,0.14)",
+            padding: 18,
           }}
         >
-          Something to try
-        </p>
+          <p
+            style={{
+              color: colors.goldSoft,
+              fontSize: 10,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+              margin: "0 0 10px",
+            }}
+          >
+            Something to notice
+          </p>
 
-        <p
-          style={{
-            color: colors.gold,
-            fontSize: 13,
-            lineHeight: 1.6,
-            margin: 0,
-          }}
-        >
-          {pattern.suggestion}
-        </p>
-      </section>
+          <p
+            style={{
+              color: colors.gold,
+              fontSize: 13,
+              lineHeight: 1.65,
+              margin: 0,
+            }}
+          >
+            {pattern.suggestion}
+          </p>
+        </section>
+      )}
     </motion.div>
   );
 }
@@ -797,16 +1014,15 @@ function LockedCard({
 
       <h2
         style={{
-          fontFamily: "Georgia, serif",
+          ...serif,
           fontSize: 25,
-          fontWeight: 400,
           color: colors.text,
           margin: "0 0 10px",
         }}
       >
         {signedIn
-          ? "Let The Nest notice what changes."
-          : "Sign in to unlock AI Patterns."}
+          ? "Discover what you don't notice."
+          : "Sign in to unlock The Nest Noticed."}
       </h2>
 
       <p
@@ -818,8 +1034,8 @@ function LockedCard({
         }}
       >
         {signedIn
-          ? "Supporter automatically analyzes new voice capsules and thoughts in the background. You only hear from The Nest when something meaningful appears."
-          : "AI Patterns need a private account so your entries and insights can stay connected securely."}
+          ? "Supporter lets The Nest quietly compare new voice capsules and thoughts over time. You only hear from it when something meaningful appears."
+          : "A private account is needed so your entries and discoveries stay connected securely."}
       </p>
 
       {signedIn ? (
@@ -875,7 +1091,7 @@ function EmptyActiveState() {
     <section
       style={{
         borderRadius: 24,
-        padding: "30px 22px",
+        padding: "31px 22px",
         textAlign: "center",
         border: `1px solid ${colors.border}`,
         background: colors.card,
@@ -909,14 +1125,13 @@ function EmptyActiveState() {
 
       <h2
         style={{
-          fontFamily: "Georgia, serif",
+          ...serif,
           fontSize: 25,
-          fontWeight: 400,
           color: colors.text,
           margin: "0 0 10px",
         }}
       >
-        The Nest is listening.
+        Nothing strong enough yet.
       </h2>
 
       <p
@@ -927,9 +1142,172 @@ function EmptyActiveState() {
           margin: 0,
         }}
       >
-        A new insight will appear here when several
-        entries reveal something meaningful.
+        The Nest will stay quiet until several entries
+        reveal something genuinely meaningful.
       </p>
+    </section>
+  );
+}
+
+function InsightHistory({
+  history,
+  onOpen,
+}: {
+  history: AIPatternGeneration[];
+  onOpen: (pattern: AIPattern) => void;
+}) {
+  const [expandedId, setExpandedId] =
+    useState<string | null>(null);
+
+  const historyWithInsights = history.filter(
+    (generation) =>
+      generation.result.patterns.length > 0
+  );
+
+  if (historyWithInsights.length === 0) {
+    return null;
+  }
+
+  return (
+    <section
+      style={{
+        marginTop: 27,
+      }}
+    >
+      <p
+        style={{
+          color: colors.goldSoft,
+          fontSize: 10,
+          letterSpacing: "0.16em",
+          textTransform: "uppercase",
+          margin: "0 0 10px",
+        }}
+      >
+        Earlier discoveries
+      </p>
+
+      <div
+        style={{
+          display: "grid",
+          gap: 10,
+        }}
+      >
+        {historyWithInsights.map((generation) => {
+          const expanded =
+            expandedId === generation.id;
+
+          const pattern =
+            generation.result.patterns[0];
+
+          return (
+            <div
+              key={generation.id}
+              style={{
+                borderRadius: 18,
+                overflow: "hidden",
+                background: expanded
+                  ? "rgba(205,170,100,0.06)"
+                  : colors.card,
+                border: expanded
+                  ? "1px solid rgba(205,170,100,0.22)"
+                  : `1px solid ${colors.border}`,
+              }}
+            >
+              <button
+                onClick={() =>
+                  setExpandedId(
+                    expanded ? null : generation.id
+                  )
+                }
+                style={{
+                  width: "100%",
+                  minHeight: 72,
+                  background: "transparent",
+                  border: "none",
+                  padding: 15,
+                  color: colors.textSoft,
+                  textAlign: "left",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      color: expanded
+                        ? colors.gold
+                        : colors.text,
+                      fontSize: 14,
+                      marginBottom: 5,
+                    }}
+                  >
+                    {pattern.title}
+                  </div>
+
+                  <div
+                    style={{
+                      color: colors.textFaint,
+                      fontSize: 11,
+                    }}
+                  >
+                    {formatDate(
+                      generation.created_at
+                    )}{" "}
+                    · {generation.entry_count} entries
+                  </div>
+                </div>
+
+                <motion.div
+                  animate={{
+                    rotate: expanded ? 90 : 0,
+                  }}
+                >
+                  <ChevronRight
+                    size={18}
+                    color={colors.goldSoft}
+                  />
+                </motion.div>
+              </button>
+
+              <AnimatePresence>
+                {expanded && (
+                  <motion.div
+                    initial={{
+                      height: 0,
+                      opacity: 0,
+                    }}
+                    animate={{
+                      height: "auto",
+                      opacity: 1,
+                    }}
+                    exit={{
+                      height: 0,
+                      opacity: 0,
+                    }}
+                    style={{
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        padding: "0 13px 13px",
+                      }}
+                    >
+                      <PatternCard
+                        pattern={pattern}
+                        onOpen={() => onOpen(pattern)}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -938,17 +1316,14 @@ export function AIPatterns() {
   const [pageData, setPageData] =
     useState<AIPatternPageData | null>(null);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [showAll, setShowAll] = useState(false);
-
   const [selectedPattern, setSelectedPattern] =
     useState<AIPattern | null>(null);
 
-  const [
-    expandedHistoryId,
-    setExpandedHistoryId,
-  ] = useState<string | null>(null);
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
 
   const [upgradeLoading, setUpgradeLoading] =
     useState(false);
@@ -964,7 +1339,9 @@ export function AIPatterns() {
         const result =
           await loadAIPatternPageData();
 
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
         setPageData(result);
 
@@ -972,16 +1349,18 @@ export function AIPatterns() {
           await markAIPatternsSeen();
         }
       } catch (loadError: any) {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
         console.error(
-          "Could not load AI Patterns:",
+          "Could not load The Nest Noticed:",
           loadError
         );
 
         setError(
           loadError.message ||
-            "Could not load AI Patterns."
+            "Could not load The Nest Noticed."
         );
       } finally {
         if (!cancelled) {
@@ -997,22 +1376,10 @@ export function AIPatterns() {
     };
   }, []);
 
-  const generation =
-    pageData?.latestGeneration || null;
-
-  const history = pageData?.history || [];
-
-  const visiblePatterns = useMemo(() => {
-    const patterns =
-      generation?.result.patterns || [];
-
-    return showAll
-      ? patterns
-      : patterns.slice(0, 3);
-  }, [generation, showAll]);
-
   async function handleUpgrade() {
-    if (upgradeLoading) return;
+    if (upgradeLoading) {
+      return;
+    }
 
     setUpgradeLoading(true);
     setError("");
@@ -1064,6 +1431,15 @@ export function AIPatterns() {
     );
   }
 
+  const latestInsight =
+    pageData?.latestInsight || null;
+
+  const lifeThemes =
+    pageData?.lifeThemes || [];
+
+  const history =
+    pageData?.history || [];
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -1085,7 +1461,7 @@ export function AIPatterns() {
           inset: 0,
           pointerEvents: "none",
           background:
-            "radial-gradient(circle at 50% 0%, rgba(205,170,100,0.09), transparent 35%)",
+            "radial-gradient(circle at 50% 0%, rgba(205,170,100,0.10), transparent 36%)",
         }}
       />
 
@@ -1133,21 +1509,19 @@ export function AIPatterns() {
                 textTransform: "uppercase",
               }}
             >
-              What The Nest noticed
+              Discover what you don't notice
             </p>
 
             <h1
               style={{
-                fontFamily:
-                  "Georgia, 'Times New Roman', serif",
-                fontSize: 31,
-                fontWeight: 400,
+                ...serif,
+                fontSize: 32,
                 color: colors.text,
                 lineHeight: 1.08,
-                margin: "0 0 8px",
+                margin: "0 0 9px",
               }}
             >
-              AI Patterns
+              The Nest Noticed
             </h1>
 
             <p
@@ -1158,8 +1532,8 @@ export function AIPatterns() {
                 margin: 0,
               }}
             >
-              Insights appear only when something
-              meaningful changes.
+              Quiet observations drawn from your own
+              voice capsules and thoughts.
             </p>
           </div>
         </header>
@@ -1197,7 +1571,7 @@ export function AIPatterns() {
                 margin: 0,
               }}
             >
-              Opening your insights…
+              Opening what The Nest noticed…
             </p>
           </section>
         )}
@@ -1234,546 +1608,27 @@ export function AIPatterns() {
                 }
               />
 
-              {!generation ? (
-                <EmptyActiveState />
+              {latestInsight ? (
+                <InsightHero
+                  pattern={latestInsight}
+                  onOpen={() =>
+                    setSelectedPattern(
+                      latestInsight
+                    )
+                  }
+                />
               ) : (
-                <AnimatePresence>
-                  <motion.div
-                    initial={{
-                      opacity: 0,
-                      y: 12,
-                    }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                    }}
-                    transition={{
-                      duration: 0.7,
-                    }}
-                  >
-                    <p
-                      style={{
-                        color: colors.textFaint,
-                        fontSize: 11,
-                        margin: "0 0 14px",
-                      }}
-                    >
-                      Discovered{" "}
-                      {timeAgo(
-                        generation.created_at
-                      )}{" "}
-                      · Based on{" "}
-                      {generation.voice_count} voice
-                      capsules and{" "}
-                      {generation.thought_count} thoughts.
-                    </p>
-
-                    {generation.result.patterns
-                      .length > 0 && (
-                      <section
-                        style={{
-                          borderRadius: 24,
-                          border:
-                            "1px solid rgba(205,170,100,0.16)",
-                          background:
-                            "linear-gradient(145deg, rgba(205,170,100,0.10), rgba(255,255,255,0.024))",
-                          padding: 22,
-                          marginBottom: 16,
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            marginBottom: 11,
-                            color: colors.gold,
-                          }}
-                        >
-                          <Sparkles size={16} />
-
-                          <p
-                            style={{
-                              margin: 0,
-                              fontSize: 10,
-                              letterSpacing:
-                                "0.18em",
-                              textTransform:
-                                "uppercase",
-                            }}
-                          >
-                            New Insight
-                          </p>
-                        </div>
-
-                        <h2
-                          style={{
-                            fontFamily:
-                              "Georgia, serif",
-                            fontSize: 25,
-                            fontWeight: 400,
-                            lineHeight: 1.25,
-                            color: colors.text,
-                            margin: "0 0 10px",
-                          }}
-                        >
-                          {
-                            generation.result
-                              .patterns[0].title
-                          }
-                        </h2>
-
-                        <p
-                          style={{
-                            color:
-                              colors.textSoft,
-                            fontSize: 13,
-                            lineHeight: 1.65,
-                            margin: "0 0 16px",
-                          }}
-                        >
-                          {
-                            generation.result
-                              .patterns[0]
-                              .description
-                          }
-                        </p>
-
-                        <button
-                          onClick={() =>
-                            setSelectedPattern(
-                              generation.result
-                                .patterns[0]
-                            )
-                          }
-                          style={{
-                            border: "none",
-                            background: "none",
-                            padding: 0,
-                            color: colors.gold,
-                            fontSize: 12,
-                            cursor: "pointer",
-                          }}
-                        >
-                          Discover why →
-                        </button>
-                      </section>
-                    )}
-
-                    {generation.result.summary && (
-                      <section
-                        style={{
-                          background: colors.card,
-                          border: `1px solid ${colors.border}`,
-                          borderRadius: 18,
-                          padding: 16,
-                          marginBottom: 16,
-                        }}
-                      >
-                        <p
-                          style={{
-                            fontSize: 10,
-                            letterSpacing:
-                              "0.16em",
-                            textTransform:
-                              "uppercase",
-                            color:
-                              colors.goldSoft,
-                            margin: "0 0 8px",
-                          }}
-                        >
-                          What changed
-                        </p>
-
-                        <p
-                          style={{
-                            color:
-                              colors.textSoft,
-                            fontSize: 13,
-                            lineHeight: 1.65,
-                            margin: 0,
-                          }}
-                        >
-                          {
-                            generation.result
-                              .summary
-                          }
-                        </p>
-                      </section>
-                    )}
-
-                    {generation.result
-                      .hero_themes.length > 0 && (
-                      <section
-                        style={{
-                          background: colors.card,
-                          border: `1px solid ${colors.border}`,
-                          borderRadius: 18,
-                          padding: 16,
-                          marginBottom: 16,
-                        }}
-                      >
-                        <p
-                          style={{
-                            fontSize: 10,
-                            letterSpacing:
-                              "0.16em",
-                            textTransform:
-                              "uppercase",
-                            color:
-                              colors.goldSoft,
-                            margin: "0 0 11px",
-                          }}
-                        >
-                          Themes appearing lately
-                        </p>
-
-                        <div
-                          style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: 8,
-                          }}
-                        >
-                          {generation.result.hero_themes.map(
-                            (theme) => (
-                              <span
-                                key={theme}
-                                style={{
-                                  borderRadius:
-                                    999,
-                                  border:
-                                    "1px solid rgba(205,170,100,0.13)",
-                                  background:
-                                    "rgba(205,170,100,0.055)",
-                                  padding:
-                                    "8px 11px",
-                                  color:
-                                    colors.textSoft,
-                                  fontSize: 11,
-                                }}
-                              >
-                                {theme}
-                              </span>
-                            )
-                          )}
-                        </div>
-                      </section>
-                    )}
-
-                    {generation.result.patterns
-                      .length === 0 ? (
-                      <EmptyActiveState />
-                    ) : (
-                      <>
-                        <p
-                          style={{
-                            fontSize: 10,
-                            letterSpacing:
-                              "0.16em",
-                            textTransform:
-                              "uppercase",
-                            color:
-                              colors.goldSoft,
-                            margin: "0 0 10px",
-                          }}
-                        >
-                          Recent discoveries
-                        </p>
-
-                        <div
-                          style={{
-                            display: "grid",
-                            gap: 12,
-                          }}
-                        >
-                          {visiblePatterns.map(
-                            (
-                              pattern,
-                              index
-                            ) => (
-                              <PatternCard
-                                key={`${pattern.id}-${index}`}
-                                pattern={pattern}
-                                index={index}
-                                onOpen={() =>
-                                  setSelectedPattern(
-                                    pattern
-                                  )
-                                }
-                              />
-                            )
-                          )}
-                        </div>
-
-                        {!showAll &&
-                          generation.result.patterns
-                            .length > 3 && (
-                            <button
-                              onClick={() =>
-                                setShowAll(true)
-                              }
-                              style={{
-                                width: "100%",
-                                marginTop: 14,
-                                border:
-                                  "1px solid rgba(205,170,100,0.14)",
-                                background:
-                                  "rgba(205,170,100,0.06)",
-                                borderRadius: 16,
-                                padding:
-                                  "14px 16px",
-                                color:
-                                  colors.gold,
-                                fontSize: 11,
-                                letterSpacing:
-                                  "0.14em",
-                                textTransform:
-                                  "uppercase",
-                                cursor:
-                                  "pointer",
-                              }}
-                            >
-                              Show all insights
-                            </button>
-                          )}
-                      </>
-                    )}
-
-                    {history.length > 0 && (
-                      <section
-                        style={{
-                          marginTop: 27,
-                        }}
-                      >
-                        <p
-                          style={{
-                            fontSize: 10,
-                            letterSpacing:
-                              "0.16em",
-                            textTransform:
-                              "uppercase",
-                            color:
-                              colors.goldSoft,
-                            margin: "0 0 10px",
-                          }}
-                        >
-                          Insight History
-                        </p>
-
-                        <div
-                          style={{
-                            display: "grid",
-                            gap: 10,
-                          }}
-                        >
-                          {history.map(
-                            (
-                              historyItem: AIPatternGeneration
-                            ) => {
-                              const expanded =
-                                expandedHistoryId ===
-                                historyItem.id;
-
-                              return (
-                                <div
-                                  key={
-                                    historyItem.id
-                                  }
-                                  style={{
-                                    background:
-                                      expanded
-                                        ? "rgba(205,170,100,0.06)"
-                                        : colors.card,
-                                    border: expanded
-                                      ? "1px solid rgba(205,170,100,0.22)"
-                                      : `1px solid ${colors.border}`,
-                                    borderRadius: 18,
-                                    overflow:
-                                      "hidden",
-                                  }}
-                                >
-                                  <button
-                                    onClick={() =>
-                                      setExpandedHistoryId(
-                                        expanded
-                                          ? null
-                                          : historyItem.id
-                                      )
-                                    }
-                                    style={{
-                                      width:
-                                        "100%",
-                                      minHeight: 72,
-                                      background:
-                                        "transparent",
-                                      border: "none",
-                                      padding:
-                                        "15px",
-                                      color:
-                                        colors.textSoft,
-                                      textAlign:
-                                        "left",
-                                      cursor:
-                                        "pointer",
-                                      display:
-                                        "flex",
-                                      alignItems:
-                                        "center",
-                                      justifyContent:
-                                        "space-between",
-                                      gap: 12,
-                                    }}
-                                  >
-                                    <div>
-                                      <div
-                                        style={{
-                                          color:
-                                            expanded
-                                              ? colors.gold
-                                              : colors.text,
-                                          fontSize: 14,
-                                          marginBottom: 5,
-                                        }}
-                                      >
-                                        {formatDate(
-                                          historyItem.created_at
-                                        )}
-                                      </div>
-
-                                      <div
-                                        style={{
-                                          color:
-                                            colors.textFaint,
-                                          fontSize: 11,
-                                        }}
-                                      >
-                                        {
-                                          historyItem
-                                            .result
-                                            .patterns
-                                            .length
-                                        }{" "}
-                                        insight
-                                        {historyItem
-                                          .result
-                                          .patterns
-                                          .length ===
-                                        1
-                                          ? ""
-                                          : "s"}{" "}
-                                        ·{" "}
-                                        {
-                                          historyItem.entry_count
-                                        }{" "}
-                                        entries
-                                      </div>
-                                    </div>
-
-                                    <motion.div
-                                      animate={{
-                                        rotate:
-                                          expanded
-                                            ? 90
-                                            : 0,
-                                      }}
-                                    >
-                                      <ChevronRight
-                                        size={18}
-                                        color={
-                                          colors.goldSoft
-                                        }
-                                      />
-                                    </motion.div>
-                                  </button>
-
-                                  <AnimatePresence>
-                                    {expanded && (
-                                      <motion.div
-                                        initial={{
-                                          height: 0,
-                                          opacity: 0,
-                                        }}
-                                        animate={{
-                                          height:
-                                            "auto",
-                                          opacity: 1,
-                                        }}
-                                        exit={{
-                                          height: 0,
-                                          opacity: 0,
-                                        }}
-                                        style={{
-                                          overflow:
-                                            "hidden",
-                                        }}
-                                      >
-                                        <div
-                                          style={{
-                                            padding:
-                                              "0 13px 13px",
-                                            display:
-                                              "grid",
-                                            gap: 10,
-                                          }}
-                                        >
-                                          {historyItem.result.patterns.map(
-                                            (
-                                              pattern,
-                                              index
-                                            ) => (
-                                              <PatternCard
-                                                key={`${historyItem.id}-${pattern.id}-${index}`}
-                                                pattern={
-                                                  pattern
-                                                }
-                                                index={
-                                                  index
-                                                }
-                                                onOpen={() =>
-                                                  setSelectedPattern(
-                                                    pattern
-                                                  )
-                                                }
-                                              />
-                                            )
-                                          )}
-
-                                          {historyItem
-                                            .result
-                                            .patterns
-                                            .length ===
-                                            0 && (
-                                            <div
-                                              style={{
-                                                borderRadius: 15,
-                                                border: `1px solid ${colors.border}`,
-                                                padding: 14,
-                                                color:
-                                                  colors.textSoft,
-                                                fontSize: 12,
-                                              }}
-                                            >
-                                              No strong
-                                              insights
-                                              were found in
-                                              this analysis.
-                                            </div>
-                                          )}
-                                        </div>
-                                      </motion.div>
-                                    )}
-                                  </AnimatePresence>
-                                </div>
-                              );
-                            }
-                          )}
-                        </div>
-                      </section>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
+                <EmptyActiveState />
               )}
+
+              <LifeThemesSection
+                themes={lifeThemes}
+              />
+
+              <InsightHistory
+                history={history}
+                onOpen={setSelectedPattern}
+              />
             </>
           )}
       </div>

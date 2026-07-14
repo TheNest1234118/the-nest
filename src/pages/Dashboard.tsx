@@ -7,6 +7,12 @@ import { loadThoughts, saveThought } from "@/lib/userData";
 import { registerVisitForPwaPrompt } from "@/lib/pwa";
 import { AuthModal } from "@/components/AuthModal";
 import { supabase } from "@/lib/supabase";
+import {
+  loadAIPatternPageData,
+  type AIPatternPageData,
+} from "@/lib/aiPatterns";
+import { loadReflectionV2History } from "@/lib/reflectionV2";
+import type { ReflectionV2Generation } from "@/lib/reflectionV2Types";
 
 import type { User } from "@supabase/supabase-js";
 import {
@@ -28,6 +34,7 @@ import {
   Feather,
   FileText,
   Home,
+  Heart,
   Lock,
   MessageSquare,
   Mic,
@@ -837,78 +844,485 @@ const filteredItems = items.filter((item) => {
   );
 }
 function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
-  const insights = [
-    { title: "AI Patterns", path: "/insights/ai-patterns", stars: "", enabled: true },
-    { title: "Weekly Reflection", path: "/insights/weekly", stars: "", enabled: true },
-    { title: "Topics", path: "/insights/topics", stars: "", enabled: false },
-    { title: "Statistics", path: "/insights/statistics", stars: "", enabled: false },
-    { title: "Monthly Reflection", path: "/insights/monthly", stars: "", enabled: false },
+  const [patternData, setPatternData] =
+    useState<AIPatternPageData | null>(null);
+  const [latestDigest, setLatestDigest] =
+    useState<ReflectionV2Generation | null>(null);
+  const [loadingInsights, setLoadingInsights] = useState(true);
 
-    { title: "Mood Trends", path: "", stars: "Coming Soon", enabled: false },
-    { title: "Heatmap", path: "", stars: "Coming Soon", enabled: false },
-    { title: "Word Cloud", path: "", stars: "Coming Soon", enabled: false },
-    { title: "Emotional Timeline", path: "", stars: "Coming Soon", enabled: false },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInsights() {
+      setLoadingInsights(true);
+
+      try {
+        const [patterns, digests] = await Promise.all([
+          loadAIPatternPageData(),
+          loadReflectionV2History("weekly"),
+        ]);
+
+        if (cancelled) return;
+
+        setPatternData(patterns);
+        setLatestDigest(digests[0] || null);
+      } catch (error) {
+        console.error("Could not load dashboard insights", error);
+      } finally {
+        if (!cancelled) {
+          setLoadingInsights(false);
+        }
+      }
+    }
+
+    loadInsights();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const latestInsight = patternData?.latestInsight || null;
+  const lifeThemes = patternData?.lifeThemes || [];
+
+  const digestTitle =
+    latestDigest?.result?.digest_title ||
+    "Your weekly story is waiting.";
+
+  const digestDescription = latestDigest?.result?.story
+    ? latestDigest.result.story.length > 130
+      ? `${latestDigest.result.story.slice(0, 130).trim()}…`
+      : latestDigest.result.story
+    : "Every Sunday, The Nest turns your voice capsules, thoughts and mood check-ins into one calm chapter.";
+
+  const openDigest = () => {
+    trackNestEvent(events.opened_weekly_reflection);
+    navigate("/insights/weekly");
+  };
+
+  const openNoticed = () => {
+    trackNestEvent(events.opened_ai_patterns);
+    navigate("/insights/ai-patterns");
+  };
+
+  const featureCardStyle: React.CSSProperties = {
+    borderRadius: 20,
+    border: `1px solid ${colors.border}`,
+    background:
+      "linear-gradient(145deg, rgba(255,255,255,0.034), rgba(255,255,255,0.018))",
+    padding: 17,
+    minHeight: 156,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    textAlign: "left",
+    boxSizing: "border-box",
+  };
 
   return (
     <>
       <PageIntro
-        eyebrow="Understand Yourself"
-        title="A place for reflection."
-        description="Patterns, moods and meaning from everything you have captured."
+        eyebrow="Discover Yourself"
+        title="What The Nest found."
+        description="Your thoughts become stories, insights and memories worth returning to."
       />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        {insights.map((item) => (
-         <SoftCard
-         key={item.title}
-         onClick={
-           item.enabled
-             ? () => {
-     
-                 if (item.title === "AI Patterns") {
-                   trackNestEvent(events.opened_ai_patterns);
-                 }
-     
-                 if (item.title === "Weekly Reflection") {
-                   trackNestEvent(events.opened_weekly_reflection);
-                 }
-     
-                 navigate(item.path);
-     
-               }
-             : undefined
-         }
-     >
-            <div
+      <motion.button
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        onClick={openDigest}
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          width: "100%",
+          borderRadius: 25,
+          border: "1px solid rgba(205,170,100,0.22)",
+          background:
+            "linear-gradient(145deg, rgba(205,170,100,0.13), rgba(255,255,255,0.025))",
+          padding: "22px 20px",
+          minHeight: 218,
+          textAlign: "left",
+          cursor: "pointer",
+          boxShadow: "0 24px 85px rgba(0,0,0,0.25)",
+        }}
+      >
+        <motion.div
+          animate={{
+            opacity: [0.28, 0.62, 0.28],
+            scale: [0.96, 1.06, 0.96],
+          }}
+          transition={{
+            duration: 5.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          style={{
+            position: "absolute",
+            width: 230,
+            height: 230,
+            borderRadius: 999,
+            right: -70,
+            top: -85,
+            background:
+              "radial-gradient(circle, rgba(225,176,86,0.24), transparent 68%)",
+            pointerEvents: "none",
+          }}
+        />
+
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              color: colors.gold,
+              marginBottom: 18,
+            }}
+          >
+            <BookOpen size={18} strokeWidth={1.45} />
+            <span
               style={{
-                minHeight: 82,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                opacity: item.enabled ? 1 : 0.42,
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                fontWeight: 800,
               }}
             >
-              <BarChart3 size={18} strokeWidth={1.45} color={colors.goldSoft} />
+              The Nest Digest
+            </span>
+          </div>
 
-              <div style={{ color: colors.text, fontSize: 14, lineHeight: 1.35 }}>
-                {item.title}
-              </div>
+          <h2
+            style={{
+              ...serif,
+              color: colors.text,
+              fontSize: 28,
+              lineHeight: 1.18,
+              margin: "0 0 12px",
+            }}
+          >
+            {loadingInsights ? "Reading your week…" : digestTitle}
+          </h2>
 
-              <div
-                style={{
-                  color: item.enabled ? colors.goldSoft : colors.textFaint,
-                  fontSize: item.enabled ? 11 : 10,
-                  letterSpacing: item.enabled ? "0" : "0.12em",
-                  textTransform: item.enabled ? "none" : "uppercase",
-                }}
-              >
-                {item.stars}
-              </div>
-            </div>
-          </SoftCard>
-        ))}
+          <p
+            style={{
+              color: colors.textSoft,
+              fontSize: 13,
+              lineHeight: 1.65,
+              margin: "0 0 21px",
+              maxWidth: 360,
+            }}
+          >
+            {digestDescription}
+          </p>
+
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              color: colors.gold,
+              fontSize: 12,
+            }}
+          >
+            {latestDigest ? "Read your Digest" : "Open The Nest Digest"}
+            <ChevronRight size={15} />
+          </div>
+        </div>
+      </motion.button>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 10,
+        }}
+      >
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08, duration: 0.55 }}
+          onClick={openNoticed}
+          style={{
+            ...featureCardStyle,
+            cursor: "pointer",
+          }}
+        >
+          <div>
+            <Sparkles
+              size={20}
+              strokeWidth={1.45}
+              color={colors.gold}
+            />
+
+            <p
+              style={{
+                color: colors.goldSoft,
+                fontSize: 9,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                margin: "15px 0 7px",
+              }}
+            >
+              The Nest Noticed
+            </p>
+
+            <h3
+              style={{
+                ...serif,
+                color: colors.text,
+                fontSize: 19,
+                lineHeight: 1.28,
+                margin: "0 0 8px",
+              }}
+            >
+              {latestInsight?.title || "Discover what you don't notice."}
+            </h3>
+
+            <p
+              style={{
+                color: colors.textSoft,
+                fontSize: 11,
+                lineHeight: 1.55,
+                margin: 0,
+              }}
+            >
+              {latestInsight
+                ? latestInsight.description
+                : "The Nest stays quiet until several entries reveal something meaningful."}
+            </p>
+          </div>
+
+          <span
+            style={{
+              color: colors.gold,
+              fontSize: 11,
+              marginTop: 14,
+            }}
+          >
+            {latestInsight ? "See why →" : "Open →"}
+          </span>
+        </motion.button>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12, duration: 0.55 }}
+          style={{
+            ...featureCardStyle,
+            opacity: 0.62,
+          }}
+        >
+          <div>
+            <UserRound
+              size={20}
+              strokeWidth={1.45}
+              color={colors.goldSoft}
+            />
+
+            <p
+              style={{
+                color: colors.goldSoft,
+                fontSize: 9,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                margin: "15px 0 7px",
+              }}
+            >
+              Mirror
+            </p>
+
+            <h3
+              style={{
+                ...serif,
+                color: colors.text,
+                fontSize: 19,
+                lineHeight: 1.28,
+                margin: "0 0 8px",
+              }}
+            >
+              Meet your past self.
+            </h3>
+
+            <p
+              style={{
+                color: colors.textSoft,
+                fontSize: 11,
+                lineHeight: 1.55,
+                margin: 0,
+              }}
+            >
+              Compare what you say today with what mattered months ago.
+            </p>
+          </div>
+
+          <span
+            style={{
+              color: colors.textFaint,
+              fontSize: 9,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              marginTop: 14,
+            }}
+          >
+            Coming next
+          </span>
+        </motion.div>
       </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 10,
+        }}
+      >
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.16, duration: 0.55 }}
+          onClick={openNoticed}
+          style={{
+            ...featureCardStyle,
+            cursor: "pointer",
+          }}
+        >
+          <div>
+            <Heart
+              size={20}
+              strokeWidth={1.45}
+              color={colors.gold}
+            />
+
+            <p
+              style={{
+                color: colors.goldSoft,
+                fontSize: 9,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                margin: "15px 0 7px",
+              }}
+            >
+              Life Themes
+            </p>
+
+            <h3
+              style={{
+                ...serif,
+                color: colors.text,
+                fontSize: 19,
+                lineHeight: 1.28,
+                margin: "0 0 8px",
+              }}
+            >
+              The chapters shaping your life.
+            </h3>
+
+            <p
+              style={{
+                color: colors.textSoft,
+                fontSize: 11,
+                lineHeight: 1.55,
+                margin: 0,
+              }}
+            >
+              {lifeThemes.length > 0
+                ? lifeThemes
+                    .slice(0, 3)
+                    .map((theme) => theme.name)
+                    .join(" · ")
+                : "Family, work, future and the subjects that keep returning."}
+            </p>
+          </div>
+
+          <span
+            style={{
+              color: colors.gold,
+              fontSize: 11,
+              marginTop: 14,
+            }}
+          >
+            Explore →
+          </span>
+        </motion.button>
+
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.55 }}
+          onClick={() => navigate("/nest")}
+          style={{
+            ...featureCardStyle,
+            cursor: "pointer",
+          }}
+        >
+          <div>
+            <Clock3
+              size={20}
+              strokeWidth={1.45}
+              color={colors.gold}
+            />
+
+            <p
+              style={{
+                color: colors.goldSoft,
+                fontSize: 9,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                margin: "15px 0 7px",
+              }}
+            >
+              Memories Waiting
+            </p>
+
+            <h3
+              style={{
+                ...serif,
+                color: colors.text,
+                fontSize: 19,
+                lineHeight: 1.28,
+                margin: "0 0 8px",
+              }}
+            >
+              Hear an earlier version of you.
+            </h3>
+
+            <p
+              style={{
+                color: colors.textSoft,
+                fontSize: 11,
+                lineHeight: 1.55,
+                margin: 0,
+              }}
+            >
+              Return to a voice capsule that may feel different today.
+            </p>
+          </div>
+
+          <span
+            style={{
+              color: colors.gold,
+              fontSize: 11,
+              marginTop: 14,
+            }}
+          >
+            Open memories →
+          </span>
+        </motion.button>
+      </div>
+
+      <p
+        style={{
+          color: colors.textFaint,
+          fontSize: 11,
+          lineHeight: 1.6,
+          textAlign: "center",
+          margin: "1px 10px 0",
+        }}
+      >
+        The Nest is a calm observer. It only reflects what your own entries support.
+      </p>
     </>
   );
 }

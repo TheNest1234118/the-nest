@@ -33,7 +33,7 @@ function getOrCreateDeviceId() {
   return deviceId;
 }
 
-type Step = "one" | "understand" | "journey" | "safe" | "firstVoice" | "reminders" | "done";
+type Step = "one" | "understand" | "journey" | "safe" | "award" | "firstVoice" | "reminders" | "done";
 
 function Progress({ current, total }: { current: number; total: number }) {
   return (
@@ -197,7 +197,7 @@ export function Onboarding() {
       );
     });
   const steps: Step[] = useMemo(
-    () => ["one", "understand", "journey", "safe", "firstVoice", "reminders", "done"],
+    () => ["one", "understand", "journey", "safe", "award", "firstVoice", "reminders", "done"],
     []
   );
 
@@ -439,6 +439,112 @@ navigate("/home");
                 No filters. No pressure. Just you, being real.
               </p>
             </div>
+            <PrimaryButton onClick={next}>Continue →</PrimaryButton>
+          </ScreenShell>
+        )}
+
+        {current === "award" && (
+          <ScreenShell key="award">
+            <div
+              style={{
+                textAlign: "center",
+                paddingTop: 22,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 34,
+                  lineHeight: 1,
+                  marginBottom: 12,
+                  filter: "drop-shadow(0 0 18px rgba(255,193,69,0.35))",
+                }}
+              >
+                🏆
+              </div>
+
+              <h1
+                style={{
+                  fontFamily: "Georgia, serif",
+                  fontWeight: 400,
+                  fontSize: 38,
+                  lineHeight: 1.04,
+                  margin: 0,
+                  maxWidth: 350,
+                }}
+              >
+                One year.
+                <br />
+                One frame.
+                <br />
+                <span style={{ color: gold }}>A lifetime remembered.</span>
+              </h1>
+
+              <p
+                style={{
+                  color: softText,
+                  fontSize: 14,
+                  lineHeight: 1.55,
+                  maxWidth: 320,
+                  margin: "16px auto 12px",
+                }}
+              >
+                Stay consistent for 365 days and we’ll create your personalized
+                <span style={{ color: "rgba(255,207,116,0.92)", fontWeight: 700 }}>
+                  {" "}365 Days Remembered award
+                </span>
+                .
+              </p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  justifyContent: "center",
+                  position: "relative",
+                  marginTop: 2,
+                }}
+              >
+                <div
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    width: 250,
+                    height: 250,
+                    borderRadius: "50%",
+                    top: "48%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    background:
+                      "radial-gradient(circle, rgba(255,181,48,0.20) 0%, rgba(255,181,48,0.07) 42%, transparent 70%)",
+                    filter: "blur(4px)",
+                    pointerEvents: "none",
+                  }}
+                />
+
+                <img
+                  src="/365-days-remembered-award.jpg"
+                  alt="365 Days Remembered award"
+                  style={{
+                    position: "relative",
+                    zIndex: 1,
+                    width: "min(100%, 330px)",
+                    maxHeight: "38svh",
+                    objectFit: "contain",
+                    borderRadius: 24,
+                    mixBlendMode: "screen",
+                    filter:
+                      "drop-shadow(0 24px 40px rgba(0,0,0,0.50)) drop-shadow(0 0 26px rgba(255,177,47,0.16))",
+                  }}
+                />
+              </motion.div>
+            </div>
+
             <PrimaryButton onClick={next}>Continue →</PrimaryButton>
           </ScreenShell>
         )}
