@@ -198,7 +198,8 @@ export function DaysRemembered() {
             style={{
               position: "relative",
               zIndex: 2,
-              maxWidth: 235,
+              maxWidth: 200,
+paddingRight: 10,
               paddingTop: 36,
             }}
           >
@@ -269,15 +270,15 @@ export function DaysRemembered() {
               },
             }}
             style={{
-              position: "absolute",
-              width: 330,
-              maxWidth: "78vw",
-              right: -82,
-              bottom: -18,
-              objectFit: "contain",
-              filter:
-                "drop-shadow(0 24px 55px rgba(0,0,0,.48)) drop-shadow(0 0 30px rgba(214,153,50,.16))",
-            }}
+                position: "absolute",
+                width: 270,          // kleiner
+                maxWidth: "65vw",
+                right: -35,          // etwas weniger weit rechts
+                bottom: 12,          // etwas höher
+                objectFit: "contain",
+                filter:
+                  "drop-shadow(0 24px 55px rgba(0,0,0,.48)) drop-shadow(0 0 30px rgba(214,153,50,.16))",
+              }}
           />
         </section>
 
