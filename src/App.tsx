@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FeedbackPage } from "@/pages/FeedbackPage";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
+import { DaysRemembered } from "@/pages/DaysRemembered";
 import { AudioProvider } from "@/hooks/use-audio-context";
 import { initClarity } from "@/lib/clarity";
 import { AtmosphereProvider } from "@/hooks/use-atmosphere";
@@ -72,6 +73,9 @@ function AppRouter() {
   <Memos />
 </Route>
       <Route path="/reset" component={Reset} />
+      <Route path="/profile/365-days-remembered">
+  <DaysRemembered />
+</Route>
       <Route path="/anchors" component={Anchors} />
       <Route path="/atmosphere" component={Atmosphere} />
       <Route path="/settings" component={Settings} />

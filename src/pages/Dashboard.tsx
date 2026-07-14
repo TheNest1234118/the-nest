@@ -1339,6 +1339,13 @@ function ProfilePage({
 }) {
   const rows = [
     {
+      label: "365 Days Remembered",
+      subtitle: "Your voice. Your year. Your story.",
+      icon: <Sparkles size={18} />,
+      action: () => navigate("/profile/365-days-remembered"),
+      value: "Coming Soon",
+    },
+    {
       label: "Voice Prompts",
       icon: <Mic size={18} />,
       action: () => navigate("/profile/voice-prompts"),
