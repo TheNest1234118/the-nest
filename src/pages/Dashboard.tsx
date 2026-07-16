@@ -886,19 +886,72 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
     };
   }, []);
 
-  const isPremium = patternData?.isSupporter === true;
-  const latestInsight = patternData?.latestInsight || null;
-  const lifeThemes = (patternData?.lifeThemes || []).slice(0, 5);
+  const isPremium =
+  patternData?.isSupporter === true;
 
-  const digestTitle =
-    latestDigest?.result?.digest_title ||
-    "Your weekly story is waiting.";
+const latestInsight =
+  patternData?.latestInsight &&
+  typeof patternData.latestInsight === "object"
+    ? patternData.latestInsight
+    : null;
 
-  const digestDescription = latestDigest?.result?.story
-    ? latestDigest.result.story.length > 130
-      ? `${latestDigest.result.story.slice(0, 130).trim()}…`
-      : latestDigest.result.story
-    : "A weekly chapter shaped by your own voice, thoughts and moments.";
+/*
+ * Alte AI-Daten können Strings oder Objekte enthalten.
+ * React darf keine Objekte direkt rendern.
+ */
+const lifeThemes = (
+  Array.isArray(patternData?.lifeThemes)
+    ? patternData.lifeThemes
+    : []
+)
+  .map((theme: any) => {
+    if (typeof theme === "string") {
+      return theme.trim();
+    }
+
+    if (theme && typeof theme === "object") {
+      return String(
+        theme.title ||
+          theme.name ||
+          theme.label ||
+          theme.theme ||
+          ""
+      ).trim();
+    }
+
+    return "";
+  })
+  .filter(Boolean)
+  .slice(0, 5);
+
+const rawDigestTitle =
+  latestDigest?.result?.digest_title;
+
+const digestTitle =
+  typeof rawDigestTitle === "string" &&
+  rawDigestTitle.trim()
+    ? rawDigestTitle.trim()
+    : "Your weekly story is waiting.";
+
+const rawDigestStory =
+  latestDigest?.result?.story;
+
+const digestStory =
+  typeof rawDigestStory === "string"
+    ? rawDigestStory.trim()
+    : "";
+
+const digestDescription = digestStory
+  ? digestStory.length > 130
+    ? `${digestStory.slice(0, 130).trim()}…`
+    : digestStory
+  : "A weekly chapter shaped by your own voice, thoughts and moments.";
+
+const latestInsightTitle =
+  latestInsight &&
+  typeof latestInsight.title === "string"
+    ? latestInsight.title.trim()
+    : "";
 
   const premiumCardStyle: React.CSSProperties = {
     borderRadius: 20,
@@ -998,7 +1051,7 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
                   : ["Your themes will appear here"]
                 ).map((theme) => (
                   <span
-                    key={theme}
+                  key={`life-theme-${theme}`}
                     style={{
                       borderRadius: 999,
                       border: "1px solid rgba(205,170,100,.13)",
@@ -1306,9 +1359,9 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
                   margin: "0 0 8px",
                 }}
               >
-                {isPremium && latestInsight?.title
-                  ? latestInsight.title
-                  : "Discover what you don't notice."}
+            {isPremium && latestInsightTitle
+  ? latestInsightTitle
+  : "Discover what you don't notice."}
               </h3>
             </div>
 
