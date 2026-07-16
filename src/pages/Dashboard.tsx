@@ -13,6 +13,10 @@ import {
 } from "@/lib/aiPatterns";
 import { loadReflectionV2History } from "@/lib/reflectionV2";
 import type { ReflectionV2Generation } from "@/lib/reflectionV2Types";
+import {
+  loadDaysRememberedProgress,
+  type DaysRememberedProgress,
+} from "@/lib/daysRemembered";
 
 import type { User } from "@supabase/supabase-js";
 import {
@@ -882,30 +886,21 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
     };
   }, []);
 
+  const isPremium = patternData?.isSupporter === true;
   const latestInsight = patternData?.latestInsight || null;
-  const lifeThemes = patternData?.lifeThemes || [];
+  const lifeThemes = (patternData?.lifeThemes || []).slice(0, 5);
 
   const digestTitle =
     latestDigest?.result?.digest_title ||
     "Your weekly story is waiting.";
 
-    const digestDescription = latestDigest?.result?.story
+  const digestDescription = latestDigest?.result?.story
     ? latestDigest.result.story.length > 130
       ? `${latestDigest.result.story.slice(0, 130).trim()}…`
       : latestDigest.result.story
-    : "";
+    : "A weekly chapter shaped by your own voice, thoughts and moments.";
 
-  const openDigest = () => {
-    trackNestEvent(events.opened_weekly_reflection);
-    navigate("/insights/weekly");
-  };
-
-  const openNoticed = () => {
-    trackNestEvent(events.opened_ai_patterns);
-    navigate("/insights/ai-patterns");
-  };
-
-  const featureCardStyle: React.CSSProperties = {
+  const premiumCardStyle: React.CSSProperties = {
     borderRadius: 20,
     border: `1px solid ${colors.border}`,
     background:
@@ -919,355 +914,503 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
     boxSizing: "border-box",
   };
 
+  function openPremium(path: string, eventName?: string) {
+    if (!isPremium) {
+      navigate("/profile/premium");
+      return;
+    }
+
+    if (eventName) {
+      trackNestEvent(eventName as any);
+    }
+
+    navigate(path);
+  }
+
   return (
     <>
       <PageIntro
         eyebrow="Discover Yourself"
         title="What The Nest found."
-        description="Your thoughts become stories, insights and memories worth returning to."
+        description="Free memories and life themes give you a reason to return. Premium turns your entries into deeper stories and personal change."
       />
 
-      <motion.button
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        onClick={openDigest}
-        style={{
-          position: "relative",
-          overflow: "hidden",
-          width: "100%",
-          borderRadius: 25,
-          border: "1px solid rgba(205,170,100,0.22)",
-          background:
-            "linear-gradient(145deg, rgba(205,170,100,0.13), rgba(255,255,255,0.025))",
-          padding: "22px 20px",
-          minHeight: 218,
-          textAlign: "left",
-          cursor: "pointer",
-          boxShadow: "0 24px 85px rgba(0,0,0,0.25)",
-        }}
-      >
-        <motion.div
-          animate={{
-            opacity: [0.28, 0.62, 0.28],
-            scale: [0.96, 1.06, 0.96],
-          }}
-          transition={{
-            duration: 5.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          style={{
-            position: "absolute",
-            width: 230,
-            height: 230,
-            borderRadius: 999,
-            right: -70,
-            top: -85,
-            background:
-              "radial-gradient(circle, rgba(225,176,86,0.24), transparent 68%)",
-            pointerEvents: "none",
-          }}
+      <section>
+        <SectionHeader
+          label="Free"
+          description="Small discoveries that keep your past close."
         />
 
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              color: colors.gold,
-              marginBottom: 18,
-            }}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 10,
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55 }}
+            style={premiumCardStyle}
           >
-            <BookOpen size={18} strokeWidth={1.45} />
+            <div>
+              <Heart
+                size={20}
+                strokeWidth={1.45}
+                color={colors.gold}
+              />
+
+              <p
+                style={{
+                  color: colors.goldSoft,
+                  fontSize: 9,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  margin: "15px 0 7px",
+                }}
+              >
+                Life Themes
+              </p>
+
+              <h3
+                style={{
+                  ...serif,
+                  color: colors.text,
+                  fontSize: 19,
+                  lineHeight: 1.28,
+                  margin: "0 0 10px",
+                }}
+              >
+                The chapters shaping your life.
+              </h3>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  marginTop: 10,
+                }}
+              >
+                {(lifeThemes.length > 0
+                  ? lifeThemes
+                  : ["Your themes will appear here"]
+                ).map((theme) => (
+                  <span
+                    key={theme}
+                    style={{
+                      borderRadius: 999,
+                      border: "1px solid rgba(205,170,100,.13)",
+                      background: "rgba(205,170,100,.055)",
+                      color: colors.textSoft,
+                      fontSize: 10,
+                      padding: "6px 8px",
+                    }}
+                  >
+                    {theme}
+                  </span>
+                ))}
+              </div>
+            </div>
+
             <span
               style={{
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                fontWeight: 800,
+                color: colors.gold,
+                fontSize: 11,
+                marginTop: 14,
               }}
             >
-              The Nest Digest
+              Included free
             </span>
-          </div>
+          </motion.div>
 
-          <h2
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05, duration: 0.55 }}
+            onClick={() => navigate("/nest")}
             style={{
-              ...serif,
-              color: colors.text,
-              fontSize: 28,
-              lineHeight: 1.18,
-              margin: "0 0 12px",
+              ...premiumCardStyle,
+              cursor: "pointer",
             }}
           >
-            {loadingInsights ? "Reading your week…" : digestTitle}
-          </h2>
+            <div>
+              <Clock3
+                size={20}
+                strokeWidth={1.45}
+                color={colors.gold}
+              />
 
-          <p
-            style={{
-              color: colors.textSoft,
-              fontSize: 13,
-              lineHeight: 1.65,
-              margin: "0 0 21px",
-              maxWidth: 360,
+              <p
+                style={{
+                  color: colors.goldSoft,
+                  fontSize: 9,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  margin: "15px 0 7px",
+                }}
+              >
+                Memories Waiting
+              </p>
+
+              <h3
+                style={{
+                  ...serif,
+                  color: colors.text,
+                  fontSize: 19,
+                  lineHeight: 1.28,
+                  margin: "0 0 8px",
+                }}
+              >
+                Hear an earlier version of you.
+              </h3>
+
+              <p
+                style={{
+                  color: colors.textSoft,
+                  fontSize: 11,
+                  lineHeight: 1.5,
+                  margin: 0,
+                }}
+              >
+                Return to a Voice Capsule from months ago.
+              </p>
+            </div>
+
+            <span
+              style={{
+                color: colors.gold,
+                fontSize: 11,
+                marginTop: 14,
+              }}
+            >
+              Open memories →
+            </span>
+          </motion.button>
+        </div>
+      </section>
+
+      <section>
+        <SectionHeader
+          label="Premium"
+          description="Your weekly story, deeper patterns and personal change."
+        />
+
+        <motion.button
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          onClick={() =>
+            openPremium(
+              "/insights/weekly",
+              events.opened_weekly_reflection
+            )
+          }
+          style={{
+            position: "relative",
+            overflow: "hidden",
+            width: "100%",
+            borderRadius: 25,
+            border: "1px solid rgba(205,170,100,0.22)",
+            background:
+              "linear-gradient(145deg, rgba(205,170,100,0.13), rgba(255,255,255,0.025))",
+            padding: "22px 20px",
+            minHeight: 218,
+            textAlign: "left",
+            cursor: "pointer",
+            boxShadow: "0 24px 85px rgba(0,0,0,0.25)",
+          }}
+        >
+          <motion.div
+            animate={{
+              opacity: [0.28, 0.62, 0.28],
+              scale: [0.96, 1.06, 0.96],
             }}
-          >
-            {digestDescription}
-          </p>
+            transition={{
+              duration: 5.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            style={{
+              position: "absolute",
+              width: 230,
+              height: 230,
+              borderRadius: 999,
+              right: -70,
+              top: -85,
+              background:
+                "radial-gradient(circle, rgba(225,176,86,0.24), transparent 68%)",
+              pointerEvents: "none",
+            }}
+          />
+
+          {!isPremium && (
+            <div
+              style={{
+                position: "absolute",
+                top: 16,
+                right: 16,
+                width: 34,
+                height: 34,
+                borderRadius: 999,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(8,8,11,.72)",
+                border: "1px solid rgba(205,170,100,.18)",
+                color: colors.gold,
+                zIndex: 2,
+              }}
+            >
+              <Lock size={15} />
+            </div>
+          )}
 
           <div
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 7,
-              color: colors.gold,
-              fontSize: 12,
+              position: "relative",
+              zIndex: 1,
+              opacity: isPremium ? 1 : 0.6,
             }}
           >
-            {latestDigest ? "Read your Digest" : "Open The Nest Digest"}
-            <ChevronRight size={15} />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                color: colors.gold,
+                marginBottom: 18,
+              }}
+            >
+              <BookOpen size={18} strokeWidth={1.45} />
+              <span
+                style={{
+                  fontSize: 10,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  fontWeight: 800,
+                }}
+              >
+                The Nest Digest
+              </span>
+            </div>
+
+            <h2
+              style={{
+                ...serif,
+                color: colors.text,
+                fontSize: 28,
+                lineHeight: 1.18,
+                margin: "0 0 12px",
+              }}
+            >
+              {loadingInsights
+                ? "Reading your week…"
+                : isPremium
+                ? digestTitle
+                : "Your week becomes a story."}
+            </h2>
+
+            <p
+              style={{
+                color: colors.textSoft,
+                fontSize: 13,
+                lineHeight: 1.65,
+                margin: "0 0 21px",
+                maxWidth: 360,
+              }}
+            >
+              {isPremium
+                ? digestDescription
+                : "A weekly narrative with meaningful quotes, changes and the moments that shaped your week."}
+            </p>
+
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                color: colors.gold,
+                fontSize: 12,
+              }}
+            >
+              {isPremium ? "Read your Digest" : "Unlock Premium"}
+              <ChevronRight size={15} />
+            </div>
           </div>
+        </motion.button>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 10,
+            marginTop: 10,
+          }}
+        >
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08, duration: 0.55 }}
+            onClick={() =>
+              openPremium(
+                "/insights/ai-patterns",
+                events.opened_ai_patterns
+              )
+            }
+            style={{
+              ...premiumCardStyle,
+              cursor: "pointer",
+              position: "relative",
+              opacity: isPremium ? 1 : 0.62,
+            }}
+          >
+            {!isPremium && (
+              <Lock
+                size={14}
+                color={colors.goldSoft}
+                style={{
+                  position: "absolute",
+                  right: 14,
+                  top: 14,
+                }}
+              />
+            )}
+
+            <div>
+              <Sparkles
+                size={20}
+                strokeWidth={1.45}
+                color={colors.gold}
+              />
+
+              <p
+                style={{
+                  color: colors.goldSoft,
+                  fontSize: 9,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  margin: "15px 0 7px",
+                }}
+              >
+                The Nest Noticed
+              </p>
+
+              <h3
+                style={{
+                  ...serif,
+                  color: colors.text,
+                  fontSize: 19,
+                  lineHeight: 1.28,
+                  margin: "0 0 8px",
+                }}
+              >
+                {isPremium && latestInsight?.title
+                  ? latestInsight.title
+                  : "Discover what you don't notice."}
+              </h3>
+            </div>
+
+            <span
+              style={{
+                color: colors.gold,
+                fontSize: 11,
+                marginTop: 14,
+              }}
+            >
+              {isPremium ? "Open insights →" : "Unlock"}
+            </span>
+          </motion.button>
+
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12, duration: 0.55 }}
+            onClick={() => openPremium("/insights/mirror")}
+            style={{
+              ...premiumCardStyle,
+              cursor: "pointer",
+              position: "relative",
+              opacity: isPremium ? 1 : 0.62,
+            }}
+          >
+            {!isPremium && (
+              <Lock
+                size={14}
+                color={colors.goldSoft}
+                style={{
+                  position: "absolute",
+                  right: 14,
+                  top: 14,
+                }}
+              />
+            )}
+
+            <div>
+              <UserRound
+                size={20}
+                strokeWidth={1.45}
+                color={colors.goldSoft}
+              />
+
+              <p
+                style={{
+                  color: colors.goldSoft,
+                  fontSize: 9,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  margin: "15px 0 7px",
+                }}
+              >
+                Mirror
+              </p>
+
+              <h3
+                style={{
+                  ...serif,
+                  color: colors.text,
+                  fontSize: 19,
+                  lineHeight: 1.28,
+                  margin: "0 0 8px",
+                }}
+              >
+                Meet your past self.
+              </h3>
+            </div>
+
+            <span
+              style={{
+                color: isPremium ? colors.gold : colors.goldSoft,
+                fontSize: 11,
+                marginTop: 14,
+              }}
+            >
+              {isPremium ? "Open Mirror →" : "Unlock"}
+            </span>
+          </motion.button>
         </div>
-      </motion.button>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 10,
-        }}
-      >
-        <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.08, duration: 0.55 }}
-          onClick={openNoticed}
-          style={{
-            ...featureCardStyle,
-            cursor: "pointer",
-          }}
-        >
-          <div>
-            <Sparkles
-              size={20}
-              strokeWidth={1.45}
-              color={colors.gold}
-            />
-
-            <p
-              style={{
-                color: colors.goldSoft,
-                fontSize: 9,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                margin: "15px 0 7px",
-              }}
-            >
-              The Nest Noticed
-            </p>
-
-            <h3
-              style={{
-                ...serif,
-                color: colors.text,
-                fontSize: 19,
-                lineHeight: 1.28,
-                margin: "0 0 8px",
-              }}
-            >
-              {latestInsight?.title || "Discover what you don't notice."}
-            </h3>
-
-           
-          </div>
-
-          <span
+        {!isPremium && (
+          <button
+            onClick={() => navigate("/profile/premium")}
             style={{
+              width: "100%",
+              minHeight: 50,
+              marginTop: 11,
+              borderRadius: 16,
+              border: "1px solid rgba(205,170,100,.20)",
+              background:
+                "linear-gradient(145deg, rgba(205,170,100,.11), rgba(255,255,255,.024))",
               color: colors.gold,
-              fontSize: 11,
-              marginTop: 14,
+              fontSize: 13,
+              cursor: "pointer",
             }}
           >
-            {latestInsight ? "See why →" : "Open →"}
-          </span>
-        </motion.button>
-
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12, duration: 0.55 }}
-          style={{
-            ...featureCardStyle,
-            opacity: 0.62,
-          }}
-        >
-          <div>
-            <UserRound
-              size={20}
-              strokeWidth={1.45}
-              color={colors.goldSoft}
-            />
-
-            <p
-              style={{
-                color: colors.goldSoft,
-                fontSize: 9,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                margin: "15px 0 7px",
-              }}
-            >
-              Mirror
-            </p>
-
-            <h3
-              style={{
-                ...serif,
-                color: colors.text,
-                fontSize: 19,
-                lineHeight: 1.28,
-                margin: "0 0 8px",
-              }}
-            >
-              Meet your past self.
-            </h3>
-
-        
-          </div>
-
-          <span
-            style={{
-              color: colors.textFaint,
-              fontSize: 9,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              marginTop: 14,
-            }}
-          >
-            Coming next
-          </span>
-        </motion.div>
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 10,
-        }}
-      >
-        <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.16, duration: 0.55 }}
-          onClick={openNoticed}
-          style={{
-            ...featureCardStyle,
-            cursor: "pointer",
-          }}
-        >
-          <div>
-            <Heart
-              size={20}
-              strokeWidth={1.45}
-              color={colors.gold}
-            />
-
-            <p
-              style={{
-                color: colors.goldSoft,
-                fontSize: 9,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                margin: "15px 0 7px",
-              }}
-            >
-              Life Themes
-            </p>
-
-            <h3
-              style={{
-                ...serif,
-                color: colors.text,
-                fontSize: 19,
-                lineHeight: 1.28,
-                margin: "0 0 8px",
-              }}
-            >
-              The chapters shaping your life.
-            </h3>
-
-          
-          </div>
-
-          <span
-            style={{
-              color: colors.gold,
-              fontSize: 11,
-              marginTop: 14,
-            }}
-          >
-            Explore →
-          </span>
-        </motion.button>
-
-        <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.55 }}
-          onClick={() => navigate("/nest")}
-          style={{
-            ...featureCardStyle,
-            cursor: "pointer",
-          }}
-        >
-          <div>
-            <Clock3
-              size={20}
-              strokeWidth={1.45}
-              color={colors.gold}
-            />
-
-            <p
-              style={{
-                color: colors.goldSoft,
-                fontSize: 9,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                margin: "15px 0 7px",
-              }}
-            >
-              Memories Waiting
-            </p>
-
-            <h3
-              style={{
-                ...serif,
-                color: colors.text,
-                fontSize: 19,
-                lineHeight: 1.28,
-                margin: "0 0 8px",
-              }}
-            >
-              Hear an earlier version of you.
-            </h3>
-
-         
-          </div>
-
-          <span
-            style={{
-              color: colors.gold,
-              fontSize: 11,
-              marginTop: 14,
-            }}
-          >
-            Open memories →
-          </span>
-        </motion.button>
-      </div>
+            Unlock Premium insights
+          </button>
+        )}
+      </section>
 
       <p
         style={{
@@ -1283,6 +1426,7 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
     </>
   );
 }
+
 function ProfilePage({
   user,
   onLogin,
@@ -1294,13 +1438,46 @@ function ProfilePage({
   onLogout: () => void;
   navigate: (path: string) => void;
 }) {
+  const [awardProgress, setAwardProgress] =
+    useState<DaysRememberedProgress | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAward() {
+      try {
+        const result = await loadDaysRememberedProgress();
+
+        if (!cancelled) {
+          setAwardProgress(result);
+        }
+      } catch (error) {
+        console.error("Could not load Award progress for profile", error);
+      }
+    }
+
+    loadAward();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  const awardValue = !user
+    ? "Login"
+    : awardProgress?.isPremium
+    ? `${awardProgress.currentStreak}/365`
+    : "Locked";
+
   const rows = [
     {
       label: "365 Days Remembered",
-      subtitle: "Your voice. Your year. Your story.",
+      subtitle: awardProgress?.qualifiedToday
+        ? "Today is remembered."
+        : "Your voice. Your year. Your story.",
       icon: <Sparkles size={18} />,
       action: () => navigate("/profile/365-days-remembered"),
-      value: "Coming Soon",
+      value: awardValue,
     },
     {
       label: "Voice Prompts",
@@ -1337,6 +1514,7 @@ function ProfilePage({
       label: "Premium",
       icon: <Crown size={18} />,
       action: () => navigate("/profile/premium"),
+      value: awardProgress?.isPremium ? "Active" : undefined,
     },
     {
       label: "Send feedback",
@@ -1362,52 +1540,68 @@ function ProfilePage({
       <div style={{ display: "grid", gap: 10 }}>
         {rows.map((row) => (
           <SoftCard key={row.label} onClick={row.action}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
             <div
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: 13,
-    color: colors.text,
-    minWidth: 0,
-  }}
->
-  <span
-    style={{
-      color: colors.goldSoft,
-      flex: "0 0 auto",
-    }}
-  >
-    {row.icon}
-  </span>
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 14,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 13,
+                  color: colors.text,
+                  minWidth: 0,
+                }}
+              >
+                <span
+                  style={{
+                    color: colors.goldSoft,
+                    flex: "0 0 auto",
+                  }}
+                >
+                  {row.icon}
+                </span>
 
-  <div style={{ minWidth: 0 }}>
-    <div
-      style={{
-        color: colors.text,
-        fontSize: 15,
-        lineHeight: 1.35,
-      }}
-    >
-      {row.label}
-    </div>
+                <div style={{ minWidth: 0 }}>
+                  <div
+                    style={{
+                      color: colors.text,
+                      fontSize: 15,
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    {row.label}
+                  </div>
 
-    {"subtitle" in row && row.subtitle && (
-      <div
-        style={{
-          marginTop: 4,
-          color: colors.textSoft,
-          fontSize: 12,
-          lineHeight: 1.45,
-        }}
-      >
-        {row.subtitle}
-      </div>
-    )}
-  </div>
-</div>
+                  {"subtitle" in row && row.subtitle && (
+                    <div
+                      style={{
+                        marginTop: 4,
+                        color: colors.textSoft,
+                        fontSize: 12,
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      {row.subtitle}
+                    </div>
+                  )}
+                </div>
+              </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 9, color: colors.textSoft, fontSize: 12 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 9,
+                  color: colors.textSoft,
+                  fontSize: 12,
+                  flexShrink: 0,
+                }}
+              >
                 {row.value && <span>{row.value}</span>}
                 <ChevronRight size={17} color={colors.goldSoft} />
               </div>
@@ -1416,12 +1610,22 @@ function ProfilePage({
         ))}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8, color: colors.textFaint, fontSize: 12, lineHeight: 1.5 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          color: colors.textFaint,
+          fontSize: 12,
+          lineHeight: 1.5,
+        }}
+      >
         <Lock size={14} /> No journaling content is shown on this page.
       </div>
     </>
   );
 }
+
 const TOUR_STEPS = [
   {
     selector: '[data-tour="mic"]',
