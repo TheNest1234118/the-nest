@@ -889,11 +889,11 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
     latestDigest?.result?.digest_title ||
     "Your weekly story is waiting.";
 
-  const digestDescription = latestDigest?.result?.story
+    const digestDescription = latestDigest?.result?.story
     ? latestDigest.result.story.length > 130
       ? `${latestDigest.result.story.slice(0, 130).trim()}…`
       : latestDigest.result.story
-    : "Every Sunday, The Nest turns your voice capsules, thoughts and mood check-ins into one calm chapter.";
+    : "";
 
   const openDigest = () => {
     trackNestEvent(events.opened_weekly_reflection);
@@ -1080,18 +1080,7 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
               {latestInsight?.title || "Discover what you don't notice."}
             </h3>
 
-            <p
-              style={{
-                color: colors.textSoft,
-                fontSize: 11,
-                lineHeight: 1.55,
-                margin: 0,
-              }}
-            >
-              {latestInsight
-                ? latestInsight.description
-                : "The Nest stays quiet until several entries reveal something meaningful."}
-            </p>
+           
           </div>
 
           <span
@@ -1145,16 +1134,7 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
               Meet your past self.
             </h3>
 
-            <p
-              style={{
-                color: colors.textSoft,
-                fontSize: 11,
-                lineHeight: 1.55,
-                margin: 0,
-              }}
-            >
-              Compare what you say today with what mattered months ago.
-            </p>
+        
           </div>
 
           <span
@@ -1219,21 +1199,7 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
               The chapters shaping your life.
             </h3>
 
-            <p
-              style={{
-                color: colors.textSoft,
-                fontSize: 11,
-                lineHeight: 1.55,
-                margin: 0,
-              }}
-            >
-              {lifeThemes.length > 0
-                ? lifeThemes
-                    .slice(0, 3)
-                    .map((theme) => theme.name)
-                    .join(" · ")
-                : "Family, work, future and the subjects that keep returning."}
-            </p>
+          
           </div>
 
           <span
@@ -1288,16 +1254,7 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
               Hear an earlier version of you.
             </h3>
 
-            <p
-              style={{
-                color: colors.textSoft,
-                fontSize: 11,
-                lineHeight: 1.55,
-                margin: 0,
-              }}
-            >
-              Return to a voice capsule that may feel different today.
-            </p>
+         
           </div>
 
           <span
