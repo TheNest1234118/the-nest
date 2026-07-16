@@ -265,14 +265,16 @@ export async function loadDaysRememberedProgress(): Promise<DaysRememberedProgre
       profile?.subscription_status || ""
     );
 
-  const isPremium =
-    profile?.plan === "supporter" &&
-    (
-      !subscriptionStatus ||
-      subscriptionStatus === "active" ||
-      subscriptionStatus === "trialing"
-    );
-
+    const premiumStatuses = [
+        "",
+        "active",
+        "trialing",
+        "manual_supporter",
+      ];
+      
+      const isPremium =
+        profile?.plan === "supporter" &&
+        premiumStatuses.includes(subscriptionStatus);
   const row =
     progressResult.data;
 
