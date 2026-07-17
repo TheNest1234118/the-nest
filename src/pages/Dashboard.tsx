@@ -2575,45 +2575,82 @@ export function Dashboard() {
         navigate={navigate}
       />
 
-      {welcomeOpen && (
-        <CalmModal>
-          <p style={modalEyebrow}>Welcome</p>
-          <h2 style={modalTitle}>This is your place to slow down.</h2>
-          <p style={modalText}>
-            You can use The Nest without an account.
-            <br />
-            <br />
-            Creating a free account lets your Nest remember your thoughts,
-            voice capsules, anchors and reflections across devices.
-          </p>
-          <button
-         onClick={() => {
-          localStorage.setItem("nest_welcome_seen", "true");
-          localStorage.setItem("nest_continue_without_account", "true");
-        
-          setWelcomeOpen(false);
-          setAuthOpen(false);
-        
-          setTimeout(() => startDashboardTour(), 300);
-        }}
-            style={modalButton}
-          >
-            Continue without account
-          </button>
-          <button
-            onClick={() => {
-              localStorage.setItem("nest_welcome_seen", "true");
-              setWelcomeOpen(false);
-              trackNestEvent(events.opened_signup);
+{welcomeOpen && (
+<CalmModal>
+<p style={modalEyebrow}>YOUR NEST</p>
+<h2 style={modalTitle}>
 
-              setAuthOpen(true);
-            }}
-            style={{ ...modalButton, color: "rgba(205,170,100,0.76)" }}
-          >
-            Create free account
-          </button>
-        </CalmModal>
-      )}
+      Keep your moments
+<br />
+
+      with you.
+</h2>
+<p style={modalText}>
+
+      You can explore The Nest without an account.
+<br />
+<br />
+
+      Create a free account to save your voice notes, thoughts, and memories
+
+      across devices.
+</p>
+<button
+
+      onClick={() => {
+
+        localStorage.setItem("nest_welcome_seen", "true");
+
+        localStorage.setItem(
+
+          "nest_continue_without_account",
+
+          "true"
+
+        );
+
+        setWelcomeOpen(false);
+
+        setAuthOpen(false);
+
+        setTimeout(() => startDashboardTour(), 300);
+
+      }}
+
+      style={modalButton}
+>
+
+      Continue as guest
+</button>
+<button
+
+      onClick={() => {
+
+        localStorage.setItem("nest_welcome_seen", "true");
+
+        setWelcomeOpen(false);
+
+        trackNestEvent("events:opened_signup");
+
+        setAuthOpen(true);
+
+      }}
+
+      style={{
+
+        ...modalButton,
+
+        color: "rgba(205,170,100,0.76)",
+
+      }}
+>
+
+      Create free account
+</button>
+</CalmModal>
+
+)}
+ 
 
 {dailyOpen && (
   <motion.div

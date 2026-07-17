@@ -899,33 +899,50 @@ navigate("/home");
       >
         💛
       </div>
-
       <h1
-        style={{
-          fontFamily: "Georgia, serif",
-          fontWeight: 400,
-          fontSize: 42,
-          lineHeight: 1.06,
-          margin: 0,
-        }}
-      >
-        Welcome to{" "}
-        <span style={{ color: gold }}>
-          The Nest.
-        </span>
-      </h1>
 
-      <p
-        style={{
-          color: softText,
-          fontSize: 15,
-          lineHeight: 1.65,
-          maxWidth: 300,
-          margin: "18px auto 26px",
-        }}
-      >
-        Your journey starts now. Start with one honest voice note.
-      </p>
+style={{
+
+  fontFamily: "Georgia, serif",
+
+  fontWeight: 400,
+
+  fontSize: 42,
+
+  lineHeight: 1.06,
+
+  margin: 0,
+
+}}
+>
+
+Your life has
+<br />
+<span style={{ color: gold }}>a place here.</span>
+</h1>
+<p
+
+style={{
+
+  color: softText,
+
+  fontSize: 15,
+
+  lineHeight: 1.65,
+
+  maxWidth: 310,
+
+  margin: "18px auto 26px",
+
+}}
+>
+
+Start with a moment, a thought, or a story.
+<br />
+
+Say it now. Remember it later.
+</p>
+
 
       {showFounderBeforeRecording && (
         <motion.div
