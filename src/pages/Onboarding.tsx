@@ -360,88 +360,337 @@ navigate("/home");
       )}
 
       <AnimatePresence mode="wait">
-        {current === "one" && (
-          <ScreenShell key="one">
-            <div style={{ textAlign: "center", paddingTop: 42 }}>
-              <Orb size={118} />
-              <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 42, lineHeight: 1.06 }}>
-                One voice note <span style={{ color: gold }}>a day.</span>
-                <br />That’s all.
-              </h1>
-              <p style={{ color: softText, fontSize: 15, lineHeight: 1.65, maxWidth: 280, margin: "0 auto" }}>
-                Just you, your thoughts, and a few minutes to clear your head.
-              </p>
-            </div>
-            <PrimaryButton onClick={next}>Continue →</PrimaryButton>
-          </ScreenShell>
-        )}
+   {/* PAGE 1 — CAPTURE */}
 
-        {current === "understand" && (
-          <ScreenShell key="understand">
-            <div style={{ textAlign: "center", paddingTop: 32 }}>
-              <div style={{ fontSize: 82, marginBottom: 18 }}>🧠</div>
-              <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 38, lineHeight: 1.08 }}>
-                AI that truly <span style={{ color: gold }}>understands you.</span>
-              </h1>
-              <p style={{ color: softText, fontSize: 15, lineHeight: 1.65, maxWidth: 300, margin: "0 auto" }}>
-                The more you share, the more The Nest can connect dots you would usually miss.
-              </p>
-            </div>
-            <PrimaryButton onClick={next}>Continue →</PrimaryButton>
-          </ScreenShell>
-        )}
+{current === "one" && (
+<ScreenShell key="one">
+<div style={{ textAlign: "center", paddingTop: 42 }}>
+<Orb size={118} />
+<h1
 
-        {current === "journey" && (
-          <ScreenShell key="journey">
-            <div style={{ textAlign: "center", paddingTop: 24 }}>
-              <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 37, lineHeight: 1.08 }}>
-                From small talks to <span style={{ color: gold }}>big breakthroughs.</span>
-              </h1>
+        style={{
 
-              <div style={{ marginTop: 34, display: "grid", gap: 14 }}>
-                {[
-                  ["Mon", "😔", "I felt so stressed"],
-                  ["Wed", "🙂", "But today was amazing"],
-                  ["Sun", "🌟", "I’m finally proud"],
-                ].map(([day, emoji, text]) => (
-                  <div key={day} style={{ display: "grid", gridTemplateColumns: "42px 1fr", alignItems: "center", gap: 10 }}>
-                    <div style={{ color: "rgba(238,220,190,0.38)", fontSize: 12 }}>{day}</div>
-                    <div style={{ background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "13px 14px", textAlign: "left", color: "rgba(248,230,202,0.78)", fontSize: 14 }}>
-                      {emoji} {text}
-                    </div>
-                  </div>
-                ))}
-              </div>
+          fontFamily: "Georgia, serif",
 
-              <p style={{ color: softText, fontSize: 15, lineHeight: 1.65, maxWidth: 290, margin: "32px auto 0" }}>
-                Look back. Reflect. Understand yourself like never before.
-              </p>
-            </div>
-            <PrimaryButton onClick={next}>Continue →</PrimaryButton>
-          </ScreenShell>
-        )}
+          fontWeight: 400,
 
-        {current === "safe" && (
-          <ScreenShell key="safe">
-            <div style={{ textAlign: "center", paddingTop: 52 }}>
-              <div style={{ fontSize: 70, marginBottom: 18 }}>🛡️</div>
-              <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 42, lineHeight: 1.06 }}>
-                This is your <span style={{ color: gold }}>safe space.</span>
-              </h1>
-              <div style={{ display: "flex", justifyContent: "center", gap: 8, margin: "26px 0" }}>
-                {["🔒 Private", "🛡️ Encrypted", "💛 Yours"].map((item) => (
-                  <div key={item} style={{ padding: "9px 11px", borderRadius: 999, background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.08)", fontSize: 12, color: "rgba(248,230,202,0.76)" }}>
-                    {item}
-                  </div>
-                ))}
-              </div>
-              <p style={{ color: softText, fontSize: 15, lineHeight: 1.65, maxWidth: 280, margin: "0 auto" }}>
-                No filters. No pressure. Just you, being real.
-              </p>
-            </div>
-            <PrimaryButton onClick={next}>Continue →</PrimaryButton>
-          </ScreenShell>
-        )}
+          fontSize: 42,
+
+          lineHeight: 1.06,
+
+          margin: "20px auto 18px",
+
+        }}
+>
+
+        A moment.
+<br />
+
+        A thought.
+<br />
+
+        A story.
+<br />
+<span style={{ color: gold }}>Just say it.</span>
+</h1>
+<p
+
+        style={{
+
+          color: softText,
+
+          fontSize: 15,
+
+          lineHeight: 1.65,
+
+          maxWidth: 300,
+
+          margin: "0 auto",
+
+        }}
+>
+
+        Talk about what happened, how you feel, or the journey you&apos;re on.
+</p>
+</div>
+<PrimaryButton onClick={next}>
+
+      Continue →
+</PrimaryButton>
+</ScreenShell>
+
+)}
+ 
+
+   {/* PAGE 2 — YOUR PAST BECOMES VALUABLE */}
+
+{current === "understand" && (
+<ScreenShell key="understand">
+<div style={{ textAlign: "center", paddingTop: 32 }}>
+<div
+
+        style={{
+
+          fontSize: 78,
+
+          marginBottom: 18,
+
+        }}
+>
+
+        🪺
+</div>
+<h1
+
+        style={{
+
+          fontFamily: "Georgia, serif",
+
+          fontWeight: 400,
+
+          fontSize: 38,
+
+          lineHeight: 1.08,
+
+          margin: "0 auto 18px",
+
+        }}
+>
+
+        The more you share,
+<br />
+
+        the more your past
+<br />
+<span style={{ color: gold }}>comes alive.</span>
+</h1>
+<p
+
+        style={{
+
+          color: softText,
+
+          fontSize: 15,
+
+          lineHeight: 1.65,
+
+          maxWidth: 310,
+
+          margin: "0 auto",
+
+        }}
+>
+
+        The Nest turns what you share into memories, stories, and discoveries
+
+        you can return to.
+</p>
+</div>
+<PrimaryButton onClick={next}>
+
+      Continue →
+</PrimaryButton>
+</ScreenShell>
+
+)}
+ 
+
+       {/* PAGE 3 — YOUR STORY */}
+{current === "journey" && (
+<ScreenShell key="journey">
+<div style={{ textAlign: "center", paddingTop: 24 }}>
+<h1
+       style={{
+         fontFamily: "Georgia, serif",
+         fontWeight: 400,
+         fontSize: 37,
+         lineHeight: 1.08,
+         margin: "0 auto",
+       }}
+>
+       Small moments become
+<br />
+<span style={{ color: gold }}>your story.</span>
+</h1>
+<div
+       style={{
+         marginTop: 34,
+         display: "grid",
+         gap: 14,
+       }}
+>
+       {[
+         ["Mon", "😔", "Today was exhausting"],
+         ["Wed", "🚆", "I met someone on the train"],
+         ["Sun", "🌱", "Day 18. I’m still going"],
+       ].map(([day, emoji, text]) => (
+<div
+           key={day}
+           style={{
+             display: "grid",
+             gridTemplateColumns: "42px 1fr",
+             alignItems: "center",
+             gap: 10,
+           }}
+>
+<div
+             style={{
+               color: "rgba(238,220,190,0.5)",
+               fontSize: 12,
+               fontWeight: 600,
+             }}
+>
+             {day}
+</div>
+<div
+             style={{
+               display: "flex",
+               alignItems: "center",
+               gap: 10,
+               padding: "14px 16px",
+               borderRadius: 15,
+               background: "rgba(255,255,255,0.055)",
+               border: "1px solid rgba(255,255,255,0.1)",
+               textAlign: "left",
+               fontSize: 14,
+             }}
+>
+<span style={{ fontSize: 18 }}>{emoji}</span>
+<span>{text}</span>
+</div>
+</div>
+       ))}
+</div>
+<p
+       style={{
+         color: softText,
+         fontSize: 14,
+         lineHeight: 1.6,
+         maxWidth: 310,
+         margin: "28px auto 0",
+       }}
+>
+       Look back on what happened, how you felt, and how life changed along
+       the way.
+</p>
+</div>
+<PrimaryButton onClick={next}>
+     Continue →
+</PrimaryButton>
+</ScreenShell>
+)}
+
+    {/* PAGE 4 — PRIVACY */}
+
+{current === "safe" && (
+<ScreenShell key="safe">
+<div style={{ textAlign: "center", paddingTop: 52 }}>
+<div
+
+        style={{
+
+          fontSize: 70,
+
+          marginBottom: 18,
+
+        }}
+>
+
+        🛡️
+</div>
+<h1
+
+        style={{
+
+          fontFamily: "Georgia, serif",
+
+          fontWeight: 400,
+
+          fontSize: 42,
+
+          lineHeight: 1.06,
+
+          margin: "0 auto",
+
+        }}
+>
+
+        This is your
+<br />
+<span style={{ color: gold }}>private space.</span>
+</h1>
+<div
+
+        style={{
+
+          display: "flex",
+
+          justifyContent: "center",
+
+          flexWrap: "wrap",
+
+          gap: 8,
+
+          margin: "26px 0",
+
+        }}
+>
+
+        {["🔒 Private", "🛡️ Protected", "💛 Yours"].map((item) => (
+<div
+
+            key={item}
+
+            style={{
+
+              padding: "9px 11px",
+
+              borderRadius: 999,
+
+              background: "rgba(255,255,255,0.065)",
+
+              border: "1px solid rgba(255,255,255,0.1)",
+
+              fontSize: 12,
+
+              fontWeight: 600,
+
+            }}
+>
+
+            {item}
+</div>
+
+        ))}
+</div>
+<p
+
+        style={{
+
+          color: softText,
+
+          fontSize: 15,
+
+          lineHeight: 1.65,
+
+          maxWidth: 280,
+
+          margin: "0 auto",
+
+        }}
+>
+
+        No filters. No pressure. Just you, being real.
+</p>
+</div>
+<PrimaryButton onClick={next}>
+
+      Continue →
+</PrimaryButton>
+</ScreenShell>
+
+)}
+ 
 
         {current === "award" && (
           <ScreenShell key="award">

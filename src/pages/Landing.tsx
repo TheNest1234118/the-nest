@@ -172,24 +172,34 @@ export function Landing() {
         </div>
 
         <h1
-          style={{
-            fontFamily: "Georgia, 'Times New Roman', serif",
-            fontSize: "clamp(38px, 10vw, 56px)",
-            lineHeight: 1.05,
-            fontWeight: 700,
-            margin: "0 auto 24px",
-            letterSpacing: "-0.055em",
-            textShadow: "0 2px 12px rgba(0,0,0,0.45)",
-          }}
-        >
-          Get your
-          <br />
-          thoughts
-          <br />
-          out of
-          <br />
-          <span style={{ color: "#ffc145" }}>your head.</span>
-        </h1>
+
+style={{
+
+  fontFamily: '"Georgia", "Times New Roman", serif',
+
+  fontSize: "clamp(38px, 10vw, 56px)",
+
+  lineHeight: 1.05,
+
+  fontWeight: 700,
+
+  margin: "0 auto 24px",
+
+  letterSpacing: "-0.055em",
+
+  textShadow: "0 2px 12px rgba(0,0,0,0.45)",
+
+}}
+>
+
+Say it now.
+<br />
+<span style={{ color: "#ffc145" }}>
+
+  Remember it later.
+</span>
+</h1>
+
 
         {showFounderVoice && (
           <motion.div
@@ -411,7 +421,7 @@ export function Landing() {
 
 
         <img
-          src="/landing-comparison.png"
+          src="/landing-comparison.jpg"
           alt="Without The Nest and With The Nest comparison"
           style={{
             width: "100%",
