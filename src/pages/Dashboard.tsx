@@ -1683,22 +1683,23 @@ const TOUR_STEPS = [
   {
     selector: '[data-tour="mic"]',
     title: "🎤 Voice",
-    text: "Whenever something is on your mind, start here.",
+    text: "Capture a moment, thought, feeling, or story - just say it."
+ 
   },
   {
     selector: '[data-tour="history"]',
     title: "📚 History",
-    text: "Every thought you save will appear here.",
+    text: "Everything you save lives here, ready to revisit.",
   },
   {
     selector: '[data-tour="reflections"]',
     title: "🧠 Reflections",
-    text: "Over time, The Nest finds patterns in your thoughts.",
+    text: "Over time, your memories return as stories, patterns, and discoveries.",
   },
   {
     selector: '[data-tour="home"]',
     title: "🏡 Home",
-    text: 'Return here daily. Tap "View then", then check your Mood Log.',
+    text: 'This is where you capture life now and rediscover it later.',
   },
 ];
 
@@ -1821,7 +1822,7 @@ function DashboardTour({
             cursor: "pointer",
           }}
         >
-          {step === 3 ? "You’re ready →" : "Next →"}
+          {step === 3 ? "Start your first memory →" : "Next →"}
         </button>
       </motion.div>
     </motion.div>
