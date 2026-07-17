@@ -408,27 +408,7 @@ export function Landing() {
           </motion.div>
         )}
 
-        <p
-          style={{
-            fontSize: 16,
-            lineHeight: 1.6,
-            color: "rgba(245,226,196,0.72)",
-            margin: "0 auto 28px",
-            maxWidth: 340,
-          }}
-        >
-          Some thoughts only make sense once you say them out loud.
-          <br />
-          <br />
-          <strong
-            style={{
-              color: "#f5e2c4",
-              fontWeight: 600,
-            }}
-          >
-            Speak. Remember. Understand yourself over time.
-          </strong>
-        </p>
+
 
         <img
           src="/landing-comparison.png"
