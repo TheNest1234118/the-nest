@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FeedbackPage } from "@/pages/FeedbackPage";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
+
+import { Mirror } from "./pages/Mirror";
 import { DaysRemembered } from "@/pages/DaysRemembered";
 import { AudioProvider } from "@/hooks/use-audio-context";
 import { initClarity } from "@/lib/clarity";
@@ -56,7 +58,9 @@ function AppRouter() {
       <Route path="/profile/feedback" component={FeedbackPage} />
       <Route path="/history/voice" component={VoiceHistory} />
       <Route path="/history/thoughts" component={ThoughtHistory} />
-
+      <Route path="/insights/mirror">
+  <Mirror />
+</Route>
       <Route path="/insights/weekly" component={WeeklyReflection} />
       <Route path="/insights/monthly" component={MonthlyReflection} />
       <Route path="/insights/ai-patterns" component={AIPatterns} />
