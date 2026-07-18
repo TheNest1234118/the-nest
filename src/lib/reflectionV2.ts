@@ -460,7 +460,7 @@ export async function generateReflectionV2(
   }
 
   const response = await fetch(
-    "/api/reflection-v2",
+    "/api/daily-reminder",
     {
       method: "POST",
       headers: {
