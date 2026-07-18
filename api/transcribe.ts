@@ -243,14 +243,13 @@ async function processAwardEvaluation({
     | null;
 }): Promise<AwardProcessingResult> {
   const premiumActive =
-    plan === "supporter" &&
-    (
-      !subscriptionStatus ||
-      subscriptionStatus ===
-        "active" ||
-      subscriptionStatus ===
-        "trialing"
-    );
+  plan === "supporter" &&
+  (
+    !subscriptionStatus ||
+    subscriptionStatus === "active" ||
+    subscriptionStatus === "trialing" ||
+    subscriptionStatus === "manual_supporter"
+  );
 
   /*
    * Award qualification is a Premium feature.
