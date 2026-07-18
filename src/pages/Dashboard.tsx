@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { trackNestEvent, events } from "@/lib/analyticsEvents";
 import { loadThoughts, saveThought } from "@/lib/userData";
 import { registerVisitForPwaPrompt } from "@/lib/pwa";
+import digestBooks from "../nest-digest-books.png";
 import { AuthModal } from "@/components/AuthModal";
 import { supabase } from "@/lib/supabase";
 import {
@@ -1154,7 +1155,7 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
           {/* Transparentes Buch-Bild:
               Lege deine PNG unter public/images/nest-digest-books.png ab. */}
           <img
-            src="/images/nest-digest-books.png"
+            src={digestBooks}
             alt=""
             aria-hidden="true"
             style={{
