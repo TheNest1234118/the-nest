@@ -282,12 +282,11 @@ export function OnboardingVoice({
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          sampleRate: 44100,
-        },
+
+        audio: true,
+      
       });
+       
 
       streamRef.current = stream;
 
@@ -369,13 +368,22 @@ export function OnboardingVoice({
       timerRef.current = setInterval(() => {
         setRecordingTime((currentTime) => currentTime + 1);
       }, 1000);
-    } catch (recordingError: any) {
-      setError(
-        recordingError?.name === "NotAllowedError"
-          ? "Microphone access denied."
-          : "Could not start recording."
-      );
+    } catch (recordingError: unknown) {
+
+      console.error("MICROPHONE ERROR:", recordingError);
+    
+      const message =
+    
+        recordingError instanceof Error
+    
+          ? `${recordingError.name}: ${recordingError.message}`
+    
+          : String(recordingError);
+    
+      setError(message);
+    
     }
+     
   };
 
   const stopRecording = useCallback(() => {
