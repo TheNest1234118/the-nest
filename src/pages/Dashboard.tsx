@@ -886,86 +886,118 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
     };
   }, []);
 
-  const isPremium =
-  patternData?.isSupporter === true;
+  const isPremium = patternData?.isSupporter === true;
 
-const latestInsight =
-  patternData?.latestInsight &&
-  typeof patternData.latestInsight === "object"
-    ? patternData.latestInsight
-    : null;
+  const latestInsight =
+    patternData?.latestInsight &&
+    typeof patternData.latestInsight === "object"
+      ? patternData.latestInsight
+      : null;
 
-/*
- * Alte AI-Daten können Strings oder Objekte enthalten.
- * React darf keine Objekte direkt rendern.
- */
-const lifeThemes = (
-  Array.isArray(patternData?.lifeThemes)
-    ? patternData.lifeThemes
-    : []
-)
-  .map((theme: any) => {
-    if (typeof theme === "string") {
-      return theme.trim();
-    }
+  /*
+   * Alte AI-Daten können Strings oder Objekte enthalten.
+   * React darf keine Objekte direkt rendern.
+   */
+  const lifeThemes = (
+    Array.isArray(patternData?.lifeThemes)
+      ? patternData.lifeThemes
+      : []
+  )
+    .map((theme: any) => {
+      if (typeof theme === "string") {
+        return theme.trim();
+      }
 
-    if (theme && typeof theme === "object") {
-      return String(
-        theme.title ||
-          theme.name ||
-          theme.label ||
-          theme.theme ||
-          ""
-      ).trim();
-    }
+      if (theme && typeof theme === "object") {
+        return String(
+          theme.title ||
+            theme.name ||
+            theme.label ||
+            theme.theme ||
+            ""
+        ).trim();
+      }
 
-    return "";
-  })
-  .filter(Boolean)
-  .slice(0, 5);
+      return "";
+    })
+    .filter(Boolean)
+    .slice(0, 5);
 
-const rawDigestTitle =
-  latestDigest?.result?.digest_title;
+  const rawDigestTitle =
+    latestDigest?.result?.digest_title;
 
-const digestTitle =
-  typeof rawDigestTitle === "string" &&
-  rawDigestTitle.trim()
-    ? rawDigestTitle.trim()
-    : "Your weekly story is waiting.";
+  const digestTitle =
+    typeof rawDigestTitle === "string" &&
+    rawDigestTitle.trim()
+      ? rawDigestTitle.trim()
+      : "Your weekly story is waiting.";
 
-const rawDigestStory =
-  latestDigest?.result?.story;
+  const rawDigestStory =
+    latestDigest?.result?.story;
 
-const digestStory =
-  typeof rawDigestStory === "string"
-    ? rawDigestStory.trim()
-    : "";
+  const digestStory =
+    typeof rawDigestStory === "string"
+      ? rawDigestStory.trim()
+      : "";
 
-const digestDescription = digestStory
-  ? digestStory.length > 130
-    ? `${digestStory.slice(0, 130).trim()}…`
-    : digestStory
-  : "A weekly chapter shaped by your own voice, thoughts and moments.";
+  const digestDescription = digestStory
+    ? digestStory.length > 145
+      ? `${digestStory.slice(0, 145).trim()}…`
+      : digestStory
+    : "A weekly narrative with meaningful quotes, changes and the moments that shaped your week.";
 
-const latestInsightTitle =
-  latestInsight &&
-  typeof latestInsight.title === "string"
-    ? latestInsight.title.trim()
-    : "";
+  const latestInsightTitle =
+    latestInsight &&
+    typeof latestInsight.title === "string"
+      ? latestInsight.title.trim()
+      : "";
 
-  const premiumCardStyle: React.CSSProperties = {
-    borderRadius: 20,
-    border: `1px solid ${colors.border}`,
-    background:
-      "linear-gradient(145deg, rgba(255,255,255,0.034), rgba(255,255,255,0.018))",
-    padding: 17,
-    minHeight: 156,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    textAlign: "left",
-    boxSizing: "border-box",
-  };
+  const noticedItems = [
+    {
+      id: "latest-pattern",
+      icon: (
+        <Sparkles
+          size={22}
+          strokeWidth={1.45}
+          color={colors.gold}
+        />
+      ),
+      text:
+        latestInsightTitle ||
+        (loadingInsights
+          ? "The Nest is looking for patterns in your recent moments."
+          : "Keep recording. The Nest will notice meaningful patterns over time."),
+      visual: "line" as const,
+    },
+    {
+      id: "theme-one",
+      icon: (
+        <UserRound
+          size={22}
+          strokeWidth={1.45}
+          color={colors.gold}
+        />
+      ),
+      text: lifeThemes[0]
+        ? `${lifeThemes[0]} has been appearing often in your story.`
+        : "Your recurring life themes will appear here.",
+      visual: "bars" as const,
+    },
+    {
+      id: "theme-two",
+      icon: (
+        <Heart
+          size={22}
+          strokeWidth={1.45}
+          color={colors.gold}
+        />
+      ),
+      text: lifeThemes[1]
+        ? `${lifeThemes[1]} is becoming part of the story you are telling.`
+        : "The Nest is still learning what matters most to you.",
+      visual: "days" as const,
+    },
+  ];
 
   function openPremium(path: string, eventName?: string) {
     if (!isPremium) {
@@ -982,174 +1014,73 @@ const latestInsightTitle =
 
   return (
     <>
-      <PageIntro
-        eyebrow="Discover Yourself"
-        title="What The Nest found."
-        description="Free memories and life themes give you a reason to return. Premium turns your entries into deeper stories and personal change."
-      />
-
-      <section>
-        <SectionHeader
-          label="Free"
-          description="Small discoveries that keep your past close."
-        />
-
+      {/* HEADER */}
+      <section
+        style={{
+          paddingTop: 2,
+          marginBottom: 28,
+        }}
+      >
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 10,
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 18,
           }}
         >
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55 }}
-            style={premiumCardStyle}
-          >
-            <div>
-              <Heart
-                size={20}
-                strokeWidth={1.45}
-                color={colors.gold}
-              />
-
-              <p
-                style={{
-                  color: colors.goldSoft,
-                  fontSize: 9,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  margin: "15px 0 7px",
-                }}
-              >
-                Life Themes
-              </p>
-
-              <h3
-                style={{
-                  ...serif,
-                  color: colors.text,
-                  fontSize: 19,
-                  lineHeight: 1.28,
-                  margin: "0 0 10px",
-                }}
-              >
-                The chapters shaping your life.
-              </h3>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 6,
-                  marginTop: 10,
-                }}
-              >
-                {(lifeThemes.length > 0
-                  ? lifeThemes
-                  : ["Your themes will appear here"]
-                ).map((theme) => (
-                  <span
-                  key={`life-theme-${theme}`}
-                    style={{
-                      borderRadius: 999,
-                      border: "1px solid rgba(205,170,100,.13)",
-                      background: "rgba(205,170,100,.055)",
-                      color: colors.textSoft,
-                      fontSize: 10,
-                      padding: "6px 8px",
-                    }}
-                  >
-                    {theme}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <span
+          <div style={{ minWidth: 0 }}>
+            <h1
               style={{
-                color: colors.gold,
-                fontSize: 11,
-                marginTop: 14,
+                ...serif,
+                color: colors.text,
+                fontSize: 42,
+                lineHeight: 1,
+                letterSpacing: "-0.03em",
+                margin: "0 0 14px",
               }}
             >
-              Included free
-            </span>
-          </motion.div>
+              Insights
+            </h1>
 
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05, duration: 0.55 }}
-            onClick={() => navigate("/nest")}
+            <p
+              style={{
+                color: colors.textSoft,
+                fontSize: 14,
+                lineHeight: 1.55,
+                maxWidth: 310,
+                margin: 0,
+              }}
+            >
+              Understand your patterns, growth and the story behind your moments.
+            </p>
+          </div>
+
+          {/* Dein bestehender Premium-Status bleibt funktionsfähig.
+              Nicht-Premium wird weiterhin automatisch über openPremium geschützt. */}
+          <button
+            onClick={() => navigate("/profile/premium")}
             style={{
-              ...premiumCardStyle,
+              flexShrink: 0,
+              borderRadius: 999,
+              border: "1px solid rgba(205,170,100,.24)",
+              background: "rgba(205,170,100,.035)",
+              color: colors.gold,
+              padding: "11px 18px",
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
               cursor: "pointer",
             }}
           >
-            <div>
-              <Clock3
-                size={20}
-                strokeWidth={1.45}
-                color={colors.gold}
-              />
-
-              <p
-                style={{
-                  color: colors.goldSoft,
-                  fontSize: 9,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  margin: "15px 0 7px",
-                }}
-              >
-                Memories Waiting
-              </p>
-
-              <h3
-                style={{
-                  ...serif,
-                  color: colors.text,
-                  fontSize: 19,
-                  lineHeight: 1.28,
-                  margin: "0 0 8px",
-                }}
-              >
-                Hear an earlier version of you.
-              </h3>
-
-              <p
-                style={{
-                  color: colors.textSoft,
-                  fontSize: 11,
-                  lineHeight: 1.5,
-                  margin: 0,
-                }}
-              >
-                Return to a Voice Capsule from months ago.
-              </p>
-            </div>
-
-            <span
-              style={{
-                color: colors.gold,
-                fontSize: 11,
-                marginTop: 14,
-              }}
-            >
-              Open memories →
-            </span>
-          </motion.button>
+            Premium
+          </button>
         </div>
       </section>
 
-      <section>
-        <SectionHeader
-          label="Premium"
-          description="Your weekly story, deeper patterns and personal change."
-        />
-
+      {/* THE NEST DIGEST */}
+      <section style={{ marginBottom: 28 }}>
         <motion.button
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1164,21 +1095,21 @@ const latestInsightTitle =
             position: "relative",
             overflow: "hidden",
             width: "100%",
+            minHeight: 286,
             borderRadius: 25,
-            border: "1px solid rgba(205,170,100,0.22)",
+            border: "1px solid rgba(205,170,100,.28)",
             background:
-              "linear-gradient(145deg, rgba(205,170,100,0.13), rgba(255,255,255,0.025))",
-            padding: "22px 20px",
-            minHeight: 218,
+              "linear-gradient(145deg, rgba(205,170,100,.085), rgba(255,255,255,.018))",
+            padding: "24px 20px",
             textAlign: "left",
             cursor: "pointer",
-            boxShadow: "0 24px 85px rgba(0,0,0,0.25)",
+            boxShadow: "0 24px 85px rgba(0,0,0,.25)",
           }}
         >
           <motion.div
             animate={{
-              opacity: [0.28, 0.62, 0.28],
-              scale: [0.96, 1.06, 0.96],
+              opacity: [0.3, 0.58, 0.3],
+              scale: [0.98, 1.05, 0.98],
             }}
             transition={{
               duration: 5.5,
@@ -1187,13 +1118,13 @@ const latestInsightTitle =
             }}
             style={{
               position: "absolute",
-              width: 230,
-              height: 230,
+              width: 260,
+              height: 260,
               borderRadius: 999,
-              right: -70,
-              top: -85,
+              right: -78,
+              top: -92,
               background:
-                "radial-gradient(circle, rgba(225,176,86,0.24), transparent 68%)",
+                "radial-gradient(circle, rgba(225,176,86,.18), transparent 68%)",
               pointerEvents: "none",
             }}
           />
@@ -1202,41 +1133,69 @@ const latestInsightTitle =
             <div
               style={{
                 position: "absolute",
-                top: 16,
-                right: 16,
-                width: 34,
-                height: 34,
+                top: 18,
+                right: 18,
+                width: 36,
+                height: 36,
                 borderRadius: 999,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "rgba(8,8,11,.72)",
+                background: "rgba(8,8,11,.76)",
                 border: "1px solid rgba(205,170,100,.18)",
                 color: colors.gold,
-                zIndex: 2,
+                zIndex: 4,
               }}
             >
-              <Lock size={15} />
+              <Lock size={16} />
             </div>
           )}
+
+          {/* Transparentes Buch-Bild:
+              Lege deine PNG unter public/images/nest-digest-books.png ab. */}
+          <img
+            src="/images/nest-digest-books.png"
+            alt=""
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              right: -10,
+              bottom: 12,
+              width: "46%",
+              maxWidth: 210,
+              objectFit: "contain",
+              pointerEvents: "none",
+              userSelect: "none",
+              opacity: isPremium ? 0.96 : 0.58,
+              filter:
+                "drop-shadow(0 18px 25px rgba(0,0,0,.38))",
+              zIndex: 1,
+            }}
+          />
 
           <div
             style={{
               position: "relative",
-              zIndex: 1,
-              opacity: isPremium ? 1 : 0.6,
+              zIndex: 2,
+              width: "62%",
+              minWidth: 0,
+              opacity: isPremium ? 1 : 0.72,
             }}
           >
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 8,
+                gap: 9,
                 color: colors.gold,
-                marginBottom: 18,
+                marginBottom: 26,
               }}
             >
-              <BookOpen size={18} strokeWidth={1.45} />
+              <BookOpen
+                size={19}
+                strokeWidth={1.45}
+              />
+
               <span
                 style={{
                   fontSize: 10,
@@ -1253,9 +1212,9 @@ const latestInsightTitle =
               style={{
                 ...serif,
                 color: colors.text,
-                fontSize: 28,
-                lineHeight: 1.18,
-                margin: "0 0 12px",
+                fontSize: 31,
+                lineHeight: 1.14,
+                margin: "0 0 14px",
               }}
             >
               {loadingInsights
@@ -1269,9 +1228,9 @@ const latestInsightTitle =
               style={{
                 color: colors.textSoft,
                 fontSize: 13,
-                lineHeight: 1.65,
-                margin: "0 0 21px",
-                maxWidth: 360,
+                lineHeight: 1.6,
+                margin: "0 0 22px",
+                maxWidth: 280,
               }}
             >
               {isPremium
@@ -1279,190 +1238,500 @@ const latestInsightTitle =
                 : "A weekly narrative with meaningful quotes, changes and the moments that shaped your week."}
             </p>
 
-            <div
+            <span
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 7,
                 color: colors.gold,
-                fontSize: 12,
+                fontSize: 13,
               }}
             >
-              {isPremium ? "Read your Digest" : "Unlock Premium"}
-              <ChevronRight size={15} />
-            </div>
+              {isPremium
+                ? "Read your Digest"
+                : "Unlock Premium"}
+              <ChevronRight size={16} />
+            </span>
           </div>
         </motion.button>
+      </section>
+
+      {/* THE NEST NOTICED */}
+      <section style={{ marginBottom: 29 }}>
+        <p
+          style={{
+            color: colors.goldSoft,
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            margin: "0 0 12px",
+          }}
+        >
+          The Nest Noticed
+        </p>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 10,
-            marginTop: 10,
+            gap: 8,
           }}
         >
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08, duration: 0.55 }}
-            onClick={() =>
-              openPremium(
-                "/insights/ai-patterns",
-                events.opened_ai_patterns
-              )
-            }
-            style={{
-              ...premiumCardStyle,
-              cursor: "pointer",
-              position: "relative",
-              opacity: isPremium ? 1 : 0.62,
-            }}
-          >
-            {!isPremium && (
-              <Lock
-                size={14}
-                color={colors.goldSoft}
-                style={{
-                  position: "absolute",
-                  right: 14,
-                  top: 14,
-                }}
-              />
-            )}
+          {noticedItems.map((item, index) => (
+            <motion.button
+              key={item.id}
+              initial={{ opacity: 0, y: 9 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                delay: 0.05 + index * 0.05,
+                duration: 0.5,
+              }}
+              whileTap={{ scale: 0.99 }}
+              onClick={() =>
+                openPremium(
+                  "/insights/ai-patterns",
+                  events.opened_ai_patterns
+                )
+              }
+              style={{
+                width: "100%",
+                minHeight: 92,
+                display: "grid",
+                gridTemplateColumns:
+                  "58px minmax(0, 1fr) 112px",
+                alignItems: "center",
+                gap: 12,
+                borderRadius: 18,
+                border: `1px solid ${colors.border}`,
+                background:
+                  "linear-gradient(145deg, rgba(255,255,255,.033), rgba(255,255,255,.018))",
+                padding: "13px 15px",
+                textAlign: "left",
+                cursor: "pointer",
+                opacity: isPremium ? 1 : 0.65,
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {!isPremium && (
+                <Lock
+                  size={13}
+                  color={colors.goldSoft}
+                  style={{
+                    position: "absolute",
+                    right: 10,
+                    top: 9,
+                  }}
+                />
+              )}
 
-            <div>
-              <Sparkles
-                size={20}
-                strokeWidth={1.45}
-                color={colors.gold}
-              />
+              <div
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 999,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: colors.gold,
+                  background:
+                    "radial-gradient(circle, rgba(205,170,100,.12), rgba(205,170,100,.035))",
+                  border:
+                    "1px solid rgba(205,170,100,.09)",
+                }}
+              >
+                {item.icon}
+              </div>
 
               <p
                 style={{
-                  color: colors.goldSoft,
-                  fontSize: 9,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  margin: "15px 0 7px",
-                }}
-              >
-                The Nest Noticed
-              </p>
-
-              <h3
-                style={{
                   ...serif,
                   color: colors.text,
-                  fontSize: 19,
-                  lineHeight: 1.28,
-                  margin: "0 0 8px",
+                  fontSize: 16,
+                  lineHeight: 1.35,
+                  margin: 0,
                 }}
               >
-            {isPremium && latestInsightTitle
-  ? latestInsightTitle
-  : "Discover what you don't notice."}
-              </h3>
-            </div>
-
-            <span
-              style={{
-                color: colors.gold,
-                fontSize: 11,
-                marginTop: 14,
-              }}
-            >
-              {isPremium ? "Open insights →" : "Unlock"}
-            </span>
-          </motion.button>
-
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.12, duration: 0.55 }}
-            onClick={() => openPremium("/insights/mirror")}
-            style={{
-              ...premiumCardStyle,
-              cursor: "pointer",
-              position: "relative",
-              opacity: isPremium ? 1 : 0.62,
-            }}
-          >
-            {!isPremium && (
-              <Lock
-                size={14}
-                color={colors.goldSoft}
-                style={{
-                  position: "absolute",
-                  right: 14,
-                  top: 14,
-                }}
-              />
-            )}
-
-            <div>
-              <UserRound
-                size={20}
-                strokeWidth={1.45}
-                color={colors.goldSoft}
-              />
-
-              <p
-                style={{
-                  color: colors.goldSoft,
-                  fontSize: 9,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  margin: "15px 0 7px",
-                }}
-              >
-                Mirror
+                {item.text}
               </p>
 
-              <h3
+              <div
                 style={{
-                  ...serif,
-                  color: colors.text,
-                  fontSize: 19,
-                  lineHeight: 1.28,
-                  margin: "0 0 8px",
+                  width: "100%",
+                  minWidth: 0,
+                  height: 52,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                  overflow: "hidden",
                 }}
               >
-                Meet your past self.
-              </h3>
-            </div>
+                {item.visual === "line" && (
+                  <svg
+                    viewBox="0 0 112 52"
+                    width="112"
+                    height="52"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M4 43 C20 35, 27 38, 40 31 S61 30, 76 21 S94 25,108 7"
+                      fill="none"
+                      stroke="rgba(205,170,100,.78)"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                    {[4, 27, 48, 70, 90, 108].map(
+                      (x, i) => (
+                        <circle
+                          key={x}
+                          cx={x}
+                          cy={[43, 35, 31, 24, 22, 7][i]}
+                          r="3"
+                          fill="rgba(225,190,116,.92)"
+                        />
+                      )
+                    )}
+                  </svg>
+                )}
 
-            <span
-              style={{
-                color: isPremium ? colors.gold : colors.goldSoft,
-                fontSize: 11,
-                marginTop: 14,
-              }}
-            >
-              {isPremium ? "Open Mirror →" : "Unlock"}
-            </span>
-          </motion.button>
+                {item.visual === "bars" && (
+                  <div
+                    style={{
+                      height: 50,
+                      display: "flex",
+                      alignItems: "flex-end",
+                      gap: 8,
+                    }}
+                  >
+                    {[9, 17, 27, 35, 42, 50].map(
+                      (height, i) => (
+                        <span
+                          key={`${height}-${i}`}
+                          style={{
+                            width: 9,
+                            height,
+                            borderRadius: "3px 3px 1px 1px",
+                            background:
+                              i === 5
+                                ? "rgba(225,190,116,.9)"
+                                : `rgba(205,170,100,${
+                                    0.2 + i * 0.1
+                                  })`,
+                          }}
+                        />
+                      )
+                    )}
+                  </div>
+                )}
+
+                {item.visual === "days" && (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 5,
+                      alignItems: "center",
+                    }}
+                  >
+                    {["M", "T", "W", "T", "F", "S", "S"].map(
+                      (day, i) => (
+                        <span
+                          key={`${day}-${i}`}
+                          style={{
+                            width: 26,
+                            height: 26,
+                            borderRadius: 999,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 9,
+                            fontWeight: 800,
+                            color:
+                              i < 3
+                                ? "rgba(18,12,5,.92)"
+                                : colors.textFaint,
+                            background:
+                              i < 3
+                                ? "rgba(225,190,116,.9)"
+                                : "rgba(255,255,255,.055)",
+                          }}
+                        >
+                          {day}
+                        </span>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
+            </motion.button>
+          ))}
         </div>
+      </section>
 
-        {!isPremium && (
-          <button
-            onClick={() => navigate("/profile/premium")}
+      {/* MIRROR */}
+      <section style={{ marginBottom: 28 }}>
+        <p
+          style={{
+            color: colors.goldSoft,
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            margin: "0 0 12px",
+          }}
+        >
+          Mirror
+        </p>
+
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12, duration: 0.55 }}
+          onClick={() =>
+            openPremium("/insights/mirror")
+          }
+          style={{
+            position: "relative",
+            width: "100%",
+            minHeight: 164,
+            overflow: "hidden",
+            borderRadius: 20,
+            border: `1px solid ${colors.border}`,
+            background:
+              "linear-gradient(145deg, rgba(255,255,255,.034), rgba(255,255,255,.018))",
+            padding: "18px 18px 16px",
+            textAlign: "left",
+            cursor: "pointer",
+            opacity: isPremium ? 1 : 0.66,
+          }}
+        >
+          {!isPremium && (
+            <Lock
+              size={14}
+              color={colors.goldSoft}
+              style={{
+                position: "absolute",
+                right: 14,
+                top: 14,
+              }}
+            />
+          )}
+
+          <div
             style={{
-              width: "100%",
-              minHeight: 50,
-              marginTop: 11,
-              borderRadius: 16,
-              border: "1px solid rgba(205,170,100,.20)",
-              background:
-                "linear-gradient(145deg, rgba(205,170,100,.11), rgba(255,255,255,.024))",
-              color: colors.gold,
-              fontSize: 13,
-              cursor: "pointer",
+              display: "grid",
+              gridTemplateColumns:
+                "1fr 28px 1fr 56px",
+              alignItems: "center",
+              gap: 10,
+              paddingRight: 4,
             }}
           >
-            Unlock Premium insights
-          </button>
-        )}
+            <div>
+              <p
+                style={{
+                  color: colors.textSoft,
+                  fontSize: 11,
+                  margin: "0 0 10px",
+                }}
+              >
+                8 months ago
+              </p>
+
+              <p
+                style={{
+                  ...serif,
+                  color: colors.text,
+                  fontSize: 18,
+                  lineHeight: 1.35,
+                  margin: 0,
+                }}
+              >
+                “I’m scared I’ll fail.”
+              </p>
+            </div>
+
+            <ChevronRight
+              size={22}
+              color={colors.goldSoft}
+            />
+
+            <div>
+              <p
+                style={{
+                  color: colors.textSoft,
+                  fontSize: 11,
+                  margin: "0 0 10px",
+                }}
+              >
+                Today
+              </p>
+
+              <p
+                style={{
+                  ...serif,
+                  color: colors.text,
+                  fontSize: 18,
+                  lineHeight: 1.35,
+                  margin: 0,
+                }}
+              >
+                “You made it.”
+              </p>
+            </div>
+
+            <div
+              style={{
+                width: 48,
+                height: 56,
+                borderRadius: "52% 48% 54% 46%",
+                background:
+                  "radial-gradient(circle at 38% 30%, rgba(255,226,153,.95), rgba(195,138,47,.88) 42%, rgba(99,64,21,.85) 76%, rgba(42,29,15,.92))",
+                boxShadow:
+                  "0 9px 22px rgba(205,145,45,.22)",
+              }}
+            />
+          </div>
+
+          <div
+            style={{
+              height: 1,
+              background:
+                "rgba(255,255,255,.055)",
+              margin: "17px 0 14px",
+            }}
+          />
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <span
+              style={{
+                color: colors.textSoft,
+                fontSize: 12,
+              }}
+            >
+              See how far you've come.
+            </span>
+
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                color: colors.gold,
+                fontSize: 12,
+              }}
+            >
+              {isPremium
+                ? "Open Mirror"
+                : "Unlock"}
+              <ChevronRight size={15} />
+            </span>
+          </div>
+        </motion.button>
+      </section>
+
+      {/* MEMORIES WAITING */}
+      <section>
+        <p
+          style={{
+            color: colors.goldSoft,
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            margin: "0 0 12px",
+          }}
+        >
+          Memories Waiting
+        </p>
+
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.16, duration: 0.55 }}
+          onClick={() => navigate("/nest")}
+          style={{
+            width: "100%",
+            minHeight: 108,
+            display: "grid",
+            gridTemplateColumns:
+              "62px minmax(0, 1fr) minmax(120px, .8fr)",
+            alignItems: "center",
+            gap: 14,
+            borderRadius: 19,
+            border: `1px solid ${colors.border}`,
+            background:
+              "linear-gradient(145deg, rgba(255,255,255,.033), rgba(255,255,255,.018))",
+            padding: "16px",
+            textAlign: "left",
+            cursor: "pointer",
+          }}
+        >
+          <div
+            style={{
+              width: 54,
+              height: 54,
+              borderRadius: 999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background:
+                "rgba(205,170,100,.065)",
+              border:
+                "1px solid rgba(205,170,100,.11)",
+              color: colors.gold,
+            }}
+          >
+            <Clock3
+              size={25}
+              strokeWidth={1.4}
+            />
+          </div>
+
+          <h3
+            style={{
+              ...serif,
+              color: colors.text,
+              fontSize: 20,
+              lineHeight: 1.35,
+              margin: 0,
+            }}
+          >
+            Hear an earlier version of you.
+          </h3>
+
+          <div>
+            <p
+              style={{
+                color: colors.textSoft,
+                fontSize: 11,
+                lineHeight: 1.5,
+                margin: "0 0 10px",
+              }}
+            >
+              Return to a Voice Capsule from months ago.
+            </p>
+
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                color: colors.gold,
+                fontSize: 12,
+              }}
+            >
+              Open memories
+              <ChevronRight size={15} />
+            </span>
+          </div>
+        </motion.button>
       </section>
 
       <p
@@ -1471,7 +1740,7 @@ const latestInsightTitle =
           fontSize: 11,
           lineHeight: 1.6,
           textAlign: "center",
-          margin: "1px 10px 0",
+          margin: "20px 10px 0",
         }}
       >
         The Nest is a calm observer. It only reflects what your own entries support.
