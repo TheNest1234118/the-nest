@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { loadMemos, type SupabaseMemo } from "@/lib/memos";
+import { loadMirrorPageData } from "@/lib/mirror";
 import { motion } from "framer-motion";
 import { trackNestEvent, events } from "@/lib/analyticsEvents";
 import { loadThoughts, saveThought } from "@/lib/userData";
@@ -851,9 +852,15 @@ const filteredItems = items.filter((item) => {
 function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
   const [patternData, setPatternData] =
     useState<AIPatternPageData | null>(null);
+
   const [latestDigest, setLatestDigest] =
     useState<ReflectionV2Generation | null>(null);
-  const [loadingInsights, setLoadingInsights] = useState(true);
+
+  const [mirrorData, setMirrorData] =
+    useState<Awaited<ReturnType<typeof loadMirrorPageData>> | null>(null);
+
+  const [loadingInsights, setLoadingInsights] =
+    useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -862,17 +869,23 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
       setLoadingInsights(true);
 
       try {
-        const [patterns, digests] = await Promise.all([
-          loadAIPatternPageData(),
-          loadReflectionV2History("weekly"),
-        ]);
+        const [patterns, digests, mirror] =
+          await Promise.all([
+            loadAIPatternPageData(),
+            loadReflectionV2History("weekly"),
+            loadMirrorPageData(),
+          ]);
 
         if (cancelled) return;
 
         setPatternData(patterns);
         setLatestDigest(digests[0] || null);
+        setMirrorData(mirror);
       } catch (error) {
-        console.error("Could not load dashboard insights", error);
+        console.error(
+          "Could not load dashboard insights",
+          error
+        );
       } finally {
         if (!cancelled) {
           setLoadingInsights(false);
@@ -887,7 +900,8 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
     };
   }, []);
 
-  const isPremium = patternData?.isSupporter === true;
+  const isPremium =
+    patternData?.isSupporter === true;
 
   const latestInsight =
     patternData?.latestInsight &&
@@ -896,8 +910,8 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
       : null;
 
   /*
-   * Alte AI-Daten können Strings oder Objekte enthalten.
-   * React darf keine Objekte direkt rendern.
+   * Keine Fake-Themes:
+   * Es werden nur echte Werte aus patternData.lifeThemes benutzt.
    */
   const lifeThemes = (
     Array.isArray(patternData?.lifeThemes)
@@ -906,22 +920,54 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
   )
     .map((theme: any) => {
       if (typeof theme === "string") {
-        return theme.trim();
+        return {
+          name: theme.trim(),
+          description: "",
+          direction: "",
+          strength: 0,
+        };
       }
 
       if (theme && typeof theme === "object") {
-        return String(
-          theme.title ||
-            theme.name ||
-            theme.label ||
-            theme.theme ||
-            ""
-        ).trim();
+        return {
+          name: String(
+            theme.title ||
+              theme.name ||
+              theme.label ||
+              theme.theme ||
+              ""
+          ).trim(),
+
+          description: String(
+            theme.description ||
+              theme.summary ||
+              theme.insight ||
+              ""
+          ).trim(),
+
+          direction: String(
+            theme.direction ||
+              theme.change_type ||
+              ""
+          ).trim(),
+
+          strength: Number(
+            theme.strength ||
+              theme.score ||
+              theme.confidence_score ||
+              0
+          ),
+        };
       }
 
-      return "";
+      return {
+        name: "",
+        description: "",
+        direction: "",
+        strength: 0,
+      };
     })
-    .filter(Boolean)
+    .filter((theme) => theme.name)
     .slice(0, 5);
 
   const rawDigestTitle =
@@ -953,54 +999,133 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
       ? latestInsight.title.trim()
       : "";
 
-  const noticedItems = [
-    {
-      id: "latest-pattern",
-      icon: (
-        <Sparkles
-          size={22}
-          strokeWidth={1.45}
-          color={colors.gold}
-        />
-      ),
-      text:
-        latestInsightTitle ||
-        (loadingInsights
-          ? "The Nest is looking for patterns in your recent moments."
-          : "Keep recording. The Nest will notice meaningful patterns over time."),
-      visual: "line" as const,
-    },
-    {
-      id: "theme-one",
-      icon: (
-        <UserRound
-          size={22}
-          strokeWidth={1.45}
-          color={colors.gold}
-        />
-      ),
-      text: lifeThemes[0]
-        ? `${lifeThemes[0]} has been appearing often in your story.`
-        : "Your recurring life themes will appear here.",
-      visual: "bars" as const,
-    },
-    {
-      id: "theme-two",
-      icon: (
-        <Heart
-          size={22}
-          strokeWidth={1.45}
-          color={colors.gold}
-        />
-      ),
-      text: lifeThemes[1]
-        ? `${lifeThemes[1]} is becoming part of the story you are telling.`
-        : "The Nest is still learning what matters most to you.",
-      visual: "days" as const,
-    },
-  ];
+  const latestInsightDescription =
+    latestInsight &&
+    typeof latestInsight.description === "string"
+      ? latestInsight.description.trim()
+      : "";
 
-  function openPremium(path: string, eventName?: string) {
+  /*
+   * THE NEST NOTICED
+   * Nur echte Daten.
+   * Kein erfundener Fallback-Insight.
+   */
+  const noticedItems = [
+    latestInsightTitle
+      ? {
+          id: "latest-pattern",
+          icon: (
+            <Sparkles
+              size={22}
+              strokeWidth={1.45}
+              color={colors.gold}
+            />
+          ),
+          title: latestInsightTitle,
+          description:
+            latestInsightDescription,
+          visual: "line" as const,
+        }
+      : null,
+
+    lifeThemes[0]
+      ? {
+          id: `theme-${lifeThemes[0].name}`,
+          icon: (
+            <UserRound
+              size={22}
+              strokeWidth={1.45}
+              color={colors.gold}
+            />
+          ),
+          title: lifeThemes[0].name,
+          description:
+            lifeThemes[0].description,
+          visual: "bars" as const,
+        }
+      : null,
+
+    lifeThemes[1]
+      ? {
+          id: `theme-${lifeThemes[1].name}`,
+          icon: (
+            <Heart
+              size={22}
+              strokeWidth={1.45}
+              color={colors.gold}
+            />
+          ),
+          title: lifeThemes[1].name,
+          description:
+            lifeThemes[1].description,
+          visual: "days" as const,
+        }
+      : null,
+  ].filter(Boolean) as Array<{
+    id: string;
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+    visual: "line" | "bars" | "days";
+  }>;
+
+  const latestMirror =
+    mirrorData?.latest || null;
+
+  const realMirrorResult =
+    isPremium && latestMirror
+      ? latestMirror.result
+      : null;
+
+  const mirrorPastLabel =
+    realMirrorResult
+      ? formatMirrorDate(
+          realMirrorResult.past_date
+        )
+      : "8 months ago";
+
+  const mirrorPresentLabel =
+    realMirrorResult
+      ? formatMirrorDate(
+          realMirrorResult.recent_date
+        )
+      : "Today";
+
+  const mirrorPastText =
+    realMirrorResult
+      ? realMirrorResult.past
+      : "I’m scared I’ll fail.";
+
+  const mirrorPresentText =
+    realMirrorResult
+      ? realMirrorResult.present
+      : "You made it.";
+
+  const mirrorReflection =
+    realMirrorResult
+      ? realMirrorResult.reflection
+      : "See how far you've come.";
+
+  function formatMirrorDate(value?: string | null) {
+    if (!value) return "";
+
+    try {
+      return new Date(
+        value
+      ).toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return value;
+    }
+  }
+
+  function openPremium(
+    path: string,
+    eventName?: string
+  ) {
     if (!isPremium) {
       navigate("/profile/premium");
       return;
@@ -1053,19 +1178,22 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
                 margin: 0,
               }}
             >
-              Understand your patterns, growth and the story behind your moments.
+              Understand your patterns, growth and
+              the story behind your moments.
             </p>
           </div>
 
-          {/* Dein bestehender Premium-Status bleibt funktionsfähig.
-              Nicht-Premium wird weiterhin automatisch über openPremium geschützt. */}
           <button
-            onClick={() => navigate("/profile/premium")}
+            onClick={() =>
+              navigate("/profile/premium")
+            }
             style={{
               flexShrink: 0,
               borderRadius: 999,
-              border: "1px solid rgba(205,170,100,.24)",
-              background: "rgba(205,170,100,.035)",
+              border:
+                "1px solid rgba(205,170,100,.24)",
+              background:
+                "rgba(205,170,100,.035)",
               color: colors.gold,
               padding: "11px 18px",
               fontSize: 10,
@@ -1083,9 +1211,17 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
       {/* THE NEST DIGEST */}
       <section style={{ marginBottom: 28 }}>
         <motion.button
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          initial={{
+            opacity: 0,
+            y: 12,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            duration: 0.6,
+          }}
           onClick={() =>
             openPremium(
               "/insights/weekly",
@@ -1098,13 +1234,15 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
             width: "100%",
             minHeight: 286,
             borderRadius: 25,
-            border: "1px solid rgba(205,170,100,.28)",
+            border:
+              "1px solid rgba(205,170,100,.28)",
             background:
               "linear-gradient(145deg, rgba(205,170,100,.085), rgba(255,255,255,.018))",
             padding: "24px 20px",
             textAlign: "left",
             cursor: "pointer",
-            boxShadow: "0 24px 85px rgba(0,0,0,.25)",
+            boxShadow:
+              "0 24px 85px rgba(0,0,0,.25)",
           }}
         >
           <motion.div
@@ -1142,8 +1280,10 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "rgba(8,8,11,.76)",
-                border: "1px solid rgba(205,170,100,.18)",
+                background:
+                  "rgba(8,8,11,.76)",
+                border:
+                  "1px solid rgba(205,170,100,.18)",
                 color: colors.gold,
                 zIndex: 4,
               }}
@@ -1152,8 +1292,6 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
             </div>
           )}
 
-          {/* Transparentes Buch-Bild:
-              Lege deine PNG unter public/images/nest-digest-books.png ab. */}
           <img
             src={digestBooks}
             alt=""
@@ -1167,7 +1305,9 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
               objectFit: "contain",
               pointerEvents: "none",
               userSelect: "none",
-              opacity: isPremium ? 0.96 : 0.58,
+              opacity: isPremium
+                ? 0.96
+                : 0.58,
               filter:
                 "drop-shadow(0 18px 25px rgba(0,0,0,.38))",
               zIndex: 1,
@@ -1180,7 +1320,9 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
               zIndex: 2,
               width: "62%",
               minWidth: 0,
-              opacity: isPremium ? 1 : 0.72,
+              opacity: isPremium
+                ? 1
+                : 0.72,
             }}
           >
             <div
@@ -1251,43 +1393,45 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
               {isPremium
                 ? "Read your Digest"
                 : "Unlock Premium"}
-              <ChevronRight size={16} />
+
+              <ChevronRight
+                size={16}
+              />
             </span>
           </div>
         </motion.button>
       </section>
 
       {/* THE NEST NOTICED */}
-      <section style={{ marginBottom: 29 }}>
-        <p
-          style={{
-            color: colors.goldSoft,
-            fontSize: 10,
-            fontWeight: 800,
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            margin: "0 0 12px",
-          }}
-        >
-          The Nest Noticed
-        </p>
-
+      <section
+        style={{
+          marginBottom: 29,
+        }}
+      >
         <div
           style={{
-            display: "grid",
-            gap: 8,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            marginBottom: 12,
           }}
         >
-          {noticedItems.map((item, index) => (
-            <motion.button
-              key={item.id}
-              initial={{ opacity: 0, y: 9 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                delay: 0.05 + index * 0.05,
-                duration: 0.5,
-              }}
-              whileTap={{ scale: 0.99 }}
+          <p
+            style={{
+              color: colors.goldSoft,
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              margin: 0,
+            }}
+          >
+            The Nest Noticed
+          </p>
+
+          {noticedItems.length > 0 && (
+            <button
               onClick={() =>
                 openPremium(
                   "/insights/ai-patterns",
@@ -1295,181 +1439,363 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
                 )
               }
               style={{
-                width: "100%",
-                minHeight: 92,
-                display: "grid",
-                gridTemplateColumns:
-                  "58px minmax(0, 1fr) 112px",
-                alignItems: "center",
-                gap: 12,
-                borderRadius: 18,
-                border: `1px solid ${colors.border}`,
-                background:
-                  "linear-gradient(145deg, rgba(255,255,255,.033), rgba(255,255,255,.018))",
-                padding: "13px 15px",
-                textAlign: "left",
+                border: 0,
+                background: "transparent",
+                color: colors.gold,
+                fontSize: 11,
                 cursor: "pointer",
-                opacity: isPremium ? 1 : 0.65,
-                position: "relative",
-                overflow: "hidden",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                padding: 0,
               }}
             >
-              {!isPremium && (
-                <Lock
-                  size={13}
-                  color={colors.goldSoft}
-                  style={{
-                    position: "absolute",
-                    right: 10,
-                    top: 9,
-                  }}
-                />
-              )}
-
-              <div
-                style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 999,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: colors.gold,
-                  background:
-                    "radial-gradient(circle, rgba(205,170,100,.12), rgba(205,170,100,.035))",
-                  border:
-                    "1px solid rgba(205,170,100,.09)",
-                }}
-              >
-                {item.icon}
-              </div>
-
-              <p
-                style={{
-                  ...serif,
-                  color: colors.text,
-                  fontSize: 16,
-                  lineHeight: 1.35,
-                  margin: 0,
-                }}
-              >
-                {item.text}
-              </p>
-
-              <div
-                style={{
-                  width: "100%",
-                  minWidth: 0,
-                  height: 52,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  overflow: "hidden",
-                }}
-              >
-                {item.visual === "line" && (
-                  <svg
-                    viewBox="0 0 112 52"
-                    width="112"
-                    height="52"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M4 43 C20 35, 27 38, 40 31 S61 30, 76 21 S94 25,108 7"
-                      fill="none"
-                      stroke="rgba(205,170,100,.78)"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                    {[4, 27, 48, 70, 90, 108].map(
-                      (x, i) => (
-                        <circle
-                          key={x}
-                          cx={x}
-                          cy={[43, 35, 31, 24, 22, 7][i]}
-                          r="3"
-                          fill="rgba(225,190,116,.92)"
-                        />
-                      )
-                    )}
-                  </svg>
-                )}
-
-                {item.visual === "bars" && (
-                  <div
-                    style={{
-                      height: 50,
-                      display: "flex",
-                      alignItems: "flex-end",
-                      gap: 8,
-                    }}
-                  >
-                    {[9, 17, 27, 35, 42, 50].map(
-                      (height, i) => (
-                        <span
-                          key={`${height}-${i}`}
-                          style={{
-                            width: 9,
-                            height,
-                            borderRadius: "3px 3px 1px 1px",
-                            background:
-                              i === 5
-                                ? "rgba(225,190,116,.9)"
-                                : `rgba(205,170,100,${
-                                    0.2 + i * 0.1
-                                  })`,
-                          }}
-                        />
-                      )
-                    )}
-                  </div>
-                )}
-
-                {item.visual === "days" && (
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 5,
-                      alignItems: "center",
-                    }}
-                  >
-                    {["M", "T", "W", "T", "F", "S", "S"].map(
-                      (day, i) => (
-                        <span
-                          key={`${day}-${i}`}
-                          style={{
-                            width: 26,
-                            height: 26,
-                            borderRadius: 999,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 9,
-                            fontWeight: 800,
-                            color:
-                              i < 3
-                                ? "rgba(18,12,5,.92)"
-                                : colors.textFaint,
-                            background:
-                              i < 3
-                                ? "rgba(225,190,116,.9)"
-                                : "rgba(255,255,255,.055)",
-                          }}
-                        >
-                          {day}
-                        </span>
-                      )
-                    )}
-                  </div>
-                )}
-              </div>
-            </motion.button>
-          ))}
+              View all
+              <ChevronRight size={14} />
+            </button>
+          )}
         </div>
+
+        {noticedItems.length > 0 ? (
+          <div
+            style={{
+              display: "grid",
+              gap: 8,
+            }}
+          >
+            {noticedItems.map(
+              (item, index) => (
+                <motion.button
+                  key={item.id}
+                  initial={{
+                    opacity: 0,
+                    y: 9,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                  }}
+                  transition={{
+                    delay:
+                      0.05 +
+                      index * 0.05,
+                    duration: 0.5,
+                  }}
+                  whileTap={{
+                    scale: 0.99,
+                  }}
+                  onClick={() =>
+                    openPremium(
+                      "/insights/ai-patterns",
+                      events.opened_ai_patterns
+                    )
+                  }
+                  style={{
+                    width: "100%",
+                    minHeight: 100,
+                    display: "grid",
+                    gridTemplateColumns:
+                      "54px minmax(0, 1fr) minmax(92px, 118px)",
+                    alignItems: "center",
+                    gap: 11,
+                    borderRadius: 18,
+                    border:
+                      `1px solid ${colors.border}`,
+                    background:
+                      "linear-gradient(145deg, rgba(255,255,255,.033), rgba(255,255,255,.018))",
+                    padding:
+                      "13px 14px",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    opacity: isPremium
+                      ? 1
+                      : 0.65,
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  {!isPremium && (
+                    <Lock
+                      size={13}
+                      color={
+                        colors.goldSoft
+                      }
+                      style={{
+                        position:
+                          "absolute",
+                        right: 10,
+                        top: 9,
+                      }}
+                    />
+                  )}
+
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 999,
+                      display: "flex",
+                      alignItems:
+                        "center",
+                      justifyContent:
+                        "center",
+                      color: colors.gold,
+                      background:
+                        "radial-gradient(circle, rgba(205,170,100,.12), rgba(205,170,100,.035))",
+                      border:
+                        "1px solid rgba(205,170,100,.09)",
+                    }}
+                  >
+                    {item.icon}
+                  </div>
+
+                  <div
+                    style={{
+                      minWidth: 0,
+                    }}
+                  >
+                    <p
+                      style={{
+                        ...serif,
+                        color:
+                          colors.text,
+                        fontSize: 16,
+                        lineHeight: 1.35,
+                        margin:
+                          "0 0 5px",
+                      }}
+                    >
+                      {item.title}
+                    </p>
+
+                    {item.description && (
+                      <p
+                        style={{
+                          color:
+                            colors.textSoft,
+                          fontSize: 11,
+                          lineHeight: 1.45,
+                          margin:
+                            "0 0 7px",
+                        }}
+                      >
+                        {item.description}
+                      </p>
+                    )}
+
+                    <span
+                      style={{
+                        display:
+                          "inline-flex",
+                        alignItems:
+                          "center",
+                        gap: 4,
+                        color:
+                          colors.gold,
+                        fontSize: 10,
+                        fontWeight: 650,
+                      }}
+                    >
+                      View pattern
+                      <ChevronRight
+                        size={13}
+                      />
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      width: "100%",
+                      minWidth: 0,
+                      height: 54,
+                      display: "flex",
+                      alignItems:
+                        "center",
+                      justifyContent:
+                        "flex-end",
+                      overflow: "visible",
+                    }}
+                  >
+                    {item.visual ===
+                      "line" && (
+                      <svg
+                        viewBox="0 0 112 52"
+                        width="112"
+                        height="52"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M4 43 C20 35, 27 38, 40 31 S61 30, 76 21 S94 25,108 7"
+                          fill="none"
+                          stroke="rgba(205,170,100,.78)"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+
+                        {[
+                          4, 27, 48, 70,
+                          90, 108,
+                        ].map(
+                          (x, i) => (
+                            <circle
+                              key={x}
+                              cx={x}
+                              cy={
+                                [
+                                  43, 35,
+                                  31, 24,
+                                  22, 7,
+                                ][i]
+                              }
+                              r="3"
+                              fill="rgba(225,190,116,.92)"
+                            />
+                          )
+                        )}
+                      </svg>
+                    )}
+
+                    {item.visual ===
+                      "bars" && (
+                      <div
+                        style={{
+                          height: 50,
+                          display: "flex",
+                          alignItems:
+                            "flex-end",
+                          gap: 7,
+                        }}
+                      >
+                        {[
+                          9, 17, 27,
+                          35, 42, 50,
+                        ].map(
+                          (
+                            height,
+                            i
+                          ) => (
+                            <span
+                              key={`${height}-${i}`}
+                              style={{
+                                width: 8,
+                                height,
+                                borderRadius:
+                                  "3px 3px 1px 1px",
+                                background:
+                                  i === 5
+                                    ? "rgba(225,190,116,.9)"
+                                    : `rgba(205,170,100,${
+                                        0.2 +
+                                        i *
+                                          0.1
+                                      })`,
+                              }}
+                            />
+                          )
+                        )}
+                      </div>
+                    )}
+
+                    {item.visual ===
+                      "days" && (
+                      <div
+                        style={{
+                          width: "100%",
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(7, minmax(0, 1fr))",
+                          gap: 3,
+                          alignItems:
+                            "center",
+                        }}
+                      >
+                        {[
+                          "M",
+                          "T",
+                          "W",
+                          "T",
+                          "F",
+                          "S",
+                          "S",
+                        ].map(
+                          (
+                            day,
+                            i
+                          ) => (
+                            <span
+                              key={`${day}-${i}`}
+                              style={{
+                                width:
+                                  "100%",
+                                aspectRatio:
+                                  "1 / 1",
+                                minWidth:
+                                  0,
+                                borderRadius:
+                                  999,
+                                display:
+                                  "flex",
+                                alignItems:
+                                  "center",
+                                justifyContent:
+                                  "center",
+                                fontSize:
+                                  8,
+                                fontWeight:
+                                  800,
+                                color:
+                                  colors.goldSoft,
+                                background:
+                                  "rgba(205,170,100,.07)",
+                                border:
+                                  "1px solid rgba(205,170,100,.1)",
+                              }}
+                            >
+                              {day}
+                            </span>
+                          )
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </motion.button>
+              )
+            )}
+          </div>
+        ) : (
+          <div
+            style={{
+              borderRadius: 18,
+              border:
+                `1px solid ${colors.border}`,
+              background:
+                "rgba(255,255,255,.018)",
+              padding: "18px 16px",
+            }}
+          >
+            <p
+              style={{
+                color:
+                  colors.textSoft,
+                fontSize: 12,
+                lineHeight: 1.55,
+                margin: 0,
+              }}
+            >
+              {loadingInsights
+                ? "The Nest is checking your recent entries…"
+                : "No patterns have been found yet. New insights will appear here after The Nest has enough real entries to support them."}
+            </p>
+          </div>
+        )}
       </section>
 
       {/* MIRROR */}
-      <section style={{ marginBottom: 28 }}>
+      <section
+        style={{
+          marginBottom: 28,
+        }}
+      >
         <p
           style={{
             color: colors.goldSoft,
@@ -1483,158 +1809,323 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
           Mirror
         </p>
 
-        <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12, duration: 0.55 }}
-          onClick={() =>
-            openPremium("/insights/mirror")
-          }
-          style={{
-            position: "relative",
-            width: "100%",
-            minHeight: 164,
-            overflow: "hidden",
-            borderRadius: 20,
-            border: `1px solid ${colors.border}`,
-            background:
-              "linear-gradient(145deg, rgba(255,255,255,.034), rgba(255,255,255,.018))",
-            padding: "18px 18px 16px",
-            textAlign: "left",
-            cursor: "pointer",
-            opacity: isPremium ? 1 : 0.66,
-          }}
-        >
-          {!isPremium && (
-            <Lock
-              size={14}
-              color={colors.goldSoft}
-              style={{
-                position: "absolute",
-                right: 14,
-                top: 14,
-              }}
-            />
-          )}
-
-          <div
+        {isPremium &&
+        !loadingInsights &&
+        !latestMirror ? (
+          /*
+           * Premium + noch kein echter Mirror:
+           * KEINE Demo-Daten.
+           */
+          <motion.button
+            initial={{
+              opacity: 0,
+              y: 10,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            transition={{
+              duration: 0.55,
+            }}
+            onClick={() =>
+              navigate(
+                "/insights/mirror"
+              )
+            }
             style={{
-              display: "grid",
-              gridTemplateColumns:
-                "1fr 28px 1fr 56px",
-              alignItems: "center",
-              gap: 10,
-              paddingRight: 4,
+              width: "100%",
+              borderRadius: 20,
+              border:
+                `1px solid ${colors.border}`,
+              background:
+                "linear-gradient(145deg, rgba(255,255,255,.034), rgba(255,255,255,.018))",
+              padding:
+                "20px 18px",
+              textAlign: "left",
+              cursor: "pointer",
             }}
           >
-            <div>
-              <p
-                style={{
-                  color: colors.textSoft,
-                  fontSize: 11,
-                  margin: "0 0 10px",
-                }}
-              >
-                8 months ago
-              </p>
+            <div
+              style={{
+                display: "flex",
+                alignItems:
+                  "flex-start",
+                justifyContent:
+                  "space-between",
+                gap: 14,
+              }}
+            >
+              <div>
+                <h3
+                  style={{
+                    ...serif,
+                    color:
+                      colors.text,
+                    fontSize: 20,
+                    lineHeight: 1.3,
+                    margin:
+                      "0 0 7px",
+                  }}
+                >
+                  Your Mirror is still forming.
+                </h3>
 
-              <p
-                style={{
-                  ...serif,
-                  color: colors.text,
-                  fontSize: 18,
-                  lineHeight: 1.35,
-                  margin: 0,
-                }}
-              >
-                “I’m scared I’ll fail.”
-              </p>
+                <p
+                  style={{
+                    color:
+                      colors.textSoft,
+                    fontSize: 12,
+                    lineHeight: 1.55,
+                    margin: 0,
+                    maxWidth: 300,
+                  }}
+                >
+                  The Nest has not found a strong,
+                  supported change between your past
+                  and recent recordings yet.
+                </p>
+              </div>
+
+              <ChevronRight
+                size={18}
+                color={
+                  colors.goldSoft
+                }
+              />
             </div>
-
-            <ChevronRight
-              size={22}
-              color={colors.goldSoft}
-            />
-
-            <div>
-              <p
+          </motion.button>
+        ) : (
+          <motion.button
+            initial={{
+              opacity: 0,
+              y: 10,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            transition={{
+              delay: 0.12,
+              duration: 0.55,
+            }}
+            onClick={() =>
+              openPremium(
+                "/insights/mirror"
+              )
+            }
+            style={{
+              position: "relative",
+              width: "100%",
+              minHeight: 182,
+              overflow: "hidden",
+              borderRadius: 20,
+              border:
+                `1px solid ${colors.border}`,
+              background:
+                "linear-gradient(145deg, rgba(255,255,255,.034), rgba(255,255,255,.018))",
+              padding:
+                "18px 18px 16px",
+              textAlign: "left",
+              cursor: "pointer",
+              opacity: isPremium
+                ? 1
+                : 0.72,
+            }}
+          >
+            {!isPremium && (
+              <Lock
+                size={14}
+                color={
+                  colors.goldSoft
+                }
                 style={{
-                  color: colors.textSoft,
-                  fontSize: 11,
-                  margin: "0 0 10px",
+                  position:
+                    "absolute",
+                  right: 14,
+                  top: 14,
+                }}
+              />
+            )}
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "minmax(0, 1fr) 24px minmax(0, 1fr) 48px",
+                alignItems: "center",
+                gap: 9,
+                paddingRight: 2,
+              }}
+            >
+              <div
+                style={{
+                  minWidth: 0,
                 }}
               >
-                Today
-              </p>
+                <p
+                  style={{
+                    color:
+                      colors.textSoft,
+                    fontSize: 10,
+                    margin:
+                      "0 0 9px",
+                  }}
+                >
+                  {mirrorPastLabel}
+                </p>
 
-              <p
+                <p
+                  style={{
+                    ...serif,
+                    color:
+                      colors.text,
+                    fontSize: 17,
+                    lineHeight: 1.35,
+                    margin: 0,
+                  }}
+                >
+                  “{mirrorPastText}”
+                </p>
+              </div>
+
+              <ChevronRight
+                size={20}
+                color={
+                  colors.goldSoft
+                }
+              />
+
+              <div
                 style={{
-                  ...serif,
-                  color: colors.text,
-                  fontSize: 18,
-                  lineHeight: 1.35,
-                  margin: 0,
+                  minWidth: 0,
                 }}
               >
-                “You made it.”
-              </p>
+                <p
+                  style={{
+                    color:
+                      colors.textSoft,
+                    fontSize: 10,
+                    margin:
+                      "0 0 9px",
+                  }}
+                >
+                  {mirrorPresentLabel}
+                </p>
+
+                <p
+                  style={{
+                    ...serif,
+                    color:
+                      colors.text,
+                    fontSize: 17,
+                    lineHeight: 1.35,
+                    margin: 0,
+                  }}
+                >
+                  “{mirrorPresentText}”
+                </p>
+              </div>
+
+              <div
+                style={{
+                  width: 44,
+                  height: 52,
+                  borderRadius:
+                    "52% 48% 54% 46%",
+                  background:
+                    "radial-gradient(circle at 38% 30%, rgba(255,226,153,.95), rgba(195,138,47,.88) 42%, rgba(99,64,21,.85) 76%, rgba(42,29,15,.92))",
+                  boxShadow:
+                    "0 9px 22px rgba(205,145,45,.22)",
+                }}
+              />
             </div>
 
             <div
               style={{
-                width: 48,
-                height: 56,
-                borderRadius: "52% 48% 54% 46%",
+                height: 1,
                 background:
-                  "radial-gradient(circle at 38% 30%, rgba(255,226,153,.95), rgba(195,138,47,.88) 42%, rgba(99,64,21,.85) 76%, rgba(42,29,15,.92))",
-                boxShadow:
-                  "0 9px 22px rgba(205,145,45,.22)",
+                  "rgba(255,255,255,.055)",
+                margin:
+                  "17px 0 13px",
               }}
             />
-          </div>
 
-          <div
-            style={{
-              height: 1,
-              background:
-                "rgba(255,255,255,.055)",
-              margin: "17px 0 14px",
-            }}
-          />
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-            }}
-          >
-            <span
+            <div
               style={{
-                color: colors.textSoft,
-                fontSize: 12,
+                display: "flex",
+                alignItems:
+                  "flex-start",
+                justifyContent:
+                  "space-between",
+                gap: 14,
               }}
             >
-              See how far you've come.
-            </span>
+              <div
+                style={{
+                  minWidth: 0,
+                  flex: 1,
+                }}
+              >
+                {realMirrorResult?.title && (
+                  <p
+                    style={{
+                      color:
+                        colors.goldSoft,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing:
+                        "0.08em",
+                      textTransform:
+                        "uppercase",
+                      margin:
+                        "0 0 5px",
+                    }}
+                  >
+                    {
+                      realMirrorResult.title
+                    }
+                  </p>
+                )}
 
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                color: colors.gold,
-                fontSize: 12,
-              }}
-            >
-              {isPremium
-                ? "Open Mirror"
-                : "Unlock"}
-              <ChevronRight size={15} />
-            </span>
-          </div>
-        </motion.button>
+                <p
+                  style={{
+                    color:
+                      colors.textSoft,
+                    fontSize: 12,
+                    lineHeight: 1.55,
+                    margin: 0,
+                  }}
+                >
+                  {mirrorReflection}
+                </p>
+              </div>
+
+              <span
+                style={{
+                  flexShrink: 0,
+                  display:
+                    "inline-flex",
+                  alignItems:
+                    "center",
+                  gap: 5,
+                  color:
+                    colors.gold,
+                  fontSize: 11,
+                  marginTop: 2,
+                }}
+              >
+                {isPremium
+                  ? "Open Mirror"
+                  : "Unlock"}
+
+                <ChevronRight
+                  size={14}
+                />
+              </span>
+            </div>
+          </motion.button>
+        )}
       </section>
 
       {/* MEMORIES WAITING */}
@@ -1653,31 +2144,43 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
         </p>
 
         <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.16, duration: 0.55 }}
-          onClick={() => navigate("/nest")}
+          initial={{
+            opacity: 0,
+            y: 10,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            delay: 0.16,
+            duration: 0.55,
+          }}
+          onClick={() =>
+            navigate("/nest")
+          }
           style={{
             width: "100%",
             minHeight: 108,
             display: "grid",
             gridTemplateColumns:
-              "62px minmax(0, 1fr) minmax(120px, .8fr)",
+              "58px minmax(0, 1fr) minmax(112px, .8fr)",
             alignItems: "center",
-            gap: 14,
+            gap: 13,
             borderRadius: 19,
-            border: `1px solid ${colors.border}`,
+            border:
+              `1px solid ${colors.border}`,
             background:
               "linear-gradient(145deg, rgba(255,255,255,.033), rgba(255,255,255,.018))",
-            padding: "16px",
+            padding: 15,
             textAlign: "left",
             cursor: "pointer",
           }}
         >
           <div
             style={{
-              width: 54,
-              height: 54,
+              width: 50,
+              height: 50,
               borderRadius: 999,
               display: "flex",
               alignItems: "center",
@@ -1690,7 +2193,7 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
             }}
           >
             <Clock3
-              size={25}
+              size={24}
               strokeWidth={1.4}
             />
           </div>
@@ -1699,7 +2202,7 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
             style={{
               ...serif,
               color: colors.text,
-              fontSize: 20,
+              fontSize: 19,
               lineHeight: 1.35,
               margin: 0,
             }}
@@ -1710,26 +2213,33 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
           <div>
             <p
               style={{
-                color: colors.textSoft,
+                color:
+                  colors.textSoft,
                 fontSize: 11,
                 lineHeight: 1.5,
-                margin: "0 0 10px",
+                margin:
+                  "0 0 9px",
               }}
             >
-              Return to a Voice Capsule from months ago.
+              Return to a Voice Capsule from months
+              ago.
             </p>
 
             <span
               style={{
-                display: "inline-flex",
-                alignItems: "center",
+                display:
+                  "inline-flex",
+                alignItems:
+                  "center",
                 gap: 6,
                 color: colors.gold,
                 fontSize: 12,
               }}
             >
               Open memories
-              <ChevronRight size={15} />
+              <ChevronRight
+                size={15}
+              />
             </span>
           </div>
         </motion.button>
@@ -1744,7 +2254,8 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
           margin: "20px 10px 0",
         }}
       >
-        The Nest is a calm observer. It only reflects what your own entries support.
+        The Nest is a calm observer. It only reflects
+        what your own entries support.
       </p>
     </>
   );
