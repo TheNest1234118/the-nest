@@ -215,7 +215,9 @@ import type {
     const force =
       req.query.force === "true" ||
       req.body?.force === true;
-  
+      const backfill =
+      req.query.backfill === "true" ||
+      req.body?.backfill === true;
     const supabase = createClient(
       supabaseUrl,
       serviceKey
@@ -293,10 +295,14 @@ import type {
           }
   
           const recentStart =
-            state?.last_recent_entry_at ||
-            new Date(
-              Date.now() - 14 * 24 * 60 * 60 * 1000
-            ).toISOString();
+          backfill
+            ? new Date(
+                Date.now() - 730 * 24 * 60 * 60 * 1000
+              ).toISOString()
+            : state?.last_recent_entry_at ||
+              new Date(
+                Date.now() - 14 * 24 * 60 * 60 * 1000
+              ).toISOString();
   
           const oldCutoff = new Date(
             Date.now() - 30 * 24 * 60 * 60 * 1000
@@ -320,7 +326,7 @@ import type {
               .order("created_at", {
                 ascending: false,
               })
-              .limit(12),
+              .limit(backfill ? 100 : 40),
   
             supabase
               .from("memos")

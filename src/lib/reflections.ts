@@ -69,7 +69,7 @@ export async function generateReflection(
  if (!session?.access_token) {
    return { ok: false, error: "Please log in first." };
  }
- const response = await fetch("/api/generate-reflection", {
+ const response = await fetch("/api/daily-reminder?action=generate-reflection", {
    method: "POST",
    headers: {
      Authorization: `Bearer ${session.access_token}`,
