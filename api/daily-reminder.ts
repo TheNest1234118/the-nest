@@ -656,7 +656,7 @@ const mirrorResponseSchema = {
     },
   },
 };
-
+const MIRROR_MIN_DAYS_APART = 7;
 const MIRROR_SYSTEM_PROMPT = `
 You are The Nest Mirror.
 
@@ -687,7 +687,7 @@ Rules:
 - Never create drama.
 - Never manipulate emotion.
 - Never claim a change unless the supplied entries support it.
-- The past and present entries must be at least 30 days apart.
+- The past and present entries must be at least 7 days apart.
 - Prefer exact short quotes copied from the transcripts.
 - Do not repeat previous Mirror results.
 - Return only one comparison.
@@ -892,13 +892,13 @@ function normalizeMirrorResult(
       60 *
       1000);
 
-  if (
-    separationDays < 30
-  ) {
-    return emptyMirrorResult(
-      "The selected entries were not far enough apart."
-    );
-  }
+      if (
+        separationDays < MIRROR_MIN_DAYS_APART
+      ) {
+        return emptyMirrorResult(
+          `The selected entries must be at least ${MIRROR_MIN_DAYS_APART} days apart.`
+        );
+      }
 
   return {
     found: true,
@@ -1055,16 +1055,16 @@ async function generateMirrorComparison({
               previous_mirrors:
                 cleanPrevious,
 
-              constraints: {
-                minimum_days_apart:
-                  30,
-
-                minimum_confidence:
-                  70,
-
-                return_zero_when_uncertain:
-                  true,
-              },
+                constraints: {
+                  minimum_days_apart:
+                    MIRROR_MIN_DAYS_APART,
+                
+                  minimum_confidence:
+                    70,
+                
+                  return_zero_when_uncertain:
+                    true,
+                },
             }),
         },
       ],
@@ -2444,16 +2444,15 @@ async function handleRunMirrorAnalysis(
                     60 *
                     1000
               ).toISOString();
-
-        const oldCutoff =
-          new Date(
-            Date.now() -
-              30 *
-                24 *
-                60 *
-                60 *
-                1000
-          ).toISOString();
+              const oldCutoff =
+              new Date(
+                Date.now() -
+                  MIRROR_MIN_DAYS_APART *
+                    24 *
+                    60 *
+                    60 *
+                    1000
+              ).toISOString();
 
         const oldStart =
           new Date(
