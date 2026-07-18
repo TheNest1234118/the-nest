@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { trackNestEvent, events } from "@/lib/analyticsEvents";
 import { loadThoughts, saveThought } from "@/lib/userData";
 import { registerVisitForPwaPrompt } from "@/lib/pwa";
-import digestBooks from "../nest-digest-books.png";
 import { AuthModal } from "@/components/AuthModal";
 import { supabase } from "@/lib/supabase";
 import {
@@ -1292,27 +1291,25 @@ function InsightsPage({ navigate }: { navigate: (path: string) => void }) {
             </div>
           )}
 
-          <img
-            src={digestBooks}
-            alt=""
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              right: -10,
-              bottom: 12,
-              width: "46%",
-              maxWidth: 210,
-              objectFit: "contain",
-              pointerEvents: "none",
-              userSelect: "none",
-              opacity: isPremium
-                ? 0.96
-                : 0.58,
-              filter:
-                "drop-shadow(0 18px 25px rgba(0,0,0,.38))",
-              zIndex: 1,
-            }}
-          />
+<img
+  src="/assets/nest-digest-books.png"
+  alt=""
+  aria-hidden="true"
+  style={{
+    position: "absolute",
+    right: -10,
+    bottom: 12,
+    width: "46%",
+    maxWidth: 210,
+    objectFit: "contain",
+    pointerEvents: "none",
+    userSelect: "none",
+    opacity: isPremium ? 0.96 : 0.58,
+    filter:
+      "drop-shadow(0 18px 25px rgba(0,0,0,.38))",
+    zIndex: 1,
+  }}
+/>
 
           <div
             style={{
