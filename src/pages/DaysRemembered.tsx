@@ -990,7 +990,7 @@ export function DaysRemembered() {
                   width: 330,
                   maxWidth: "78vw",
                 
-                  right: -45,
+                  right: -70,
                 
                   // Award weiter nach oben
                   bottom: 70,
