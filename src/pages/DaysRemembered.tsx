@@ -987,13 +987,13 @@ export function DaysRemembered() {
                   position: "absolute",
                 
                   // Award größer
-                  width: 280,
-                  maxWidth: "68vw",
+                  width: 330,
+                  maxWidth: "78vw",
                 
                   right: -30,
                 
                   // Award weiter nach oben
-                  bottom: 30,
+                  bottom: 70,
                 
                   objectFit: "contain",
                 
