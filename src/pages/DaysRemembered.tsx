@@ -985,18 +985,18 @@ export function DaysRemembered() {
                 }}
                 style={{
                   position: "absolute",
-
-                  width: 235,
-
-                  maxWidth: "58vw",
-
-                  right: -25,
-
-                  bottom: 2,
-
-                  objectFit:
-                    "contain",
-
+                
+                  // Award größer
+                  width: 280,
+                  maxWidth: "68vw",
+                
+                  right: -30,
+                
+                  // Award weiter nach oben
+                  bottom: 30,
+                
+                  objectFit: "contain",
+                
                   filter:
                     "drop-shadow(0 24px 55px rgba(0,0,0,.48)) drop-shadow(0 0 30px rgba(214,153,50,.16))",
                 }}
