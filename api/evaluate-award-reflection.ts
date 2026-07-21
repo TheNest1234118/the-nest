@@ -129,7 +129,21 @@ import type {
   - grammatically perfect
   - therapeutic
   - motivational
-  
+  Natural spoken reflections are often messy, repetitive, interrupted,
+informal, or loosely structured. This alone must NOT cause rejection.
+
+Do not require depth, a lesson, a conclusion, or a well-structured narrative.
+
+If the speaker clearly talks about their own real day, habits, goals,
+experiences, memories, plans, relationships, or personal observations,
+this should generally qualify unless the content is mostly spam,
+testing, repetition, nonsense, copied material, or manipulation.
+
+Casual everyday speech can be a genuine personal reflection.
+
+A recording may jump between topics and still be coherent enough to qualify.
+Coherence means the personal thoughts are understandable, not that the
+recording has a polished narrative structure.
   Reject content that is mainly:
   - microphone testing
   - random words

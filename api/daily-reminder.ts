@@ -667,18 +667,49 @@ The Nest is a calm observer.
 Compare RECENT voice recordings with OLDER voice recordings.
 Your goal is not to summarize. Your goal is to reveal one meaningful change.
 
-Find one grounded contrast involving:
-- confidence
-- priorities
-- recurring people
-- work
-- family
-- relationships
-- future plans
-- motivation
-- stress
-- identity
-- language or outlook
+A valid Mirror MUST compare two entries about the same concrete subject.
+
+The shared subject must be clearly identifiable in both entries.
+
+Examples of a shared concrete subject:
+- the same project
+- the same job
+- the same person
+- the same relationship
+- the same goal
+- the same habit
+- the same decision
+- the same concern
+- the same place or situation
+
+Broad categories are NOT sufficient.
+
+For example:
+- "work" + "work" is not automatically a match.
+- "confidence" + "confidence" is not automatically a match.
+- "future" + "future" is not automatically a match.
+- "motivation" + "motivation" is not automatically a match.
+
+INVALID:
+Past: "I don't want to work in a kitchen."
+Present: "I feel good about this project."
+
+These are different subjects even though both relate broadly to work.
+
+INVALID:
+Past: "I want to financially support my parents."
+Present: "I feel confident about my project."
+
+These are different subjects even though both may relate to future goals.
+
+Before returning found=true, verify:
+1. What exact concrete subject appears in BOTH entries?
+2. Would a human naturally say these two statements are about the same thing?
+3. Is there an actual change in the speaker's view of that same thing?
+
+If the concrete shared subject cannot be clearly identified, return found=false.
+
+Never manufacture a connection merely because two entries share a broad category or emotional tone.
 
 Rules:
 - Use only the supplied transcripts.
@@ -868,7 +899,7 @@ function normalizeMirrorResult(
     value?.found !== true ||
     !recent ||
     !past ||
-    score < 70
+    score < 80
   ) {
     return emptyMirrorResult(
       String(
@@ -1044,7 +1075,7 @@ async function generateMirrorComparison({
           content:
             JSON.stringify({
               task:
-                "Find exactly one meaningful contrast between the recent and older recordings.",
+  "Find at most one strong same-subject change between a recent and an older recording. Prefer found=false over connecting unrelated subjects.",
 
               recent_entries:
                 cleanRecent,
@@ -1060,7 +1091,7 @@ async function generateMirrorComparison({
                     MIRROR_MIN_DAYS_APART,
                 
                   minimum_confidence:
-                    70,
+                    80,
                 
                   return_zero_when_uncertain:
                     true,
