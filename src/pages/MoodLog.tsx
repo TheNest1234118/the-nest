@@ -237,60 +237,142 @@ export function MoodLog() {
   }, []);
 
   const stats = useMemo(() => {
-  if (!entries.length) {
+    if (!entries.length) {
+      return {
+        topMood: "neutral",
+        topMoodPercent: 0,
+        trendPercent: 0,
+        hasLastWeek: false,
+        trendLabel: "No trend yet",
+        insight:
+          "Your patterns will appear after a few check-ins.",
+      };
+    }
+  
+    const now = new Date();
+  
+    const thisWeekStart =
+      getWeekStart(now);
+  
+    const lastWeekStart =
+      new Date(thisWeekStart);
+  
+    lastWeekStart.setDate(
+      lastWeekStart.getDate() - 7
+    );
+  
+    const thisWeek = entries.filter(
+      (entry) => {
+        const d = new Date(
+          entry.mood_date ||
+            entry.created_at
+        );
+  
+        return d >= thisWeekStart;
+      }
+    );
+  
+    const lastWeek = entries.filter(
+      (entry) => {
+        const d = new Date(
+          entry.mood_date ||
+            entry.created_at
+        );
+  
+        return (
+          d >= lastWeekStart &&
+          d < thisWeekStart
+        );
+      }
+    );
+  
+    const activeEntries =
+      thisWeek.length
+        ? thisWeek
+        : entries;
+  
+    const topMood =
+      mostCommonMood(activeEntries);
+  
+    const topMoodThisWeekCount =
+      thisWeek.filter(
+        (entry) =>
+          entry.mood === topMood
+      ).length;
+  
+    const topMoodLastWeekCount =
+      lastWeek.filter(
+        (entry) =>
+          entry.mood === topMood
+      ).length;
+  
+    const topMoodPercent =
+      thisWeek.length
+        ? Math.round(
+            (
+              topMoodThisWeekCount /
+              thisWeek.length
+            ) * 100
+          )
+        : 0;
+  
+    const topMoodLastPercent =
+      lastWeek.length
+        ? Math.round(
+            (
+              topMoodLastWeekCount /
+              lastWeek.length
+            ) * 100
+          )
+        : 0;
+  
+    const trendPercent =
+      lastWeek.length
+        ? topMoodPercent -
+          topMoodLastPercent
+        : 0;
+  
+    const moodLabel =
+      MOODS[topMood]?.label ??
+      topMood;
+  
+    let trendLabel =
+      "No trend yet";
+  
+    if (lastWeek.length) {
+      if (trendPercent > 0) {
+        trendLabel =
+          `+${trendPercent}% more ${moodLabel}`;
+      } else if (
+        trendPercent < 0
+      ) {
+        trendLabel =
+          `${Math.abs(
+            trendPercent
+          )}% less ${moodLabel}`;
+      } else {
+        trendLabel =
+          `Same ${moodLabel} level`;
+      }
+    }
+  
     return {
-      topMood: "neutral",
-      calmPercent: 0,
-      trendPercent: 0,
-      hasLastWeek: false,
-      insight: "Your patterns will appear after a few check-ins.",
+      topMood,
+      topMoodPercent,
+      trendPercent,
+      hasLastWeek:
+        lastWeek.length > 0,
+      trendLabel,
+  
+      insight:
+        thisWeek.length > 0
+          ? `${moodLabel} appeared on ${topMoodPercent}% of your check-ins this week.`
+          : `Your most common mood was ${moodLabel}.`,
     };
-  }
-
-  const now = new Date();
-  const thisWeekStart = getWeekStart(now);
-  const lastWeekStart = new Date(thisWeekStart);
-  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
-
-  const thisWeek = entries.filter((entry) => {
-    const d = new Date(entry.mood_date || entry.created_at);
-    return d >= thisWeekStart;
-  });
-
-  const lastWeek = entries.filter((entry) => {
-    const d = new Date(entry.mood_date || entry.created_at);
-    return d >= lastWeekStart && d < thisWeekStart;
-  });
-
-  const activeEntries = thisWeek.length ? thisWeek : entries;
-  const topMood = mostCommonMood(activeEntries);
-
-  const calmThisWeek = thisWeek.filter((entry) => entry.mood === "calm").length;
-  const calmLastWeek = lastWeek.filter((entry) => entry.mood === "calm").length;
-
-  const calmPercent = thisWeek.length
-    ? Math.round((calmThisWeek / thisWeek.length) * 100)
-    : 0;
-
-  const calmLastPercent = lastWeek.length
-    ? Math.round((calmLastWeek / lastWeek.length) * 100)
-    : 0;
-
-  const trendPercent = lastWeek.length
-    ? Math.round(calmPercent - calmLastPercent)
-    : 0;
-
-  return {
-    topMood,
-    calmPercent,
-    trendPercent,
-    hasLastWeek: lastWeek.length > 0,
-    insight:
-      calmPercent >= 50
-        ? `You had ${calmPercent}% calm days this week.`
-        : `Your most common mood was ${MOODS[topMood]?.label ?? topMood}.`,
-  };
-}, [entries]);
+  }, [entries]);
+  const topMoodData =
+  MOODS[stats.topMood] ??
+  MOODS.neutral;
 
   const displayEntries = useMemo(() => {
     const source = entries;
@@ -416,21 +498,26 @@ export function MoodLog() {
         }}
       >
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-          <div
-            style={{
-              width: 62,
-              height: 62,
-              borderRadius: 999,
-              display: "grid",
-              placeItems: "center",
-              color: "#FFD86B",
-              background:
-                "radial-gradient(circle, rgba(255,216,107,.26), rgba(255,216,107,.05) 58%, transparent 72%)",
-              boxShadow: "0 0 28px rgba(255,216,107,.18)",
-            }}
-          >
-            <Moon size={34} fill="currentColor" />
-          </div>
+        <div
+  style={{
+    width: 62,
+    height: 62,
+    borderRadius: 999,
+    display: "grid",
+    placeItems: "center",
+
+    color:
+      topMoodData.color,
+
+    background:
+      `radial-gradient(circle, ${topMoodData.glow}, rgba(255,255,255,.035) 58%, transparent 72%)`,
+
+    boxShadow:
+      `0 0 28px ${topMoodData.glow}`,
+  }}
+>
+  {topMoodData.icon}
+</div>
 
           <div>
             <div style={{ fontSize: 15, color: "rgba(244,225,190,.84)" }}>
@@ -459,7 +546,11 @@ export function MoodLog() {
         </div>
 
         <div style={{ textAlign: "center" }}>
-        <ProgressRing percent={stats.calmPercent} />
+        <ProgressRing
+  percent={
+    stats.topMoodPercent
+  }
+/>
           <div
             style={{
               fontSize: 13,
@@ -467,7 +558,7 @@ export function MoodLog() {
               marginTop: 3,
             }}
           >
-            Calm days
+            {topMoodData.label} days
           </div>
         </div>
 
@@ -480,22 +571,37 @@ export function MoodLog() {
           <div style={{ fontSize: 15, color: "rgba(244,225,190,.86)" }}>
             Mood trend
           </div>
-          <MiniTrend color="#FFD86B" />
-          <div
-            style={{
-              fontSize: 16,
-              color: "#64DE77",
-              fontWeight: 600,
-              marginTop: 2,
-            }}
-          >
-           {stats.hasLastWeek
-  ? `${stats.trendPercent >= 0 ? "+" : ""}${stats.trendPercent}% calmer`
-  : "No trend yet"}
-          </div>
-          <div style={{ fontSize: 13, color: "rgba(190,172,143,.52)" }}>
-            than last week
-          </div>
+          <MiniTrend
+  color={
+    topMoodData.color
+  }
+/>
+<div
+  style={{
+    fontSize: 16,
+    color:
+      stats.trendPercent > 0
+        ? "#64DE77"
+        : stats.trendPercent < 0
+        ? "#FF8D8D"
+        : "rgba(244,225,190,.72)",
+    fontWeight: 600,
+    marginTop: 2,
+  }}
+>
+  {stats.trendLabel}
+</div>
+
+{stats.hasLastWeek && (
+  <div
+    style={{
+      fontSize: 13,
+      color: "rgba(190,172,143,.52)",
+    }}
+  >
+    than last week
+  </div>
+)}
         </div>
       </section>
 
@@ -597,16 +703,17 @@ export function MoodLog() {
                 >
                   {mood.label}
                 </div>
-
-                <div
-                  style={{
-                    fontSize: 14,
-                    color: "rgba(190,172,143,.52)",
-                    marginBottom: 9,
-                  }}
-                >
-                  {formatDate(entry.mood_date || entry.created_at)}
-                </div>
+{stats.hasLastWeek && (
+  <div
+    style={{
+      fontSize: 13,
+      color:
+        "rgba(190,172,143,.52)",
+    }}
+  >
+    than last week
+  </div>
+)}
 
                 <div
                   style={{
